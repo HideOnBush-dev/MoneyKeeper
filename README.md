@@ -20,7 +20,7 @@ Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập n
   - Phân tích mẫu chi tiêu và đưa ra lời khuyên.
   - Trả lời các câu hỏi liên quan đến tài chính cá nhân (bằng tiếng Việt).
   - Có nhiều "tính cách" (thân thiện, nghiêm khắc, hài hước).
-- **Bảo mật:** Sử dụng mã PIN để bảo vệ dữ liệu (Lưu ý: Phần mô tả có nhắc đến PIN, nhưng hiện tại code chưa implement. Oni-chan cần thêm tính năng này).
+- **Bảo mật:** Sử dụng mã tài khoản và mật khẩu để bảo vệ dữ liệu
 - **Xuất/Nhập dữ liệu:** Xuất dữ liệu chi tiêu ra file Excel.
 - **Thông báo:** Nhận thông báo khi chi tiêu gần vượt quá ngân sách.
 - **Giao diện:** Thiết kế responsive, thân thiện với người dùng, hỗ trợ tiếng Việt.
@@ -129,8 +129,6 @@ Truy cập vào localhost:8000 trên trình duyệt.
 - Đảm bảo rằng thư mục `models` (chứa model AI) có thể truy cập được bởi ứng dụng.
 
 ## Contributing
-
-(Phần này Oni-chan tự viết nhé, hướng dẫn cách người khác có thể đóng góp cho project của Oni-chan, ví dụ: quy trình pull request, coding style, v.v.)
 
 - Tạo một nhánh mới từ `main` (ví dụ: `feature/new-feature`, `bugfix/fix-bug`).
 - Thực hiện thay đổi trên nhánh của bạn.
