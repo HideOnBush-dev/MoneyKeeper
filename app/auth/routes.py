@@ -90,7 +90,7 @@ def register():
                 logger.exception(
                     f"Error during registration: {e}"
                 )  # More specific exception logging
-                flash("Lỗi đăng ký: " + str(e), "error")  # Keep original error message.
+                flash("Lỗi đăng ký: " + str(e), "error")
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return render_template(
                         "auth/_register_content.html", form=form

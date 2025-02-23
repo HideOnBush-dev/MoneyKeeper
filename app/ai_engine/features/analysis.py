@@ -63,7 +63,7 @@ class ExpenseAnalyzer:
         return {
             "daily_average": daily_average,
             "total": total_spent,
-            "common_categories": sorted_categories[:3],  # Top 3 categories
+            "common_categories": sorted_categories[:3],
             "highest_expense": highest_expense,
         }
 
@@ -72,9 +72,7 @@ class ExpenseAnalyzer:
         Generates recommendations based on expense data using the LLM.
         Now expects and parses JSON output.
         """
-        analysis_data = self.get_analysis_data(
-            expense_data
-        )  # calculate or get analysis data
+        analysis_data = self.get_analysis_data(expense_data)
 
         if not expense_data:
             return ["Bắt đầu theo dõi chi tiêu của bạn để nhận phân tích."]
@@ -96,7 +94,6 @@ class ExpenseAnalyzer:
             )
             generated_text = outputs[0]["generated_text"]
 
-            # Remove the prompt from the generated text
             response_text = generated_text.replace(prompt, "").strip()
             print(response_text)
 
@@ -137,24 +134,23 @@ KHÔNG GIẢI THÍCH. CHỈ JSON VÀ KHÔNG ĐỀ CẬP VẤN ĐỀ KHÁC."""
         Handles potential JSON decoding errors.
         """
         try:
-            # More robust JSON extraction, handles extra text before/after
             match = re.search(
                 r"```json\s*({[\s\S]*?})\s*```", analysis_text, re.IGNORECASE
             )  # Added IGNORECASE flag
             if match:
                 json_str = match.group(1)
-                json_str = json_str.strip()  # important to remove extra spaces.
+                json_str = json_str.strip()
                 data = json.loads(json_str)
 
                 if "recommendations" in data and isinstance(
                     data["recommendations"], list
                 ):
-                    return data["recommendations"][:3]  # Limit to 3 recommendations
+                    return data["recommendations"][:3]
                 else:
                     logger.error(
                         f"Invalid JSON format: 'recommendations' key missing or not a list. Response: {analysis_text}"
                     )
-                    return []  # Return empty list if invalid
+                    return []
             else:
                 logger.error(f"No JSON found in AI response: {analysis_text}")
                 return []
@@ -162,8 +158,8 @@ KHÔNG GIẢI THÍCH. CHỈ JSON VÀ KHÔNG ĐỀ CẬP VẤN ĐỀ KHÁC."""
         except json.JSONDecodeError as e:
             logger.exception(
                 f"JSON decoding error: {e}.  Response text: {analysis_text}"
-            )  # Log the exception AND the problematic text
+            )
             return []
-        except Exception as e:  # General exception handling
+        except Exception as e:
             logger.exception(f"An unexpected error occurred: {e}")
             return []

@@ -17,7 +17,6 @@ from wtforms.validators import (
     ValidationError,
 )
 from app.constants import EXPENSE_CATEGORIES
-from app.models import Wallet, Expense
 from flask_login import current_user
 import re
 
@@ -42,7 +41,6 @@ class WalletForm(FlaskForm):
         validators=[
             DataRequired(message="Vui lòng nhập số dư"),
             NumberRange(min=0, message="Số dư phải lớn hơn hoặc bằng 0"),
-            # is_valid_amount_format  # Removed custom validator
         ],
     )
     description = TextAreaField("Mô tả", validators=[Length(max=200)])
@@ -62,7 +60,6 @@ class ExpenseForm(FlaskForm):
         validators=[
             DataRequired(message="Vui lòng nhập số tiền"),
             NumberRange(min=0, message="Số tiền phải lớn hơn 0"),
-            # is_valid_amount_format  # Removed custom validator
         ],
     )
     category = SelectField(

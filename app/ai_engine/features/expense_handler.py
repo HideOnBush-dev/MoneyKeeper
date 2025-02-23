@@ -97,5 +97,5 @@ class ExpenseHandler:
             return expense
         except Exception as e:
             db.session.rollback()
-            logger.exception(f"Error saving expense: {e}")  # Added logging
-            raise  # Re-raise exception to be handled by caller
+            logger.exception(f"Error saving expense: {e}") 
+            raise 

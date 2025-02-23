@@ -1,5 +1,4 @@
 from typing import Dict, List, Optional
-from transformers import pipeline
 from app.ai_engine.core.model_manager import model_manager
 import logging
 
@@ -38,7 +37,7 @@ class ExpensePredictor:
             return predictions
 
         except Exception as e:
-            logger.exception(f"Prediction error: {e}")  # Log full traceback
+            logger.exception(f"Prediction error: {e}")
             return None
 
     def _format_prediction_prompt(self, expenses: List[Dict]) -> str:
@@ -62,15 +61,13 @@ class ExpensePredictor:
                     amount = float(
                         parts[1]
                         .replace("₫", "")
-                        .replace(".", "")  # Remove thousand separators
-                        .replace(",", "")  # Remove any commas
+                        .replace(".", "")
+                        .replace(",", "")
                         .strip()
                     )
                     predictions[category] = amount
                 except ValueError:
-                    logger.warning(
-                        f"Could not parse prediction line: {line}"
-                    )  # log unparseable lines.
+                    logger.warning(f"Could not parse prediction line: {line}")
         return predictions
 
 

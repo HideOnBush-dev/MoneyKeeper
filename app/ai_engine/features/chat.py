@@ -374,7 +374,7 @@ class AIChat:
         except Exception as e:
             logger.exception(f"Error during cleanup: {e}")
 
-    def _format_response(self, response_text, persona):  # No changes needed here
+    def _format_response(self, response_text, persona):
         """Formats the response, removing tool calls and adding the assistant marker."""
         response_text = re.sub(
             r"```tool_call.*?```", "", response_text, flags=re.DOTALL

@@ -21,7 +21,7 @@ def init_db(app):
         "pool_pre_ping": True,
         "connect_args": {
             "timeout": 30,
-            "check_same_thread": False,  # <- Add this for SQLite
+            "check_same_thread": False,  
         },
     }
 
@@ -36,7 +36,7 @@ def init_db(app):
             cursor.execute("PRAGMA journal_mode=WAL")
             cursor.execute(
                 "PRAGMA busy_timeout=10000"
-            )  # Increased busy_timeout (in milliseconds)
+            ) 
             cursor.close()
 
         # Register the event listener

@@ -21,7 +21,7 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_permanently_logged_in = db.Column(
         db.Boolean, default=False
-    )  # Not currently used, consider removing
+    )
     budgets = db.relationship("Budget", back_populates="user")
     wallets = db.relationship("Wallet", backref="user", lazy="dynamic")
     chat_sessions = db.relationship("ChatSession", backref="user", lazy="dynamic")
@@ -32,7 +32,7 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    def set_permanent_login(self, status):  # Consider removing if not used
+    def set_permanent_login(self, status): 
         self.is_permanently_logged_in = status
         db.session.commit()
 
@@ -104,9 +104,7 @@ class Wallet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
     balance = db.Column(db.Float, default=0.0)
-    currency = db.Column(
-        db.String(3), default="VND"
-    )  # Currency support (limited in this example)
+    currency = db.Column(db.String(3), default="VND")
     description = db.Column(db.String(200))
     is_default = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

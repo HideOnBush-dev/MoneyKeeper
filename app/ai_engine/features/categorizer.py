@@ -422,7 +422,7 @@ class ExpenseCategorizer:
                 return "khác"
 
         except Exception as e:
-            logger.exception(f"Error classifying with LLM: {e}")  # Log full traceback
+            logger.exception(f"Error classifying with LLM: {e}")
             return "khác"
 
     def predict_category(self, description: str) -> str:
@@ -442,7 +442,7 @@ class ExpenseCategorizer:
         best_category = max(scores, key=scores.get)
         max_matches = scores[best_category]
 
-        if max_matches >= 1:  # Use the best category if good match
+        if max_matches >= 1:
             return best_category
         else:  # Use LLM
             return self._classify_with_llm(description)

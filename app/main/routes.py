@@ -455,7 +455,14 @@ def handle_message(data):
     message = data.get("message", "")
     if not message.strip():
         return
-    message = message.replace("<", "<").replace(">", ">")  # Basic XSS prevention
+    # More comprehensive XSS prevention using HTML escape
+    message = (
+        message.replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("&", "&amp;")
+        .replace('"', "&quot;")
+        .replace("'", "&#x27;")
+    )
 
     try:
         session = (
@@ -482,11 +489,10 @@ def handle_message(data):
             response_chunks = current_app.ai_chat.get_response_stream(
                 message, session.personality, str(session.id)
             )
-            full_response = ""  # Accumulate the full response here
+            full_response = ""
             for chunk in response_chunks:
                 full_response += chunk
-                # Build up the full response.
-            # After yielding all chunks, send to client
+
             socketio.emit(
                 "response",
                 {"data": full_response, "user": False, "done": True},
@@ -494,7 +500,7 @@ def handle_message(data):
                 namespace="/chat",
             )
         except Exception as e:
-            logger.exception(f"Error handling message: {e}")  # Log the full traceback.
+            logger.exception(f"Error handling message: {e}")
             emit("error", {"data": "Đã xảy ra lỗi."}, room=str(current_user.id))
     finally:
         current_app.ai_chat.cleanup()
@@ -530,7 +536,7 @@ def manage_chat_sessions():
             return jsonify({"error": "Missing session_id"}), 400
         session = ChatSession.query.get(session_id)
         if not session:
-            return jsonify({"error": "Session not found"}), 404  # More specific error
+            return jsonify({"error": "Session not found"}), 404
         if session.user_id != current_user.id:
             return jsonify({"error": "Unauthorized"}), 403
         try:
@@ -540,12 +546,9 @@ def manage_chat_sessions():
             return jsonify({"success": True})
         except SQLAlchemyError as e:
             db.session.rollback()
-            logger.exception(
-                f"Database error deleting chat session: {e}"
-            )  # Log the exception
+            logger.exception(f"Database error deleting chat session: {e}")
             return jsonify({"error": "Database error deleting session."}), 500
 
-    # Update session.  (Used for switching personalities)
     elif action == "update":
         session_id = data.get("session_id")
         if not session_id:
@@ -694,7 +697,7 @@ def import_data():
         return jsonify({"success": "Dữ liệu đã được nhập thành công"})
     except Exception as e:
         db.session.rollback()
-        logger.exception(f"Error importing data: {e}")  # Log full traceback
+        logger.exception(f"Error importing data: {e}")
         return jsonify({"error": str(e)}), 400
 
 
@@ -757,7 +760,7 @@ def suggest_category():
         return (
             jsonify({"error": "Description is required"}),
             400,
-        )  # Check for empty description
+        )
     category = current_app.expense_categorizer.predict_category(description)
     return jsonify({"category": category})
 
@@ -781,9 +784,7 @@ def mark_notification_read(id):
         NotificationManager.mark_as_read(id, current_user.id)
         return jsonify({"success": True})
     except Exception as e:
-        logger.exception(
-            f"Error marking notification as read: {e}"
-        )  # Log with traceback
+        logger.exception(f"Error marking notification as read: {e}")
         return jsonify({"success": False, "message": "Failed to mark as read."}), 500
 
 
@@ -882,9 +883,7 @@ def add_wallet():
         except SQLAlchemyError as e:
             db.session.rollback()
             logger.exception(f"Database error adding wallet: {e}")
-            flash(
-                "Lỗi cơ sở dữ liệu khi thêm ví.", "error"
-            )  # More specific error message
+            flash("Lỗi cơ sở dữ liệu khi thêm ví.", "error")
             return render_template(
                 "main/wallets.html", form=form, title="Quản Lý Ví"
             )  # Stay on the same page
@@ -917,11 +916,11 @@ def edit_wallet(id):
             return redirect(url_for("main.wallets"))
         except SQLAlchemyError as e:
             db.session.rollback()
-            logger.exception(f"Error updating wallet: {e}")  # Log the traceback
+            logger.exception(f"Error updating wallet: {e}")
             flash("Lỗi cơ sở dữ liệu khi cập nhật ví.", "error")
             return render_template(
                 "main/edit_wallet.html", wallet=wallet, form=form, title="Chỉnh sửa ví"
-            )  # Stay on the edit page
+            )
 
     return render_template(
         "main/edit_wallet.html", wallet=wallet, form=form, title="Chỉnh sửa ví"
@@ -957,7 +956,7 @@ def delete_wallet(id):
         return jsonify({"success": True, "message": "Đã xóa ví thành công!"})
     except SQLAlchemyError as e:
         db.session.rollback()
-        logger.exception(f"Error deleting wallet: {e}")  # Log the full traceback
+        logger.exception(f"Error deleting wallet: {e}")
         return (
             jsonify({"success": False, "message": "Lỗi cơ sở dữ liệu khi xóa ví."}),
             500,

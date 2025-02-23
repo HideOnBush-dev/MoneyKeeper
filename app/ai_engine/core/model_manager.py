@@ -89,7 +89,7 @@ class ModelManager:
                 self._load_model(model_info)
                 self.load_queue.task_done()
             except Exception as e:
-                logger.exception(f"Error loading model: {e}")  # Log the full traceback
+                logger.exception(f"Error loading model: {e}")
 
     def _load_model(self, model_info: ModelInfo):
         name = model_info["name"]
@@ -115,7 +115,7 @@ class ModelManager:
 
         except Exception as e:
             error_msg = f"Error loading model/tokenizer for {name}: {str(e)}"
-            logger.exception(error_msg)  # Log full traceback
+            logger.exception(error_msg)
             self.loading_status[name] = "failed"
             self.loading_event.set()
             torch.cuda.empty_cache()
