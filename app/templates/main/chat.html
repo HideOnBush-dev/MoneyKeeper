@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block content %}  <!-- THIS IS CRUCIAL: Make sure you have this line -->
+{% block content %}
 {% if current_user.is_authenticated %}
 <div class="animate__animated animate__fadeIn">
   <!-- Main container with proper desktop height -->
@@ -26,6 +26,13 @@
           <option value="funny" {% if session.personality == 'funny' %}selected{% endif %}>Hài hước 😎</option>
         </select>
 
+        <!-- Session Switcher Button (Visible on Desktop) -->
+          <button id="sessionListButton" class="md:block hidden relative">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+          </button>
+
       </div>
     </div>
 
@@ -36,7 +43,7 @@
         <div class="flex {% if message.is_user %}justify-end{% else %}justify-start{% endif %}">
             <div
                 class="{% if message.is_user %}bg-blue-600 text-white rounded-bl-none {% else %}bg-gray-100 text-gray-800 rounded-br-none{% endif %} rounded-2xl px-4 py-2 max-w-[85%] md:max-w-[70%] shadow-sm message-bubble">
-                {{ message.content }}  <!--  This is where the Markdown will be rendered -->
+                {{ message.content }}
             </div>
         </div>
         {% endfor %}
@@ -86,13 +93,16 @@
           🔮 Dự đoán
         </button>
           <!-- New Chat Button -->
-        <button onclick="newChatSession()"
-          class="whitespace-nowrap bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium hover:bg-green-100 transition-colors">
-          + Phiên mới
-        </button>
       </div>
 
       <!-- Input form with proper spacing -->
+        {% if not current_user.premium %}
+          <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
+            <p class="font-bold">Lưu ý:</p>
+            <p>Bạn có thể gửi tối đa 200 tin nhắn và có 2 phiên trò chuyện mỗi ngày. Nâng cấp lên Premium để trò chuyện không giới hạn.</p>
+            <a href="/upgrade" class="text-blue-600 hover:text-blue-800">Nâng cấp Premium</a>
+          </div>
+        {% endif %}
       <form id="chatForm" class="flex items-center gap-2 p-3 bg-white">
         <input
           type="text"
@@ -123,7 +133,7 @@
     </div>
 
         <!-- Chat Session List (Dropdown) -->
-    <div class="absolute bottom-full right-0 mb-2 w-48 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden"
+    <div class="absolute bottom-full right-0 mb-2 w-64 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden hidden"
         id="sessionList">
         <div class="py-1">
             <button onclick="newChatSession()"
@@ -136,7 +146,7 @@
             <div class="border-t border-gray-200 my-1"></div>
             {% for s in all_sessions %}
             <a href="#" onclick="switchSession({{ s.id }})"
-            class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+            class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {% if s.id == session.id %}bg-blue-50 text-blue-700 font-medium{% endif %}">
                 Phiên {{ s.id }}  <!-- Basic ID for now; could use a title -->
                 <button onclick="deleteSession(event, {{ s.id }})" class="ml-auto text-red-600 hover:text-red-800">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -457,7 +467,7 @@
     const messageBubble = document.createElement("div");
     messageBubble.classList.add(
         "message-bubble", // Keep this for common styles
-        isUser ? "bg-blue-600" : "bg-gray-100",  // Use bg-gray-100 for AI
+        isUser ? "bg-blue-600" : "bg-gray-100",
         isUser ? "text-white" : "text-gray-800", // Text color based on sender
         "rounded-2xl",
         "px-4",
@@ -534,19 +544,7 @@
               </div>
           `;
 
-      // Find the last user message, or if none, add to the end
-      const lastUserMessage = document.querySelector(
-        "#chatMessages .flex.justify-end:last-child"
-      );
-
-      if (lastUserMessage) {
-        // Insert *before* the last user message
-        chatMessages.insertBefore(indicator, lastUserMessage.nextSibling);
-      } else {
-        // If no user messages, add to the end.
-        chatMessages.appendChild(indicator);
-      }
-
+      chatMessages.appendChild(indicator);
       scrollToBottom();
     }
 
@@ -557,9 +555,7 @@
       }
     }
 
-    // Send message on button click (optional, if you have a send button).
     function askQuestion(question) {
-      // Don't add message to the UI here, the 'message' event will handle it.
       socket.emit("message", {
         message: question,
         personality: aiPersonality.value,
@@ -571,7 +567,6 @@
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Initial scroll on load
     scrollToBottom();
 
     // --- New Session, Delete Session, and Update Personality ---
@@ -641,6 +636,39 @@
           }
       });
     }
+
+    // --- Session List Toggle (Mobile and Desktop) ---
+    const sessionListButton = document.getElementById('sessionListButton');
+    const sessionList = document.getElementById('sessionList');
+
+    if (sessionListButton && sessionList) {
+        sessionListButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent document click from immediately closing it
+            sessionList.classList.toggle('hidden');
+        });
+
+        // Close the list if clicking outside.
+        document.addEventListener('click', (e) => {
+            if (!sessionList.contains(e.target) && !sessionListButton.contains(e.target)) {
+                sessionList.classList.add('hidden');
+            }
+        });
+    }
+      // Add this event listener to your existing DOMContentLoaded handler:
+    document.addEventListener('DOMContentLoaded', () => {
+      // ... (other initialization code) ...
+
+      // Session list toggle for mobile menu
+      const mobileMenuButton = document.getElementById('mobileMenuButton');
+      if (mobileMenuButton) {
+          mobileMenuButton.addEventListener('click', () => {
+              const sessionList = document.getElementById('sessionList'); // Ensure this is the correct ID
+              if (sessionList) { // Check if the element exists
+                  sessionList.classList.toggle('hidden');
+              }
+          });
+      }
+    });
 </script>
 {% else %}
 <div class="text-center py-12">

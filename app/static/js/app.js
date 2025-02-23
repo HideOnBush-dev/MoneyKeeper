@@ -1,4 +1,3 @@
-// app/static/js/app.js
 function formatCurrency(amount) {
     return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
@@ -30,25 +29,22 @@ function showToast(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
-// Improved form validation with clearer error messages
 function validateForm(form) {
     const requiredFields = form.querySelectorAll('[required]');
     let isValid = true;
 
     requiredFields.forEach(field => {
         if (!field.value.trim()) {
-            field.classList.add('border-red-500'); // Add error class
-            // Add error message, if not already present
+            field.classList.add('border-red-500');
             if (!field.nextElementSibling || !field.nextElementSibling.classList.contains('error-message')) {
                 const errorSpan = document.createElement('span');
                 errorSpan.className = 'error-message text-red-600 text-sm mt-1';
                 errorSpan.textContent = 'Trường này là bắt buộc.';
-                field.parentNode.insertBefore(errorSpan, field.nextSibling); // Insert after the field
+                field.parentNode.insertBefore(errorSpan, field.nextSibling);
             }
             isValid = false;
         } else {
             field.classList.remove('border-red-500');
-            // Remove error message
             if (field.nextElementSibling && field.nextElementSibling.classList.contains('error-message')) {
                 field.nextElementSibling.remove();
             }
@@ -57,7 +53,6 @@ function validateForm(form) {
 
     return isValid;
 }
-
 
 function initLazyLoading() {
     if ('loading' in HTMLImageElement.prototype) {
@@ -80,10 +75,9 @@ function initLazyLoading() {
         lazyImages.forEach(img => imageObserver.observe(img));
     }
 }
+
 class ResourceLoader {
     static async preloadResources() {
-        // Only preload existing resources
-
     }
     static loadDeferredImages() {
         const images = document.querySelectorAll('img[data-src]');
@@ -101,11 +95,12 @@ class ResourceLoader {
         images.forEach(img => imageObserver.observe(img));
     }
 }
+
 function initPerformanceMonitoring() {
     if ('PerformanceObserver' in window) {
         const observer = new PerformanceObserver((list) => {
             list.getEntries().forEach((entry) => {
-                if (entry.loadTime > 3000) { // Ngưỡng 3 giây
+                if (entry.loadTime > 3000) {
                     console.warn('Slow resource load:', entry.name);
                 }
             });
@@ -114,16 +109,24 @@ function initPerformanceMonitoring() {
     }
 }
 
+function showLoading() {
+    document.getElementById("loading").classList.remove("hidden");
+}
+
+function hideLoading() {
+    document.getElementById("loading").classList.add("hidden");
+}
+
 let analysisRequest = null;
+
 async function fetchAndUpdateAnalysis() {
-    // Check if the necessary elements exist before proceeding.
     if (!document.getElementById('dailyAverage')) {
         console.warn("Analysis elements not found.  Skipping fetchAndUpdateAnalysis.");
-        return; // Exit the function if the elements aren't present.
+        return;
     }
 
-    // --- Fetch Core Analysis Data ---
     try {
+        showLoading();
         const response = await fetch('/ai/get_analysis_data', { method: 'POST' });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -151,7 +154,6 @@ async function fetchAndUpdateAnalysis() {
         document.getElementById('highestExpense').textContent = "Lỗi";
     }
 
-    // --- Fetch Recommendations (with a delay) ---
     setTimeout(() => {
         fetch('/ai/get_recommendations', { method: 'POST' })
             .then(response => {
@@ -162,7 +164,7 @@ async function fetchAndUpdateAnalysis() {
             })
             .then(data => {
                 const recommendationsList = document.getElementById('recommendationsList');
-                recommendationsList.innerHTML = ''; // Clear previous recommendations or loading message
+                recommendationsList.innerHTML = '';
 
                 if (data.recommendations && data.recommendations.length > 0) {
                     data.recommendations.forEach(rec => {
@@ -183,6 +185,8 @@ async function fetchAndUpdateAnalysis() {
             .catch(error => {
                 console.error('Error fetching recommendations:', error);
                 document.getElementById('recommendationsList').innerHTML = '<li class="text-red-500">Đã xảy ra lỗi khi tải khuyến nghị.</li>';
+            }).finally(() => {
+                hideLoading();
             });
     }, 500);
 }
@@ -200,21 +204,17 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAndUpdateAnalysis
     };
 
-    // Only call fetchAndUpdateAnalysis if on the index page
     if (window.location.pathname === '/index' || window.location.pathname === '/') {
         fetchAndUpdateAnalysis();
     }
-
 
     function setAmount(amount) {
         document.getElementById("amount").value = formatMoney(amount.toString());
         document.querySelectorAll(".amount-btn").forEach((btn) => {
             btn.classList.remove("bg-green-100", "text-green-800");
         });
-        // Use closest to find the button even if the click is on a child element
         event.target.closest('.amount-btn').classList.add("bg-green-100", "text-green-800");
     }
-
 
     function updateCategoryIcon(category) {
         const icons = {
@@ -234,12 +234,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setCategory(category) {
         document.getElementById("category").value = category;
-        // Remove active classes from all category buttons.  More robust way.
         document.querySelectorAll(".category-btn").forEach(btn => {
             btn.classList.remove("bg-blue-100", "border-blue-500", "text-blue-800");
         });
 
-        // Find *exactly* the button that corresponds to this category and activate it.
         document.querySelectorAll(`.category-btn[data-category='${category}']`).forEach(btn => {
             btn.classList.add("bg-blue-100", "border-blue-500", "text-blue-800");
         });
@@ -247,13 +245,10 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCategoryIcon(category);
     }
 
-
-    // Add data-category attributes to category buttons
-    // Select category buttons only if they exist
     const categoryButtons = document.querySelectorAll('.category-btn');
     if (categoryButtons.length > 0) {
         categoryButtons.forEach(button => {
-            const categoryValue = button.querySelector('span:last-child').textContent.trim(); // Get text content
+            const categoryValue = button.querySelector('span:last-child').textContent.trim();
             const categoryKey = Object.entries(CATEGORY_ICONS).find(([key, value]) => value === categoryValue || key === categoryValue)[0];
 
             button.setAttribute('data-category', categoryKey);
@@ -263,7 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-
 
     function startVoiceInput() {
         if ("webkitSpeechRecognition" in window) {
@@ -357,11 +351,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.success) {
                         location.reload();
                     } else {
-                        // Display error message from server
                         showToast(data.message || "Lỗi khi xóa chi tiêu", "error");
                     }
                 })
-                .catch(error => { // Catch network errors
+                .catch(error => {
                     showToast("Lỗi kết nối.", "error");
                     console.error("Network error:", error);
                 });
@@ -397,7 +390,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Only add these listeners if we're on a page with amount buttons
     const amountButtons = document.querySelectorAll('.amount-btn');
     if (amountButtons.length > 0) {
         amountButtons.forEach(button => {
@@ -407,46 +399,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Only add these listeners if we're on a page with category buttons
-    const categoryButtons1 = document.querySelectorAll('.category-btn'); //Use other variable name.
+    const categoryButtons1 = document.querySelectorAll('.category-btn');
     if (categoryButtons1.length > 0) {
         categoryButtons1.forEach(button => {
-            // NO! button.addEventListener('click', setCategory);  <- Incorrect!
             button.addEventListener('click', function () {
-                setCategory(this.dataset.category); // Correct. Uses data-category
+                setCategory(this.dataset.category);
             });
         });
     }
 
-    // Handle form submissions using AJAX
-    const expenseForm = document.querySelector('#expenseForm'); // Assuming your form has this ID
+    const expenseForm = document.querySelector('#expenseForm');
     if (expenseForm) {
         expenseForm.addEventListener('submit', function (event) {
-            event.preventDefault(); // Prevent default form submission
+            event.preventDefault();
 
-            if (!validateForm(this)) { // this refers to the form
-                return; // Stop if validation fails
+            if (!validateForm(this)) {
+                return;
             }
 
-
-            fetch(this.action, { // Use the form's action attribute
+            fetch(this.action, {
                 method: 'POST',
-                body: new FormData(this) // Send form data
+                body: new FormData(this)
             })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
                     }
-                    return response.json(); // Parse JSON response
+                    return response.json();
                 })
                 .then(data => {
                     if (data.redirect) {
-                        window.location.href = data.redirect; // Redirect if server sends redirect
+                        window.location.href = data.redirect;
                     } else {
-                        // Handle other responses, e.g., show a success message
                         showToast('Chi tiêu đã được thêm thành công!', 'success');
-                        // You could also clear the form here if needed
-                        this.reset(); // Reset form after successful submission
+                        this.reset();
                     }
                 })
                 .catch(error => {
@@ -455,5 +441,4 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     }
-
 });

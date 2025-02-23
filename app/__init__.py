@@ -2,12 +2,15 @@
 
 from flask import Flask
 from config import Config
-from app.database import db, login_manager, mail, moment, init_db
+from app.database import db, login_manager, mail, moment, init_db  # Keep db here
 from flask_migrate import Migrate
 import os
 from flask_socketio import SocketIO
 import logging
-from app.utils import format_currency  # Import format currency
+from app.utils import format_currency
+
+from flask_babel import Babel, _
+
 
 # Configure logging
 logging.basicConfig(
@@ -16,6 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 socketio = SocketIO()
+babel = Babel()
 
 
 def create_app(config_class=Config):
@@ -26,19 +30,18 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     mail.init_app(app)
     moment.init_app(app)
-    migrate = Migrate(app, db)  # Initialize Flask-Migrate
+    migrate = Migrate(app, db)
     socketio.init_app(app, async_mode="threading")
+    babel.init_app(app)
 
     login_manager.login_view = "auth.login"
-    login_manager.login_message = (
-        "Vui lòng đăng nhập để truy cập trang này."  # Added login message
-    )
+    login_manager.login_message = "Vui lòng đăng nhập để truy cập trang này."
     login_manager.login_message_category = "info"
 
     from app.commands import init_db_command, create_tables_command
 
     app.cli.add_command(init_db_command)
-    app.cli.add_command(create_tables_command)  # Add create_tables command
+    app.cli.add_command(create_tables_command)
 
     @app.context_processor
     def utility_processor():
@@ -53,8 +56,12 @@ def create_app(config_class=Config):
         app.register_blueprint(main_bp)
         app.register_blueprint(settings_bp)
 
+        from app.admin import configure_admin
+
+        configure_admin(app)
+
         if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-            logger.info("Preloading AI models...")  # Log model loading
+            logger.info("Preloading AI models...")
             from app.ai_engine.core.model_manager import model_manager
 
             model_manager.preload_models()

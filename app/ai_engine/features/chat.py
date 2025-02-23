@@ -153,6 +153,19 @@ class AIChat:
                 return False
         return False
 
+    def get_static_response(self, message: str, personality: str = "friendly") -> str:
+        """Provides basic, rule-based responses for non-premium users."""
+        persona = self.personalities.get(personality, self.personalities["friendly"])
+
+        if any(word in message.lower() for word in ["tiết kiệm", "save"]):
+            return f"{random.choice(persona['emojis'])} Bạn có thể thử đặt mục tiêu tiết kiệm hàng tháng, hoặc tìm cách giảm chi tiêu cho những khoản không cần thiết."
+        elif any(word in message.lower() for word in ["ngân sách", "budget"]):
+            return f"{random.choice(persona['emojis'])} Việc lập ngân sách rất quan trọng!  Hãy bắt đầu bằng cách liệt kê các khoản thu nhập và chi tiêu của bạn."
+        elif any(word in message.lower() for word in ["xin chào", "chào"]):
+            return random.choice(persona["responses"]["greeting"])
+        else:
+            return f"{random.choice(persona['emojis'])} Mình chưa hiểu ý bạn lắm. Bạn có thể nói rõ hơn được không?"
+
     def get_response_stream(
         self, message: str, personality: str = "friendly", session_id: str = None
     ) -> Generator[str, None, None]:

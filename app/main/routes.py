@@ -23,6 +23,10 @@ from app.main.forms import (
     WalletForm,
 )
 from app.models import Expense, Budget, Notification, ChatSession, ChatMessage, Wallet
+from app.utils.static_analysis import (
+    get_static_analysis_data,
+    get_static_recommendations,
+)
 from app.utils import format_currency, get_date_range, calculate_statistics
 from app.utils.export import export_expenses_to_excel
 from app.utils.notifications import NotificationManager
@@ -611,7 +615,13 @@ def get_analysis_data():
         for e in expenses
         if start_date <= e.date <= end_date
     ]
-    analysis_data = current_app.expense_analyzer.get_analysis_data(expense_data)
+
+    # Use static analysis if not premium, else use AI analysis.
+    if current_user.premium:
+        analysis_data = current_app.expense_analyzer.get_analysis_data(expense_data)
+    else:
+        analysis_data = get_static_analysis_data(expense_data)  # Use static analysis
+
     return jsonify(analysis_data)
 
 
@@ -630,7 +640,12 @@ def get_recommendations():
         for e in expenses
         if start_date <= e.date <= end_date
     ]
-    recommendations = current_app.expense_analyzer.get_recommendations(expense_data)
+
+    if current_user.premium:
+        recommendations = current_app.expense_analyzer.get_recommendations(expense_data)
+    else:
+        recommendations = get_static_recommendations(expense_data)  # Static
+
     return jsonify({"recommendations": recommendations})
 
 

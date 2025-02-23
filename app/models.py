@@ -1,6 +1,6 @@
 from app import db, login_manager
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime, date
 
 from werkzeug.security import (
     generate_password_hash,
@@ -19,12 +19,16 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(128))
     email = db.Column(db.String(120), unique=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_permanently_logged_in = db.Column(
-        db.Boolean, default=False
-    )
+    is_permanently_logged_in = db.Column(db.Boolean, default=False)
     budgets = db.relationship("Budget", back_populates="user")
     wallets = db.relationship("Wallet", backref="user", lazy="dynamic")
     chat_sessions = db.relationship("ChatSession", backref="user", lazy="dynamic")
+
+    premium = db.Column(db.Boolean, default=False)  # Premium status
+    chat_message_count = db.Column(db.Integer, default=0)  # Daily message count
+    last_message_count_reset = db.Column(
+        db.Date, default=date.today
+    )  # Track reset date
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -32,7 +36,7 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    def set_permanent_login(self, status): 
+    def set_permanent_login(self, status):
         self.is_permanently_logged_in = status
         db.session.commit()
 
@@ -46,6 +50,27 @@ class User(UserMixin, db.Model):
             db.session.add(default_wallet)
             db.session.commit()
         return default_wallet
+
+    def reset_chat_message_count(self):
+        """Resets the daily chat message count if needed."""
+        today = date.today()
+        if self.last_message_count_reset != today:
+            self.chat_message_count = 0
+            self.last_message_count_reset = today
+            db.session.commit()
+
+    def can_send_chat_message(self):
+        """Checks if the user can send a chat message based on premium status and limits."""
+        self.reset_chat_message_count()  # Reset if it's a new day
+        if self.premium:
+            return True  # No limit for premium users
+        return self.chat_message_count < 200  # Limit for non premium user
+
+    def increment_chat_message_count(self):
+        """Increments the chat message count and commits to the database."""
+        if not self.premium:
+            self.chat_message_count += 1
+        db.session.commit()
 
 
 class Expense(db.Model):

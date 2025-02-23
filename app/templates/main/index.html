@@ -139,8 +139,12 @@
 
         <!-- Analysis Card - Mobile Optimized -->
         <div class="bg-white p-4 md:p-6 rounded-xl shadow-md">
+        <!-- ADD PREMIUM NOTICE -->
           <h2 class="text-lg md:text-xl font-semibold mb-4 text-blue-700">
             Phân tích chi tiêu
+            {% if not current_user.premium %}
+                <span class="text-sm text-gray-500">(Phiên bản cơ bản)</span>
+            {% endif %}
           </h2>
 
           <!-- Analysis Grid -->
@@ -185,44 +189,45 @@
               <li class="text-gray-500">Đang tải khuyến nghị...</li>
             </ul>
           </div>
-
-      <!-- Recent Expenses Card -->
-      <div class="bg-white p-4 md:p-6 rounded-xl shadow-md">
-        <h2 class="text-xl font-semibold mb-5 text-green-700">
-          Chi tiêu gần đây
-        </h2>
-        <div class="space-y-5">
-          {% for expense in recent_expenses %}
-          <div
-            class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors duration-150"
-          >
-            <div class="flex items-center space-x-4">
-              <div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-              <div>
-                <p class="font-medium text-gray-800">{{ expense.category }}</p>
-                <p class="text-sm text-gray-500">
-                  {{ moment(expense.date).fromNow() }}
-                </p>
-              </div>
-            </div>
-            <div class="text-right">
-              <p class="font-bold text-gray-900">
-                {{ format_currency(expense.amount) }}
-              </p>
-            </div>
-          </div>
-          {% endfor %}
         </div>
-        <a
-          href="{{ url_for('main.expenses') }}"
-          class="mt-5 block text-center text-blue-600 hover:text-blue-800 transition-colors duration-200 font-medium"
-        >
-          Xem tất cả →
-        </a>
+          <!-- Recent Expenses Card -->
+          <div class="bg-white p-4 md:p-6 rounded-xl shadow-md">
+            <h2 class="text-xl font-semibold mb-5 text-green-700">
+              Chi tiêu gần đây
+            </h2>
+            <div class="space-y-5">
+              {% for expense in recent_expenses %}
+              <div
+                class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors duration-150"
+              >
+                <div class="flex items-center space-x-4">
+                  <div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                  <div>
+                    <p class="font-medium text-gray-800">{{ expense.category }}</p>
+                    <p class="text-sm text-gray-500">
+                      {{ moment(expense.date).fromNow() }}
+                    </p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold text-gray-900">
+                    {{ format_currency(expense.amount) }}
+                  </p>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            <a
+              href="{{ url_for('main.expenses') }}"
+              class="mt-5 block text-center text-blue-600 hover:text-blue-800 transition-colors duration-200 font-medium"
+            >
+              Xem tất cả →
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
