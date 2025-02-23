@@ -1,0 +1,99 @@
+{% extends "base.html" %} {% block content %}
+<div class="animate__animated animate__fadeIn">
+  <div class="w-full max-w-lg mx-auto px-4 sm:px-0">
+    <!-- Settings Header -->
+    <div
+      class="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-xl p-4 sm:p-6"
+    >
+      <h1 class="text-xl sm:text-2xl font-bold flex items-center">
+        <svg
+          class="w-5 h-5 sm:w-6 sm:h-6 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+          />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+          />
+        </svg>
+        Cài đặt tài khoản
+      </h1>
+      <p class="mt-1 text-blue-100 text-sm sm:text-base">
+        Quản lý thông tin tài khoản của bạn
+      </p>
+    </div>
+
+    <!-- Main Settings Card -->
+    <div class="bg-white rounded-b-xl shadow-lg p-4 sm:p-6 mb-16 sm:mb-0">
+      <div class="space-y-6">
+        <!-- Change Password Section -->
+        <section class="space-y-4">
+          <h3 class="text-base sm:text-lg font-semibold text-gray-800">
+            Đổi mật khẩu
+          </h3>
+          <form
+            method="POST"
+            action="{{ url_for('settings.change_password') }}"
+            class="space-y-4"
+          >
+            {{ form_password.hidden_tag() }}
+            <div class="space-y-2">
+              {{ form_password.current_password.label(class="block text-sm
+              font-medium text-gray-700") }} {{
+              form_password.current_password(class="shadow appearance-none
+              border rounded-md w-full py-2 px-3 text-gray-700 leading-tight
+              focus:outline-none focus:shadow-outline border-gray-300
+              focus:ring-blue-500 focus:border-blue-500") }} {% for error in
+              form_password.current_password.errors %}
+              <p class="text-red-500 text-xs italic">{{ error }}</p>
+              {% endfor %}
+            </div>
+
+            <div class="space-y-2">
+              {{ form_password.new_password.label(class="block text-sm
+              font-medium text-gray-700") }} {{
+              form_password.new_password(class="shadow appearance-none border
+              rounded-md w-full py-2 px-3 text-gray-700 leading-tight
+              focus:outline-none focus:shadow-outline border-gray-300
+              focus:ring-blue-500 focus:border-blue-500") }} {% for error in
+              form_password.new_password.errors %}
+              <p class="text-red-500 text-xs italic">{{ error }}</p>
+              {% endfor %}
+            </div>
+
+            <div class="space-y-2">
+              {{ form_password.confirm_new_password.label(class="block text-sm
+              font-medium text-gray-700") }} {{
+              form_password.confirm_new_password(class="shadow appearance-none
+              border rounded-md w-full py-2 px-3 text-gray-700 leading-tight
+              focus:outline-none focus:shadow-outline border-gray-300
+              focus:ring-blue-500 focus:border-blue-500") }} {% for error in
+              form_password.confirm_new_password.errors %}
+              <p class="text-red-500 text-xs italic">{{ error }}</p>
+              {% endfor %}
+            </div>
+
+            <div class="pt-2">
+              <button
+                type="submit"
+                class="w-full sm:w-auto inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Đổi mật khẩu
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

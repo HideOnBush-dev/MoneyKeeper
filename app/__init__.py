@@ -1,0 +1,72 @@
+# app/__init__.py
+
+from flask import Flask
+from config import Config
+from app.database import db, login_manager, mail, moment, init_db
+from flask_migrate import Migrate
+import os
+from flask_socketio import SocketIO
+import logging
+from app.utils import format_currency  # Import format currency
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+socketio = SocketIO()
+
+
+def create_app(config_class=Config):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
+
+    init_db(app)
+    login_manager.init_app(app)
+    mail.init_app(app)
+    moment.init_app(app)
+    migrate = Migrate(app, db)  # Initialize Flask-Migrate
+    socketio.init_app(app, async_mode="threading")
+
+    login_manager.login_view = "auth.login"
+    login_manager.login_message = (
+        "Vui lòng đăng nhập để truy cập trang này."  # Added login message
+    )
+    login_manager.login_message_category = "info"
+
+    from app.commands import init_db_command, create_tables_command
+
+    app.cli.add_command(init_db_command)
+    app.cli.add_command(create_tables_command)  # Add create_tables command
+
+    @app.context_processor
+    def utility_processor():
+        return dict(format_currency=format_currency)
+
+    with app.app_context():
+        from app.auth import bp as auth_bp
+        from app.main import bp as main_bp
+        from app.settings import bp as settings_bp
+
+        app.register_blueprint(auth_bp)
+        app.register_blueprint(main_bp)
+        app.register_blueprint(settings_bp)
+
+        if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+            logger.info("Preloading AI models...")  # Log model loading
+            from app.ai_engine.core.model_manager import model_manager
+
+            model_manager.preload_models()
+            from app.ai_engine.features.chat import AIChat
+            from app.ai_engine.features.analysis import ExpenseAnalyzer
+            from app.ai_engine.features.predictor import ExpensePredictor
+            from app.ai_engine.features.categorizer import ExpenseCategorizer
+
+            app.expense_analyzer = ExpenseAnalyzer()
+            app.expense_categorizer = ExpenseCategorizer()
+            app.expense_predictor = ExpensePredictor()
+            app.ai_chat = AIChat()
+            logger.info("AI models preloaded.")
+
+    return app

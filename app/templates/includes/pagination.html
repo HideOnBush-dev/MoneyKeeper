@@ -1,0 +1,42 @@
+{% if pagination is defined and pagination.pages > 1 %}
+<div class="mt-4 flex justify-center">
+  <div class="inline-flex rounded-md shadow-sm">
+    {% if pagination.has_prev %}
+    <a
+      href="{{ url_for(request.endpoint, page=pagination.prev_num, **kwargs) }}"
+      class="px-3 py-2 text-sm font-medium text-blue-600 bg-white border border-gray-300 rounded-l-md hover:bg-gray-100"
+    >
+      Trang trước
+    </a>
+    {% endif %} {% for page in pagination.iter_pages(left_edge=2,
+    left_current=2, right_current=3, right_edge=2) %} {% if page %} {% if page
+    != pagination.page %}
+    <a
+      href="{{ url_for(request.endpoint, page=page, **kwargs) }}"
+      class="px-3 py-2 text-sm font-medium text-blue-600 bg-white border-t border-b border-gray-300 hover:bg-gray-100"
+    >
+      {{ page }}
+    </a>
+    {% else %}
+    <span
+      class="px-3 py-2 text-sm font-medium text-white bg-blue-600 border-t border-b border-gray-300"
+    >
+      {{ page }}
+    </span>
+    {% endif %} {% else %}
+    <span
+      class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border-t border-b border-gray-300"
+    >
+      ...
+    </span>
+    {% endif %} {% endfor %} {% if pagination.has_next %}
+    <a
+      href="{{ url_for(request.endpoint, page=pagination.next_num, **kwargs) }}"
+      class="px-3 py-2 text-sm font-medium text-blue-600 bg-white border border-gray-300 rounded-r-md hover:bg-gray-100"
+    >
+      Trang sau
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

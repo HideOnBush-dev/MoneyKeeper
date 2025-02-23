@@ -1,0 +1,232 @@
+{% extends "base.html" %} {% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Ví của tôi</h1>
+    <p class="mt-1 text-sm text-gray-500">
+      Quản lý các ví tiền và theo dõi số dư
+    </p>
+  </div>
+
+  <!-- Total Balance Card - Full width on mobile -->
+  <div
+    class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-4 sm:p-6 mx-4 sm:mx-0 mb-6"
+  >
+    <p class="text-blue-100 text-sm font-medium">Tổng số dư</p>
+    <p class="text-white text-3xl font-bold mt-1">
+      {{ "{:,.0f}".format(wallets|sum(attribute='balance')) }}₫
+    </p>
+    <p class="text-blue-100 text-sm mt-2">{{ wallets|length }} ví</p>
+  </div>
+
+  <!-- Wallets Grid - 1 column on mobile -->
+  <div class="grid gap-4 sm:gap-6 px-4 sm:px-0 pb-20 sm:pb-0">
+    {% for wallet in wallets %}
+    <div
+      class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+    >
+      <div class="p-4 sm:p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <span class="text-2xl">💼</span>
+            <h3 class="text-lg font-semibold text-gray-900">
+              {{ wallet.name }}
+            </h3>
+          </div>
+          {% if wallet.is_default %}
+          <span
+            class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded"
+            >Mặc định</span
+          >
+          {% endif %}
+        </div>
+
+        <div class="mb-4">
+          <p class="text-sm text-gray-500 mb-1">Số dư hiện tại</p>
+          <p class="text-2xl font-bold text-gray-900">
+            {{ "{:,.0f}".format(wallet.balance) }}₫
+          </p>
+        </div>
+
+        {% if wallet.description %}
+        <p class="text-sm text-gray-500 mb-4">{{ wallet.description }}</p>
+        {% endif %}
+
+        <!-- Actions -->
+        <div
+          class="flex items-center justify-end space-x-3 border-t border-gray-100 pt-4"
+        >
+          <a
+            href="{{ url_for('main.edit_wallet', id=wallet.id) }}"
+            class="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            Chỉnh sửa
+          </a>
+          {% if not wallet.is_default %}
+          <form
+            action="{{ url_for('main.delete_wallet', id=wallet.id) }}"
+            method="POST"
+            class="inline"
+            onsubmit="return confirm('Bạn có chắc muốn xóa ví này?');"
+          >
+            <button
+              type="submit"
+              class="text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
+            >
+              Xóa
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- Add New Wallet Button - Floating on mobile -->
+    <button
+      onclick="showAddWalletModal()"
+      class="fixed bottom-4 right-4 sm:relative sm:bottom-auto sm:right-auto bg-blue-600 text-white rounded-full p-4 sm:bg-gray-50 sm:text-gray-600 sm:rounded-xl sm:p-6 shadow-lg sm:shadow-none hover:shadow-xl transition-all sm:border-2 sm:border-dashed sm:border-gray-300 sm:hover:border-blue-500"
+    >
+      <svg
+        class="w-6 h-6 sm:hidden"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+        />
+      </svg>
+      <div
+        class="hidden sm:flex sm:flex-col sm:items-center sm:justify-center sm:min-h-[200px]"
+      >
+        <div
+          class="rounded-full bg-gray-100 p-3 group-hover:bg-blue-100 transition-colors"
+        >
+          <svg
+            class="w-6 h-6 text-gray-400 group-hover:text-blue-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
+          </svg>
+        </div>
+        <span
+          class="mt-2 block text-sm font-medium text-gray-600 group-hover:text-blue-600"
+        >
+          Thêm ví mới
+        </span>
+      </div>
+    </button>
+  </div>
+</div>
+
+<!-- Add Wallet Modal - Full screen on mobile -->
+<div
+  id="addWalletModal"
+  class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 z-50"
+>
+  <div class="w-full h-full sm:h-auto sm:max-w-md mx-auto sm:mt-16">
+    <div class="bg-white h-full sm:h-auto sm:rounded-xl overflow-hidden">
+      <div class="bg-blue-600 p-6">
+        <h3 class="text-xl font-semibold text-white">Thêm ví mới</h3>
+      </div>
+
+      <form
+        method="POST"
+        action="{{ url_for('main.add_wallet') }}"
+        class="p-6 space-y-4"
+      >
+        {{ form.hidden_tag() }}
+
+        <div class="space-y-2">
+          {{ form.name.label(class="block text-sm font-medium text-gray-700") }}
+          {{ form.name(class="mt-1 block w-full rounded-lg border-gray-300
+          shadow-sm focus:ring-blue-500 focus:border-blue-500") }}
+        </div>
+
+        <div class="space-y-2">
+          {{ form.balance.label(class="block text-sm font-medium text-gray-700")
+          }}
+          <div class="relative rounded-lg shadow-sm">
+            <div
+              class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+            >
+              <span class="text-gray-500">₫</span>
+            </div>
+            {{ form.balance(class="pl-7 block w-full rounded-lg border-gray-300
+            focus:ring-blue-500 focus:border-blue-500", placeholder="0",
+            inputmode="decimal", pattern="[0-9]*") }}
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          {{ form.description.label(class="block text-sm font-medium
+          text-gray-700") }} {{ form.description(class="mt-1 block w-full
+          rounded-lg border-gray-300 shadow-sm focus:ring-blue-500
+          focus:border-blue-500", rows="3") }}
+        </div>
+
+        <div class="space-y-2">
+          {{ form.is_default.label(class="block text-sm font-medium
+          text-gray-700") }} {{ form.is_default(class="mt-1 block w-full
+          rounded-lg border-gray-300 shadow-sm focus:ring-blue-500
+          focus:border-blue-500") }}
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4 border-t">
+          <button
+            type="button"
+            onclick="hideAddWalletModal()"
+            class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Hủy
+          </button>
+          {{ form.submit(class="px-4 py-2 border border-transparent rounded-lg
+          text-sm font-medium text-white bg-blue-600 hover:bg-blue-700
+          focus:outline-none focus:ring-2 focus:ring-offset-2
+          focus:ring-blue-500") }}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showAddWalletModal() {
+    document.getElementById("addWalletModal").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+
+  function hideAddWalletModal() {
+    document.getElementById("addWalletModal").classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+
+  // Format currency input
+  document.getElementById("balance").addEventListener("input", function (e) {
+    let value = e.target.value.replace(/[^\d]/g, "");
+    if (value) {
+      e.target.value = new Intl.NumberFormat("vi-VN").format(parseInt(value));
+    }
+  });
+
+  // Close modal when clicking outside
+  document
+    .getElementById("addWalletModal")
+    .addEventListener("click", function (e) {
+      if (e.target === this) {
+        hideAddWalletModal();
+      }
+    });
+</script>
+{% endblock %}

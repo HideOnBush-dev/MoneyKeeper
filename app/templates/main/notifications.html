@@ -1,0 +1,119 @@
+{% extends "base.html" %} {% block content %}
+<div class="animate__animated animate__fadeIn">
+  <div class="max-w-3xl mx-auto">
+    <div
+      class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-xl overflow-hidden"
+    >
+      <div class="p-5 md:p-6 border-b border-blue-800">
+        <h2
+          class="text-xl md:text-2xl font-semibold text-white flex items-center"
+        >
+          <svg
+            class="w-6 h-6 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+          Thông báo
+        </h2>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-b-xl shadow-md overflow-hidden">
+      {% if notifications.items %}
+      <ul class="divide-y divide-gray-100">
+        {% for notification in notifications.items %}
+        <li
+          id="notification-{{ notification.id }}"
+          class="px-5 py-4 md:py-5 {% if not notification.is_read %}bg-blue-50{% endif %} transition-all duration-200 hover:bg-gray-50"
+        >
+          <div class="flex justify-between items-start">
+            <div class="pr-6">
+              <p class="text-gray-800 font-medium">
+                {{ notification.message }}
+              </p>
+              <p class="text-sm text-gray-500 mt-1">
+                {{ moment(notification.created_at).fromNow() }}
+              </p>
+            </div>
+            {% if not notification.is_read %}
+            <button
+              onclick="markAsRead({{ notification.id }})"
+              class="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200"
+            >
+              Đánh dấu đã đọc
+            </button>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+
+      {% include "includes/pagination.html" %} {% else %}
+      <div class="p-8 md:p-12 text-center">
+        <div class="max-w-sm mx-auto">
+          <svg
+            class="w-16 h-16 mx-auto text-gray-400 mb-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+          <p class="mt-4 text-gray-600 font-medium">Không có thông báo mới.</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  async function markAsRead(id) {
+    try {
+      const response = await fetch(`/notifications/mark_read/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const notification = document.getElementById(`notification-${id}`);
+        notification.classList.remove("bg-blue-50");
+        notification.querySelector("button").remove();
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  }
+
+  // Check for new budget alerts periodically
+  setInterval(async () => {
+    try {
+      const response = await fetch("/check_budget_alerts");
+      const data = await response.json();
+
+      if (data.alerts && data.alerts.length > 0) {
+        data.alerts.forEach((alert) => {
+          showToast(alert, "warning");
+        });
+      }
+    } catch (error) {
+      console.error("Error checking budget alerts:", error);
+    }
+  }, 300000); // Check every 5 minutes
+</script>
+{% endblock %}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .alert {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+      .header {
+        color: #004085;
+        margin-bottom: 15px;
+      }
+      .details {
+        margin: 20px 0;
+      }
+      .button {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2 class="header">Cảnh báo ngân sách</h2>
+
+      <div class="alert">
+        Chi tiêu của bạn trong danh mục <strong>{{ category }}</strong> đã đạt
+        <strong>{{ percentage }}%</strong> ngân sách.
+      </div>
+
+      <div class="details">
+        <p>Chi tiết:</p>
+        <ul>
+          <li>Đã chi: {{ "{:,.0f}".format(amount) }}₫</li>
+          <li>Ngân sách: {{ "{:,.0f}".format(budget_amount) }}₫</li>
+          <li>Còn lại: {{ "{:,.0f}".format(budget_amount - amount) }}₫</li>
+        </ul>
+      </div>
+
+      <p>
+        <a href="{{ url_for('main.budgets', _external=True) }}" class="button">
+          Xem chi tiết ngân sách
+        </a>
+      </p>
+    </div>
+  </body>
+</html>
