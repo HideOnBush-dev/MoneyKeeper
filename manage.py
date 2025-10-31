@@ -18,7 +18,13 @@ cli = FlaskGroup(app)
 @cli.command() # NEW COMMAND TO CREATE FIRST USER (ADMIN)
 def create_admin():
     """Creates an admin user."""
-    admin = User(username='admin', pin='2011') # SET DEFAULT ADMIN USER
+    # Check if admin already exists
+    existing_admin = User.query.filter_by(username='admin').first()
+    if existing_admin:
+        print("Admin user already exists.")
+        return
+    
+    admin = User(username='admin') # SET DEFAULT ADMIN USER
     admin.set_password('SkyLine@@2025') # SET DEFAULT ADMIN PASSWORD
     db.session.add(admin)
     db.session.commit()

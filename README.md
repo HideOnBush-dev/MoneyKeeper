@@ -87,7 +87,7 @@ Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập n
 6.  (Optional) **Tạo tài khoản admin:**
 
     ```bash
-    python manage.py create_admin
+    python manage.py create-admin
     ```
 
     (Sửa `manage.py` để thay đổi username/password mặc định)

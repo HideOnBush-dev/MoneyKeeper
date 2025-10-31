@@ -85,7 +85,7 @@ def configure_admin(app):
     admin = Admin(
         app,
         name="MoneyKeeper Admin",
-        template_mode="bootstrap4",
+        # template_mode="bootstrap4",
         index_view=MyAdminIndexView(),
     )
 
