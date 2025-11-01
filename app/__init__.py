@@ -64,16 +64,25 @@ def create_app(config_class=Config):
             logger.info("Preloading AI models...")
             from app.ai_engine.core.model_manager import model_manager
 
-            model_manager.preload_models()
-            from app.ai_engine.features.chat import AIChat
-            from app.ai_engine.features.analysis import ExpenseAnalyzer
-            from app.ai_engine.features.predictor import ExpensePredictor
-            from app.ai_engine.features.categorizer import ExpenseCategorizer
+            try:
+                model_manager.preload_models()
+                from app.ai_engine.features.chat import AIChat
+                from app.ai_engine.features.analysis import ExpenseAnalyzer
+                from app.ai_engine.features.predictor import ExpensePredictor
+                from app.ai_engine.features.categorizer import ExpenseCategorizer
 
-            app.expense_analyzer = ExpenseAnalyzer()
-            app.expense_categorizer = ExpenseCategorizer()
-            app.expense_predictor = ExpensePredictor()
-            app.ai_chat = AIChat()
-            logger.info("AI models preloaded.")
+                app.expense_analyzer = ExpenseAnalyzer()
+                app.expense_categorizer = ExpenseCategorizer()
+                app.expense_predictor = ExpensePredictor()
+                app.ai_chat = AIChat()
+                logger.info("AI models preloaded.")
+            except Exception as e:
+                logger.error(f"Failed to load AI models: {e}")
+                logger.warning("Application will run without AI features. Please set up Hugging Face authentication and download models.")
+                # Set None to indicate AI features are not available
+                app.expense_analyzer = None
+                app.expense_categorizer = None
+                app.expense_predictor = None
+                app.ai_chat = None
 
     return app

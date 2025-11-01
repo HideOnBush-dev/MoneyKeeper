@@ -490,6 +490,10 @@ def handle_message(data):
         emit("message", {"data": message, "user": True}, room=str(current_user.id))
 
         try:
+            if current_app.ai_chat is None:
+                emit("error", {"data": "AI features are not available. Please set up Hugging Face authentication and download models."}, room=str(current_user.id))
+                return
+                
             response_chunks = current_app.ai_chat.get_response_stream(
                 message, session.personality, str(session.id)
             )
@@ -507,7 +511,8 @@ def handle_message(data):
             logger.exception(f"Error handling message: {e}")
             emit("error", {"data": "Đã xảy ra lỗi."}, room=str(current_user.id))
     finally:
-        current_app.ai_chat.cleanup()
+        if current_app.ai_chat is not None:
+            current_app.ai_chat.cleanup()
 
 
 @bp.route("/api/chat/sessions", methods=["POST"])
@@ -617,7 +622,7 @@ def get_analysis_data():
     ]
 
     # Use static analysis if not premium, else use AI analysis.
-    if current_user.premium:
+    if current_user.premium and current_app.expense_analyzer is not None:
         analysis_data = current_app.expense_analyzer.get_analysis_data(expense_data)
     else:
         analysis_data = get_static_analysis_data(expense_data)  # Use static analysis
@@ -641,7 +646,7 @@ def get_recommendations():
         if start_date <= e.date <= end_date
     ]
 
-    if current_user.premium:
+    if current_user.premium and current_app.expense_analyzer is not None:
         recommendations = current_app.expense_analyzer.get_recommendations(expense_data)
     else:
         recommendations = get_static_recommendations(expense_data)  # Static
@@ -752,6 +757,12 @@ def analyze_patterns():
             for e in expenses
         ]
 
+        if current_app.expense_analyzer is None:
+            return jsonify(
+                {"error": "AI features are not available. Please set up Hugging Face authentication and download models."},
+                503
+            )
+        
         analysis = current_app.expense_analyzer.analyze_patterns(expense_data)
         recommendations = current_app.expense_analyzer.get_recommendations(analysis)
 
@@ -776,6 +787,9 @@ def suggest_category():
             jsonify({"error": "Description is required"}),
             400,
         )
+    if current_app.expense_categorizer is None:
+        return jsonify({"error": "AI features are not available. Please set up Hugging Face authentication and download models."}), 503
+    
     category = current_app.expense_categorizer.predict_category(description)
     return jsonify({"category": category})
 

@@ -34,9 +34,9 @@ class ModelManager:
     def initialize(self):
         if self._initialized:
             return
-
+        # Go up from app/ai_engine/core/model_manager.py to project root
         self.model_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "models"
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "models"
         )
         os.makedirs(self.model_path, exist_ok=True)
         logger.info(f"Model path initialized at: {self.model_path}")
@@ -46,26 +46,28 @@ class ModelManager:
         self.load_queue: queue.Queue[ModelInfo] = queue.Queue()
         self.loading_status: Dict[str, str] = {}
         self.loading_event = threading.Event()
-        self.default_config = {
-            "load_in_4bit": True,
-            "bnb_4bit_compute_dtype": torch.bfloat16,
-            "bnb_4bit_quant_type": "nf4",
-            "bnb_4bit_use_double_quant": True,
-            "llm_int8_enable_fp32_cpu_offload": True,
-        }
-
-        self.loader_thread = threading.Thread(
-            target=self._background_loader, daemon=True
-        )
-        self.loader_thread.start()
-
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         if self.device == "cuda":
             logger.info(f"CUDA is available. Device count: {torch.cuda.device_count()}")
             logger.info(f"Current device: {torch.cuda.current_device()}")
             logger.info(f"Device name: {torch.cuda.get_device_name(0)}")
+            # Use quantization config for CUDA
+            self.default_config = {
+                "load_in_4bit": True,
+                "bnb_4bit_compute_dtype": torch.bfloat16,
+                "bnb_4bit_quant_type": "nf4",
+                "bnb_4bit_use_double_quant": True,
+                "llm_int8_enable_fp32_cpu_offload": True,
+            }
         else:
             logger.warning("CUDA is NOT available. Falling back to CPU.")
+            # No quantization for CPU
+            self.default_config = {}
+
+        self.loader_thread = threading.Thread(
+            target=self._background_loader, daemon=True
+        )
+        self.loader_thread.start()
 
         self.pipeline = None
         self._initialized = True
@@ -127,8 +129,16 @@ class ModelManager:
                 logger.info(
                     f"Loading tokenizer (attempt {attempt + 1}/{max_retries})..."
                 )
+                # Check if local model directory exists
+                local_model_path = None
+                if name == "meta-llama/Llama-3.2-3B-Instruct":
+                    potential_path = os.path.join(self.model_path, "Llama-3.2-3B-Instruct")
+                    if os.path.exists(potential_path):
+                        local_model_path = potential_path
+                        logger.info(f"Found local model at: {local_model_path}")
+                
                 tokenizer = AutoTokenizer.from_pretrained(
-                    name,
+                    local_model_path if local_model_path else name,
                     trust_remote_code=True,
                     padding_side="left",
                     cache_dir=self.model_path,
@@ -147,17 +157,32 @@ class ModelManager:
         for attempt in range(max_retries):
             try:
                 logger.info(f"Loading model (attempt {attempt + 1}/{max_retries})...")
-                config_for_bnb = config.copy()
 
-                config_for_bnb.pop("torch_dtype", None)
-                config_for_bnb.pop("device_map", None)
+                # Check if local model directory exists
+                local_model_path = None
+                if name == "meta-llama/Llama-3.2-3B-Instruct":
+                    potential_path = os.path.join(self.model_path, "Llama-3.2-3B-Instruct")
+                    if os.path.exists(potential_path):
+                        local_model_path = potential_path
+                        logger.info(f"Found local model at: {local_model_path}")
+
+                # Build kwargs for from_pretrained
+                load_kwargs = {
+                    "trust_remote_code": True,
+                    "cache_dir": self.model_path,
+                    "low_cpu_mem_usage": True,
+                }
+
+                # Only add quantization if config is not empty
+                if config:
+                    config_for_bnb = config.copy()
+                    config_for_bnb.pop("torch_dtype", None)
+                    config_for_bnb.pop("device_map", None)
+                    load_kwargs["quantization_config"] = BitsAndBytesConfig(**config_for_bnb)
 
                 model = AutoModelForCausalLM.from_pretrained(
-                    name,
-                    quantization_config=BitsAndBytesConfig(**config_for_bnb),
-                    trust_remote_code=True,
-                    cache_dir=self.model_path,
-                    low_cpu_mem_usage=True,
+                    local_model_path if local_model_path else name,
+                    **load_kwargs
                 )
 
                 if model:
