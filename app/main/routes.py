@@ -62,6 +62,15 @@ def utility_processor():
 
 @bp.route("/")
 def landing():
+    # Serve React SPA if enabled
+    if current_app.config.get('USE_REACT_FRONTEND', False):
+        from flask import send_from_directory
+        import os
+        dist_dir = os.path.join(current_app.root_path, 'static', 'dist')
+        if os.path.exists(os.path.join(dist_dir, 'index.html')):
+            return send_from_directory(dist_dir, 'index.html')
+    
+    # Fallback to Jinja template
     if current_user.is_authenticated:
         return redirect(url_for("main.index"))
     return render_template(

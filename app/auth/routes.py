@@ -15,9 +15,39 @@ logger = logging.getLogger(__name__)
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
+        # Handle JSON requests from React
+        if request.is_json or request.headers.get("Content-Type") == "application/json":
+            return jsonify({"message": "Already authenticated", "user": {
+                "id": current_user.id,
+                "username": current_user.username,
+                "email": current_user.email
+            }})
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"redirect": url_for("main.index")})
         return redirect(url_for("main.index"))
+
+    # Handle JSON requests from React
+    if request.is_json:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({"message": "Thiếu tên đăng nhập hoặc mật khẩu"}), 400
+        
+        user = User.query.filter_by(username=username).first()
+        if user is None or not user.check_password(password):
+            return jsonify({"message": "Tên đăng nhập hoặc mật khẩu không đúng"}), 401
+        
+        login_user(user, remember=data.get('remember', False))
+        return jsonify({
+            "message": "Đăng nhập thành công",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email
+            }
+        })
 
     form = LoginForm()
     if form.validate_on_submit():
@@ -48,9 +78,53 @@ def login():
 @bp.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
+        if request.is_json:
+            return jsonify({"message": "Already authenticated", "user": {
+                "id": current_user.id,
+                "username": current_user.username,
+                "email": current_user.email
+            }})
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"redirect": url_for("main.index")})
         return redirect(url_for("main.index"))
+
+    # Handle JSON requests from React
+    if request.is_json:
+        data = request.get_json()
+        username = data.get('username')
+        email = data.get('email')
+        password = data.get('password')
+        
+        if not username or not email or not password:
+            return jsonify({"message": "Thiếu thông tin bắt buộc"}), 400
+        
+        # Check if username already exists
+        if User.query.filter_by(username=username).first():
+            return jsonify({"message": "Tên đăng nhập đã tồn tại"}), 400
+        
+        # Check if email already exists
+        if User.query.filter_by(email=email).first():
+            return jsonify({"message": "Email đã được sử dụng"}), 400
+        
+        user = User(username=username, email=email)
+        user.set_password(password)
+        db.session.add(user)
+        
+        try:
+            db.session.commit()
+            login_user(user)
+            return jsonify({
+                "message": "Đăng ký thành công",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email
+                }
+            })
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Registration error: {e}")
+            return jsonify({"message": "Đăng ký thất bại. Vui lòng thử lại."}), 500
 
     form = RegistrationForm()
     if form.validate_on_submit():
@@ -105,5 +179,10 @@ def register():
 @login_required
 def logout():
     logout_user()
+    
+    # Handle JSON requests from React
+    if request.is_json or request.headers.get("Content-Type") == "application/json":
+        return jsonify({"message": "Đăng xuất thành công"})
+    
     flash("Bạn đã đăng xuất.", "success")
     return redirect(url_for("auth.login"))
