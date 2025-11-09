@@ -10,6 +10,7 @@ Flask-Migrate
 Flask-Mail
 Flask-Moment
 flask_socketio
+Flask-CORS
 bcrypt
 python-dotenv
 numpy

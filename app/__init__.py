@@ -4,6 +4,7 @@ from flask import Flask
 from config import Config
 from app.database import db, login_manager, mail, moment, init_db  # Keep db here
 from flask_migrate import Migrate
+from flask_cors import CORS
 import os
 from flask_socketio import SocketIO
 import logging
@@ -25,6 +26,12 @@ babel = Babel()
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    # Enable CORS for development with React frontend
+    CORS(app, resources={
+        r"/api/*": {"origins": "http://localhost:3000"},
+        r"/auth/*": {"origins": "http://localhost:3000"}
+    }, supports_credentials=True)
 
     init_db(app)
     login_manager.init_app(app)
@@ -51,10 +58,12 @@ def create_app(config_class=Config):
         from app.auth import bp as auth_bp
         from app.main import bp as main_bp
         from app.settings import bp as settings_bp
+        from app.api import bp as api_bp
 
         app.register_blueprint(auth_bp)
         app.register_blueprint(main_bp)
         app.register_blueprint(settings_bp)
+        app.register_blueprint(api_bp)
 
         from app.admin import configure_admin
 
