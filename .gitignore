@@ -163,3 +163,9 @@ logs/
 
 #Ignore migrations
 migrations/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+app/static/dist/
+*.local

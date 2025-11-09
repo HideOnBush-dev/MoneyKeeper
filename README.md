@@ -1,12 +1,12 @@
 # Money Keeper - Ứng dụng Quản lý Chi tiêu Cá nhân Thông minh
 
-<!-- [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg?style=for-the-badge)]() [![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg?style=for-the-badge)](https://www.python.org/downloads/) do chưa cần nên noclue xd -->
-
-[![Flask](https://img.shields.io/badge/flask-%23000.svg?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/) [![License](https://img.shields.io/badge/license-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge)](https://github.com/psf/black)
+[![Flask](https://img.shields.io/badge/flask-%23000.svg?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/) [![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)](https://reactjs.org/) [![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/) [![License](https://img.shields.io/badge/license-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge)](https://github.com/psf/black)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white&style=for-the-badge)](https://github.com/pre-commit/pre-commit)
 [![CodeFactor](https://www.codefactor.io/repository/github/catalizcs/moneykeeper/badge?style=for-the-badge)](https://www.codefactor.io/repository/github/catalizcs/moneykeeper)
 
-Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập ngân sách và đạt được mục tiêu tài chính một cách dễ dàng và hiệu quả. Ứng dụng được xây dựng với Python (Flask), SQLite, và tích hợp AI (LLM cục bộ) để cung cấp các tính năng phân tích và gợi ý thông minh.
+Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập ngân sách và đạt được mục tiêu tài chính một cách dễ dàng và hiệu quả. Ứng dụng được xây dựng với kiến trúc hiện đại:
+- **Backend**: Flask REST API với Python, SQLite, và tích hợp AI (LLM cục bộ)
+- **Frontend**: React + Vite SPA (Single Page Application)
 
 ## Tính năng chính
 
@@ -28,12 +28,25 @@ Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập n
 - **PWA:** Hỗ trợ cài đặt như một ứng dụng trên iOS (thêm vào màn hình chính).
 - **OCR:** Hỗ trợ OCR để quét và tự điền thông tin từ hóa đơn.
 
+## Kiến trúc Ứng dụng
+
+Ứng dụng sử dụng kiến trúc tách biệt Frontend/Backend:
+
+- **Frontend (React + Vite)**: Chạy trên port 3000 trong development, build thành static files cho production
+- **Backend (Flask API)**: Chạy trên port 8000, cung cấp REST API endpoints
+- **Database**: SQLite cho dữ liệu persistent
+- **AI Engine**: LLM cục bộ để phân tích và gợi ý thông minh
+
 ## Yêu cầu
 
+### Backend
 - Python 3.7+
 - Các thư viện Python (xem file `requirements.txt`)
-- Một trình duyệt web hiện đại (Chrome, Firefox, Safari, Edge)
 - (Tùy chọn) CUDA-enabled GPU (để tăng tốc độ xử lý AI, nếu không sẽ dùng CPU)
+
+### Frontend
+- Node.js 18+ và npm
+- Một trình duyệt web hiện đại (Chrome, Firefox, Safari, Edge)
 
 ## Cài đặt
 
@@ -46,6 +59,8 @@ Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập n
 
     Thay `<repository_url>` bằng URL repository của bạn và `<repository_directory>` bằng tên thư mục chứa project.
 
+### Cài đặt Backend
+
 2.  **Tạo và kích hoạt virtual environment (tùy chọn, nhưng rất khuyến khích):**
 
     ```bash
@@ -54,7 +69,7 @@ Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập n
     venv\Scripts\activate    # Windows
     ```
 
-3.  **Cài đặt dependencies:**
+3.  **Cài đặt Python dependencies:**
 
     ```bash
     pip install -r requirements.txt
@@ -92,17 +107,50 @@ Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập n
 
     (Sửa `manage.py` để thay đổi username/password mặc định)
 
-7.  **Chạy ứng dụng:**
+7.  **Chạy Flask backend:**
 
     ```bash
     python run.py
     ```
 
-    Ứng dụng sẽ chạy trên `http://localhost:8000` (hoặc `http://0.0.0.0:8000`).
+    Backend API sẽ chạy trên `http://localhost:8000`.
+
+### Cài đặt Frontend
+
+8.  **Cài đặt Node.js dependencies:**
+
+    ```bash
+    cd frontend
+    npm install
+    ```
+
+9.  **Chạy development server:**
+
+    ```bash
+    npm run dev
+    ```
+
+    Frontend sẽ chạy trên `http://localhost:3000` và tự động proxy API requests đến backend.
+
+10. **Build cho production:**
+
+    ```bash
+    npm run build
+    ```
+
+    Build sẽ tạo static files trong `app/static/dist` để Flask backend có thể serve.
 
 ## Sử dụng
 
-Truy cập vào localhost:8000 trên trình duyệt.
+### Development Mode
+1. Chạy Flask backend: `python run.py` (port 8000)
+2. Chạy Vite dev server: `cd frontend && npm run dev` (port 3000)
+3. Truy cập `http://localhost:3000` trên trình duyệt
+
+### Production Mode
+1. Build frontend: `cd frontend && npm run build`
+2. Chạy Flask backend: `python run.py`
+3. Truy cập `http://localhost:8000` trên trình duyệt (Flask sẽ serve static files từ `app/static/dist`)
 
 ## Cấu hình
 
