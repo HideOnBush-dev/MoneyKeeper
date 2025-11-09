@@ -18,6 +18,10 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+    
+    # Frontend configuration
+    # Set to True to serve React SPA, False to use Jinja templates
+    USE_REACT_FRONTEND = os.environ.get("USE_REACT_FRONTEND", "true").lower() == "true"
     MAIL_SERVER = "smtp.example.com"  # UPDATE WITH YOUR MAIL SERVER
     MAIL_PORT = 587
     MAIL_USE_TLS = True
