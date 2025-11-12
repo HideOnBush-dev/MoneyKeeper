@@ -151,19 +151,48 @@ export const authAPI = {
 // Chat API
 export const chatAPI = {
   // Get chat sessions
-  getSessions: () => api.get('/api/chat/sessions'),
+  getSessions: () => api.get('/chat/sessions'),
   
   // Create new session
   createSession: (personality = 'friendly') => 
-    api.post('/api/chat/sessions', { action: 'create', personality }),
+    api.post('/chat/sessions', { action: 'new', personality }),
   
   // Clear chat history
-  clearHistory: () => 
-    api.post('/api/chat/sessions', { action: 'clear' }),
+  // (Not supported in backend; use deleteSession per session)
   
   // Get chat history
   getHistory: (sessionId) => 
-    api.get(`/api/chat/sessions/${sessionId}/messages`),
+    api.get(`/chat/sessions/${sessionId}/messages`),
+  
+  // Delete a session
+  deleteSession: (sessionId) =>
+    api.post('/chat/sessions', { action: 'delete', session_id: sessionId }),
+
+  // Update a session (e.g., personality or touch updated_at)
+  updateSession: (sessionId, payload = {}) =>
+    api.post('/chat/sessions', { action: 'update', session_id: sessionId, ...payload }),
+};
+
+// Notifications API
+export const notificationsAPI = {
+  // List notifications
+  list: (params) => api.get('/notifications', { params }),
+  // Unread count
+  unreadCount: () => api.get('/notifications/unread_count'),
+  // Mark as read
+  markRead: (id) => api.post(`/notifications/mark_read/${id}`),
+};
+
+// Categories API
+export const categoriesAPI = {
+  // Get all categories
+  getAll: () => api.get('/categories'),
+  // Create new category
+  create: (data) => api.post('/categories', data),
+  // Update category
+  update: (id, data) => api.put(`/categories/${id}`, data),
+  // Delete category
+  delete: (id) => api.delete(`/categories/${id}`),
 };
 
 export default api;

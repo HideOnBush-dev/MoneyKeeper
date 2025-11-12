@@ -68,20 +68,60 @@ def validate_amount(amount: Any) -> Optional[Decimal]:
         raise ValueError(f"Invalid amount: {amount}")
 
 
-def validate_category(category: str) -> str:
-    """Validate expense category"""
-    valid_categories = {
-        "di chuyển", "ăn uống", "mua sắm", "giải trí",
-        "hóa đơn", "sức khỏe", "giáo dục", "công việc", "khác"
-    }
+def validate_category(category: str, user_id: Optional[int] = None) -> str:
+    """Validate expense category against user's custom categories
+    
+    Args:
+        category: Category slug to validate
+        user_id: User ID to check against (if None, uses current_user)
+    
+    Returns:
+        Valid category slug, or 'other' if not found
+    """
+    # Import here to avoid circular imports
+    from flask_login import current_user
+    from app.models import Category
     
     category = sanitize_string(category, max_length=50).lower()
     
-    if category not in valid_categories:
-        logger.warning(f"Invalid category: {category}, defaulting to 'khác'")
-        return "khác"
+    # Determine user
+    uid = user_id if user_id else (current_user.id if current_user and current_user.is_authenticated else None)
     
-    return category
+    if not uid:
+        # No user context, use default fallback
+        logger.warning(f"No user context for category validation: {category}")
+        return "other"
+    
+    # Check if category table exists, create if not
+    try:
+        # Try to query - if table doesn't exist, this will raise an exception
+        cat = Category.query.filter_by(user_id=uid, slug=category).first()
+    except Exception as e:
+        # Table might not exist, try to create it
+        logger.warning(f"Category table query failed: {e}, attempting to create table")
+        try:
+            from app import db
+            Category.__table__.create(db.engine, checkfirst=True)
+            logger.info("Category table created successfully")
+            cat = None  # Will fall through to initialization
+        except Exception as create_error:
+            logger.error(f"Failed to create category table: {create_error}")
+            return "other"  # Fallback to default
+    
+    if not cat:
+        # Category doesn't exist, try to find 'other' category
+        other_cat = Category.query.filter_by(user_id=uid, slug='other').first()
+        if other_cat:
+            logger.warning(f"Invalid category: {category}, defaulting to 'other'")
+            return "other"
+        else:
+            # 'other' doesn't exist either, initialize default categories
+            from app.api.categories import init_default_categories
+            init_default_categories(uid)
+            logger.info(f"Initialized default categories for user {uid}")
+            return "other"
+    
+    return cat.slug
 
 
 def validate_email(email: str) -> str:
@@ -219,9 +259,12 @@ def validate_password_strength(password: str) -> tuple[bool, str]:
 def rate_limit_key(user_id: Optional[int] = None) -> str:
     """Generate rate limit key for user or IP"""
     from flask import request
-    from flask_limiter.util import get_remote_address
     
     if user_id:
         return f"user:{user_id}"
     
-    return f"ip:{get_remote_address()}"
+    # Derive client IP without Flask-Limiter
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr) or ""
+    if "," in ip:
+        ip = ip.split(",")[0].strip()
+    return f"ip:{ip}"

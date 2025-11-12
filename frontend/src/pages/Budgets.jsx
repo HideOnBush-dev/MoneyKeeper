@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
   X,
@@ -10,7 +9,6 @@ import {
   DollarSign,
   Calendar,
   Tag,
-  Sparkles,
   AlertTriangle,
   CheckCircle,
   PieChart
@@ -20,6 +18,7 @@ import { formatCurrency } from '../lib/utils';
 import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/numberFormat';
+import PageHeader from '../components/PageHeader';
 
 const CATEGORIES = [
   { value: 'food', label: 'Ăn uống', emoji: '🍔', gradient: 'from-orange-400 to-red-500', bgLight: 'from-orange-50 to-red-50' },
@@ -118,11 +117,7 @@ const Budgets = () => {
   if (loading) {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full"
-        />
+        <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
         <p className="mt-4 text-gray-600 font-medium">Đang tải...</p>
       </div>
     );
@@ -134,91 +129,47 @@ const Budgets = () => {
   const totalPercentage = totalBudget > 0 ? (totalSpent / totalBudget * 100).toFixed(1) : 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Animated Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative"
-      >
-        {/* Background Blobs */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-purple-300/30 rounded-full blur-3xl animate-blob"></div>
-          <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-300/30 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-        </div>
+    <div className="max-w-7xl mx-auto space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <PageHeader 
+          icon={Target} 
+          title="Ngân sách"
+          subtitle={`Tháng ${selectedMonth}/${selectedYear}`}
+          iconColor="from-purple-500 to-indigo-600"
+        />
+        <button
+          onClick={() => {
+            setFormData({ category: '', amount: 0, month: selectedMonth, year: selectedYear });
+            setAmountInput('');
+            setShowModal(true);
+          }}
+          className="px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center gap-1.5"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Thêm</span>
+        </button>
+      </div>
 
-        <div className="glass backdrop-blur-xl bg-white/80 rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                className="p-4 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl shadow-xl"
-              >
-                <Target className="h-8 w-8 text-white" />
-              </motion.div>
-              <div>
-                <h1 className="text-4xl font-bold font-display bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent">
-                  Ngân sách
-                </h1>
-                <p className="text-gray-600 mt-1 flex items-center space-x-2">
-                  <Sparkles className="h-4 w-4 text-yellow-500" />
-                  <span>Tháng {selectedMonth}/{selectedYear}</span>
-                </p>
+      {/* Alerts */}
+      {alerts.length > 0 && (
+        <div className="space-y-2">
+          {alerts.map((alert) => (
+            <div
+              key={alert.id}
+              className="bg-yellow-50 rounded-lg p-3 border-l-4 border-yellow-500"
+            >
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-yellow-900">{alert.message}</p>
               </div>
             </div>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                setFormData({ category: '', amount: 0, month: selectedMonth, year: selectedYear });
-              setAmountInput('');
-                setShowModal(true);
-              }}
-              className="px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center space-x-2"
-            >
-              <Plus className="h-5 w-5" />
-              <span>Thêm ngân sách</span>
-            </motion.button>
-          </div>
+          ))}
         </div>
-      </motion.div>
-
-      {/* Animated Alerts */}
-      <AnimatePresence>
-        {alerts.length > 0 && (
-          <div className="space-y-3">
-            {alerts.map((alert, index) => (
-              <motion.div
-                key={alert.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ delay: index * 0.1 }}
-                className="glass backdrop-blur-xl bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-5 shadow-lg border-l-4 border-yellow-500"
-              >
-                <div className="flex items-start space-x-4">
-                  <div className="p-2 bg-yellow-500 rounded-xl">
-                    <AlertTriangle className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-yellow-900">{alert.message}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </AnimatePresence>
+      )}
 
       {/* Month Selector */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="glass backdrop-blur-xl bg-white/80 rounded-3xl p-6 shadow-2xl border border-white/20"
-      >
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
         <div className="flex items-center space-x-4">
           <div className="flex-1">
             <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center space-x-2">
@@ -251,7 +202,7 @@ const Budgets = () => {
             </select>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -279,13 +230,9 @@ const Budgets = () => {
             bg: 'from-green-50 to-emerald-50',
           },
         ].map((stat, idx) => (
-          <motion.div
+          <div
             key={idx}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 + idx * 0.1 }}
-            whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${stat.bg} p-6 shadow-xl border border-white/50`}
+            className={`relative overflow-hidden rounded-2xl bg-white p-4 shadow-sm border border-gray-100`}
           >
             <div className="absolute inset-0 opacity-10">
               <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-gradient-to-br from-white to-transparent"></div>
@@ -307,38 +254,28 @@ const Budgets = () => {
                 {formatCurrency(stat.value, settings.currency, settings.numberFormat)}
               </p>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
       {/* Budget List */}
       {budgets.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass backdrop-blur-xl bg-white/80 rounded-3xl p-16 text-center shadow-2xl border border-white/20"
-        >
-          <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="inline-block mb-6"
-          >
-            <div className="p-8 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-3xl">
-              <Target className="h-20 w-20 text-purple-500" />
+        <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
+          <div className="inline-block mb-4">
+            <div className="p-6 bg-gray-100 rounded-2xl">
+              <Target className="h-12 w-12 text-gray-400" />
             </div>
-          </motion.div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">Chưa có ngân sách</h3>
-          <p className="text-gray-600 mb-6">Tạo ngân sách đầu tiên cho tháng này</p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-1">Chưa có ngân sách</h3>
+          <p className="text-sm text-gray-600 mb-4">Tạo ngân sách đầu tiên cho tháng này</p>
+          <button
             onClick={() => setShowModal(true)}
-            className="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all inline-flex items-center space-x-2"
+            className="px-6 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors inline-flex items-center gap-2"
           >
-            <Plus className="h-5 w-5" />
-            <span>Tạo ngân sách đầu tiên</span>
-          </motion.button>
-        </motion.div>
+            <Plus className="h-4 w-4" />
+            <span>Tạo ngân sách</span>
+          </button>
+        </div>
       ) : (
         <div className="space-y-4">
           {budgets.map((budget, index) => {
@@ -348,13 +285,9 @@ const Budgets = () => {
             const strokeDashoffset = circumference - (percentage / 100) * circumference;
             
             return (
-              <motion.div
+              <div
                 key={budget.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                className={`glass backdrop-blur-xl bg-gradient-to-br ${categoryInfo.bgLight} rounded-3xl p-6 shadow-xl border border-white/50 group`}
+                className={`bg-white rounded-2xl p-4 shadow-sm border border-gray-100 group`}
               >
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center space-x-3">
@@ -379,7 +312,7 @@ const Budgets = () => {
                         fill="none"
                         className="text-gray-200"
                       />
-                      <motion.circle
+                      <circle
                         cx="40"
                         cy="40"
                         r="35"
@@ -388,9 +321,8 @@ const Budgets = () => {
                         fill="none"
                         strokeLinecap="round"
                         className={percentage >= 100 ? 'text-red-500' : percentage >= 80 ? 'text-yellow-500' : 'text-green-500'}
-                        initial={{ strokeDasharray: circumference, strokeDashoffset: circumference }}
-                        animate={{ strokeDashoffset }}
-                        transition={{ duration: 1, ease: "easeOut" }}
+                        strokeDasharray={circumference}
+                        style={{ strokeDashoffset }}
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -415,38 +347,29 @@ const Budgets = () => {
                 </div>
 
                 {/* Delete Button */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <button
                   onClick={() => handleDelete(budget.id)}
-                  className="w-full px-4 py-3 bg-red-100 text-red-600 rounded-2xl font-semibold hover:bg-red-200 transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center space-x-2"
+                  className="w-full px-4 py-2.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                   <span>Xóa ngân sách</span>
-                </motion.button>
-              </motion.div>
+                </button>
+              </div>
             );
           })}
         </div>
       )}
 
       {/* Modal */}
-      <AnimatePresence>
-        {showModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={() => setShowModal(false)}
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="glass backdrop-blur-2xl bg-white/90 rounded-3xl p-8 w-full max-w-md shadow-2xl border border-white/20"
-            >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                   Thêm ngân sách
@@ -541,30 +464,25 @@ const Budgets = () => {
                 </div>
 
                 <div className="flex space-x-3 pt-4">
-                  <motion.button
+                  <button
                     type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     onClick={() => setShowModal(false)}
-                    className="flex-1 px-6 py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+                    className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
                   >
                     Hủy
-                  </motion.button>
-                  <motion.button
+                  </button>
+                  <button
                     type="submit"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex-1 px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2"
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2"
                   >
-                    <CheckCircle className="h-5 w-5" />
+                    <CheckCircle className="h-4 w-4" />
                     <span>Lưu</span>
-                  </motion.button>
+                  </button>
                 </div>
               </form>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 };

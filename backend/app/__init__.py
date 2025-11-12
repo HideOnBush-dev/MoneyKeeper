@@ -5,8 +5,6 @@ from config import Config
 from app.database import db, login_manager, mail, moment, init_db
 from flask_migrate import Migrate
 from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 import os
 from flask_socketio import SocketIO
@@ -29,20 +27,11 @@ logger = logging.getLogger(__name__)
 
 socketio = SocketIO()
 babel = Babel()
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
-)
 
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
-    
-    # Initialize security features
-    if app.config.get("RATELIMIT_ENABLED", True):
-        limiter.init_app(app)
     
     # Enable HTTPS security headers in production
     if not app.debug:
@@ -97,6 +86,13 @@ def create_app(config_class=Config):
 
     app.cli.add_command(init_db_command)
     app.cli.add_command(create_tables_command)
+    
+    # Ensure all tables exist on startup
+    with app.app_context():
+        try:
+            db.create_all()
+        except Exception as e:
+            logger.warning(f"Could not create all tables on startup: {e}")
 
     @app.context_processor
     def utility_processor():
@@ -137,7 +133,11 @@ def create_app(config_class=Config):
     def log_request_info():
         """Log request information"""
         if not request.path.startswith('/static'):
-            logger.info(f"{request.method} {request.path} - {get_remote_address()}")
+            # Prefer X-Forwarded-For when behind proxies; fallback to remote_addr
+            client_ip = request.headers.get('X-Forwarded-For', request.remote_addr) or ""
+            if ',' in client_ip:
+                client_ip = client_ip.split(',')[0].strip()
+            logger.info(f"{request.method} {request.path} - {client_ip}")
     
     @app.after_request
     def add_security_headers(response):

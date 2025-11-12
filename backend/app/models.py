@@ -125,6 +125,26 @@ class ChatMessage(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class Category(db.Model):
+    """User-defined expense categories with custom icons and colors"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    name = db.Column(db.String(50), nullable=False)  # Display name (e.g., "Ăn uống")
+    slug = db.Column(db.String(50), nullable=False)  # URL-safe identifier (e.g., "food")
+    icon = db.Column(db.String(10), default="📦")  # Emoji icon
+    color = db.Column(db.String(50), default="gray")  # Tailwind gradient color
+    is_default = db.Column(db.Boolean, default=False)  # System default categories
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    user = db.relationship("User", backref=db.backref("categories", lazy="dynamic"))
+    
+    # Unique constraint: user can't have duplicate slugs
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'slug', name='_user_category_slug_uc'),
+    )
+
+
 class Wallet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)

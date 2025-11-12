@@ -2,7 +2,7 @@ from flask import jsonify, request, abort
 from flask_login import login_required, current_user
 from app.api import bp
 from app.models import Expense, Wallet, Budget, User
-from app import db, limiter
+from app import db
 from app.security import (
     validate_amount, validate_category, sanitize_string,
     validate_positive_integer, validate_date
@@ -38,22 +38,35 @@ def get_dashboard():
     try:
         # Use aggregation for better performance
         from sqlalchemy import func
+        from app.models import Wallet
         
-        result = db.session.query(
-            func.sum(Expense.amount).filter(Expense.amount > 0).label('income'),
-            func.sum(Expense.amount).filter(Expense.amount < 0).label('expenses')
-        ).filter(Expense.user_id == current_user.id).first()
+        # Calculate total income (is_expense = False)
+        total_income_result = db.session.query(
+            func.sum(Expense.amount)
+        ).filter(
+            Expense.user_id == current_user.id,
+            Expense.is_expense == False
+        ).scalar()
         
-        # Handle case where the query returns None and ensure attributes are present
-        if not result:
-            total_income = 0.0
-            total_expenses = 0.0
-        else:
-            income_val = result.income if result.income is not None else 0
-            expenses_val = result.expenses if result.expenses is not None else 0
-            total_income = float(income_val)
-            total_expenses = abs(float(expenses_val))
-        balance = total_income - total_expenses
+        # Calculate total expenses (is_expense = True)
+        total_expenses_result = db.session.query(
+            func.sum(Expense.amount)
+        ).filter(
+            Expense.user_id == current_user.id,
+            Expense.is_expense == True
+        ).scalar()
+        
+        # Get total balance from all wallets
+        total_balance_result = db.session.query(
+            func.sum(Wallet.balance)
+        ).filter(
+            Wallet.user_id == current_user.id
+        ).scalar()
+        
+        # Handle None values
+        total_income = float(total_income_result) if total_income_result is not None else 0.0
+        total_expenses = float(total_expenses_result) if total_expenses_result is not None else 0.0
+        balance = float(total_balance_result) if total_balance_result is not None else 0.0
         
         # Get recent transactions (limit to 10)
         recent_expenses = Expense.query.filter_by(

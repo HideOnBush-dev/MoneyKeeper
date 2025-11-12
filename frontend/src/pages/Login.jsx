@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -18,7 +19,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(username, password);
+      await login(username, password, remember);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.');
@@ -177,6 +178,18 @@ const Login = () => {
                 </>
               )}
             </motion.button>
+
+          {/* Remember me */}
+          <div className="mt-4 flex items-center justify-center gap-2 text-white/90">
+            <input
+              id="remember"
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4 rounded border-white/40 bg-white/10"
+            />
+            <label htmlFor="remember" className="text-sm select-none">Ghi nhớ đăng nhập</label>
+          </div>
           </form>
 
           {/* Register Link */}

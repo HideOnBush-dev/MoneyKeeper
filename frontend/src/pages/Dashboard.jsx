@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   Wallet, 
   TrendingUp, 
@@ -31,6 +31,7 @@ import {
   Legend 
 } from 'recharts';
 import axios from 'axios';
+import QuickTransactionForm from '../components/QuickTransactionForm';
 import { formatCurrency } from '../lib/utils';
 import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
@@ -39,6 +40,7 @@ import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/nu
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [recentExpenses, setRecentExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -210,28 +212,14 @@ const Dashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
-      {/* Animated Header với Gradient Background */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative"
-      >
-        {/* Decorative Background */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute top-0 left-0 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl"></div>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl"></div>
-        </div>
-
-        <div className="glass backdrop-blur-xl bg-white/80 rounded-3xl p-8 shadow-2xl border border-white/20">
+      {/* Header */}
+      <div className="relative">
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center space-x-4">
-              <motion.div
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                className="p-4 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-xl"
-              >
-                <Sparkles className="h-8 w-8 text-white" />
-              </motion.div>
+              <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-sm">
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
               <div>
                 <h1 className="text-4xl md:text-5xl font-bold font-display text-gradient">
                   Dashboard
@@ -250,21 +238,17 @@ const Dashboard = () => {
                   {new Date().toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
               </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all"
-                onClick={() => {
-                  setAmountInput('');
-                  setShowAddModal(true);
-                }}
+              <button
+                onClick={() => navigate('/expenses/new')}
+                className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center gap-1.5"
               >
-                <Plus className="h-6 w-6" />
-              </motion.button>
+                <Plus className="h-4 w-4" />
+                <span>Thêm giao dịch</span>
+              </button>
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Enhanced Stats Cards với 3D Effect */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -297,13 +281,9 @@ const Dashboard = () => {
             trendUp: true,
           },
         ].map((stat, idx) => (
-          <motion.div
+          <div
             key={idx}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            whileHover={{ y: -8, transition: { duration: 0.2 } }}
-            className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${stat.bg} p-6 shadow-xl border border-white/50`}
+            className={`relative overflow-hidden rounded-2xl bg-white p-4 shadow-sm border border-gray-100`}
           >
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-10">
@@ -331,19 +311,14 @@ const Dashboard = () => {
                 </p>
               </div>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
       {/* Enhanced Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Trend Chart với Modern Design */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="glass backdrop-blur-xl bg-white/80 rounded-3xl p-6 shadow-2xl border border-white/20"
-        >
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-xl font-bold text-gray-900">Xu hướng thu chi</h3>
@@ -381,15 +356,10 @@ const Dashboard = () => {
               <Area type="monotone" dataKey="expense" stroke="#ef4444" fillOpacity={1} fill="url(#colorExpense)" strokeWidth={3} />
             </AreaChart>
           </ResponsiveContainer>
-        </motion.div>
+        </div>
 
         {/* Category Pie Chart */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5 }}
-          className="glass backdrop-blur-xl bg-white/80 rounded-3xl p-6 shadow-2xl border border-white/20"
-        >
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-xl font-bold text-gray-900">Phân bổ chi tiêu</h3>
@@ -428,16 +398,11 @@ const Dashboard = () => {
               />
             </PieChart>
           </ResponsiveContainer>
-        </motion.div>
+        </div>
       </div>
 
       {/* Enhanced Recent Transactions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="glass backdrop-blur-xl bg-white/80 rounded-3xl p-6 shadow-2xl border border-white/20"
-      >
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <div className="p-3 bg-gradient-to-br from-orange-100 to-red-100 rounded-2xl">
@@ -448,41 +413,31 @@ const Dashboard = () => {
               <p className="text-sm text-gray-600">5 giao dịch mới nhất</p>
             </div>
           </div>
-          <motion.a
+          <a
             href="/expenses"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all"
+            className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all"
           >
             <span>Xem tất cả</span>
             <ArrowRight className="h-4 w-4" />
-          </motion.a>
+          </a>
         </div>
 
         {recentExpenses.length === 0 ? (
-          <div className="text-center py-16">
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="inline-block"
-            >
-              <div className="p-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl mb-4">
-                <DollarSign className="h-16 w-16 text-gray-400" />
+          <div className="text-center py-12">
+            <div className="inline-block mb-4">
+              <div className="p-4 bg-gray-100 rounded-2xl">
+                <DollarSign className="h-12 w-12 text-gray-400" />
               </div>
-            </motion.div>
-            <p className="text-gray-500 font-medium">Chưa có giao dịch nào</p>
-            <p className="text-sm text-gray-400 mt-1">Thêm giao dịch đầu tiên của bạn</p>
+            </div>
+            <p className="text-gray-500 text-sm font-medium">Chưa có giao dịch nào</p>
+            <p className="text-xs text-gray-400 mt-1">Thêm giao dịch đầu tiên của bạn</p>
           </div>
         ) : (
           <div className="space-y-3">
             {recentExpenses.map((expense, index) => (
-              <motion.div
+              <div
                 key={expense.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 * index }}
-                whileHover={{ x: 4, transition: { duration: 0.2 } }}
-                className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-gray-50 to-white hover:from-blue-50 hover:to-indigo-50 transition-all border border-gray-100 hover:border-blue-200 cursor-pointer group"
+                className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-blue-50 transition-colors border border-gray-100 hover:border-blue-200 cursor-pointer group"
               >
                 <div className="flex items-center space-x-4">
                   <div className={`p-3 rounded-2xl shadow-lg ${
@@ -513,11 +468,11 @@ const Dashboard = () => {
                     {expense.is_expense ? '-' : '+'}{formatCurrency(expense.amount || 0, settings.currency, settings.numberFormat)}
                   </p>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         )}
-      </motion.div>
+      </div>
 
       {/* Add Transaction Modal */}
       {showAddModal && (
@@ -525,116 +480,14 @@ const Dashboard = () => {
           <div className="absolute inset-0 bg-black/30" onClick={() => !saving && setShowAddModal(false)}></div>
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
             <h3 className="text-xl font-bold mb-4">Thêm giao dịch</h3>
-            <form onSubmit={handleAddSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Số tiền</label>
-                <input
-                  type="text"
-                  name="amount"
-                  value={amountInput}
-                  onChange={handleAddChange}
-                  onBlur={() => {
-                    setAmountInput(formatAmountInput(amountInput || formData.amount, { numberFormat: settings.numberFormat }));
-                  }}
-                  ref={amountInputRef}
-                  className="w-full border rounded-xl px-3 py-2"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Loại</label>
-                  <select
-                    name="is_expense"
-                    value={formData.is_expense ? 'expense' : 'income'}
-                    onChange={(e) =>
-                      setFormData(prev => ({ ...prev, is_expense: e.target.value === 'expense' }))
-                    }
-                    className="w-full border rounded-xl px-3 py-2"
-                  >
-                    <option value="expense">Chi tiêu</option>
-                    <option value="income">Thu nhập</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Danh mục</label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleAddChange}
-                    className="w-full border rounded-xl px-3 py-2"
-                  >
-                    <option value="food">Ăn uống</option>
-                    <option value="transport">Di chuyển</option>
-                    <option value="shopping">Mua sắm</option>
-                    <option value="entertainment">Giải trí</option>
-                    <option value="health">Sức khỏe</option>
-                    <option value="education">Giáo dục</option>
-                    <option value="utilities">Tiện ích</option>
-                    <option value="other">Khác</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Ví</label>
-                <select
-                  name="wallet_id"
-                  value={formData.wallet_id}
-                  onChange={handleAddChange}
-                  className="w-full border rounded-xl px-3 py-2"
-                  required
-                >
-                  <option value="">-- Chọn ví --</option>
-                  {wallets.map(w => (
-                    <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance)})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Ngày</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleAddChange}
-                  className="w-full border rounded-xl px-3 py-2"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Mô tả</label>
-                <input
-                  type="text"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleAddChange}
-                  className="w-full border rounded-xl px-3 py-2"
-                  placeholder="Ghi chú (tuỳ chọn)"
-                />
-              </div>
-
-              <div className="flex items-center justify-end space-x-2 pt-2">
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-xl border"
-                  onClick={() => !saving && setShowAddModal(false)}
-                  disabled={saving}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-blue-600 text-white disabled:opacity-50"
-                  disabled={saving}
-                >
-                  {saving ? 'Đang lưu...' : 'Thêm'}
-                </button>
-              </div>
-            </form>
+            <QuickTransactionForm
+              wallets={wallets}
+              onSuccess={async () => {
+                setShowAddModal(false);
+                setLoading(true);
+                await fetchDashboardData();
+              }}
+            />
           </div>
         </div>
       )}

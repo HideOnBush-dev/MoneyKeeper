@@ -7,7 +7,7 @@ from flask import jsonify, request, abort, Response
 from flask_login import login_required, current_user
 from app.api import bp
 from app.models import Expense, Wallet
-from app import db, limiter
+from app import db
 from app.security import (
     validate_amount, validate_category, sanitize_string,
     validate_positive_integer, validate_date
@@ -18,7 +18,9 @@ from datetime import datetime
 from decimal import Decimal
 import csv
 from io import StringIO
+from io import BytesIO
 import logging
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -62,14 +64,8 @@ def create_expense():
         if not wallet:
             abort(404, description="Wallet not found")
         
-        # Check if wallet has sufficient balance for expense
+        # Allow negative balance - no balance check for expenses
         is_expense = data.get('is_expense', True)
-        if is_expense and wallet.balance < float(amount):
-            return jsonify({
-                'error': 'Insufficient balance',
-                'wallet_balance': float(wallet.balance),
-                'required_amount': float(amount)
-            }), 400
         
         # Create expense
         expense = Expense(
@@ -116,6 +112,168 @@ def create_expense():
         abort(500, description="An error occurred")
 
 
+@bp.route('/expenses/export_xlsx', methods=['GET'])
+@login_required
+def export_expenses_xlsx():
+    """Export expenses based on filters as XLSX"""
+    try:
+        # Build query same as CSV export
+        query = Expense.query.filter_by(user_id=current_user.id)
+
+        category = request.args.get('category')
+        if category:
+            query = query.filter_by(category=validate_category(category))
+
+        wallet_id = request.args.get('wallet_id', type=int)
+        if wallet_id:
+            query = query.filter_by(wallet_id=wallet_id)
+
+        is_expense = request.args.get('is_expense')
+        if is_expense is not None:
+            query = query.filter_by(is_expense=is_expense.lower() == 'true')
+
+        start_date = request.args.get('start_date')
+        if start_date:
+            query = query.filter(Expense.date >= validate_date(start_date))
+
+        end_date = request.args.get('end_date')
+        if end_date:
+            end_dt = validate_date(end_date)
+            from datetime import timedelta
+            query = query.filter(Expense.date < end_dt + timedelta(days=1))
+
+        min_amount = request.args.get('min_amount', type=float)
+        if min_amount is not None:
+            query = query.filter(Expense.amount >= min_amount)
+
+        max_amount = request.args.get('max_amount', type=float)
+        if max_amount is not None:
+            query = query.filter(Expense.amount <= max_amount)
+
+        description = request.args.get('description')
+        if description:
+            query = query.filter(Expense.description.ilike(f'%{description}%'))
+
+        sort_by = request.args.get('sort_by', 'date')
+        sort_order = request.args.get('sort_order', 'desc')
+
+        if sort_by == 'amount':
+            order_col = Expense.amount
+        elif sort_by == 'category':
+            order_col = Expense.category
+        else:
+            order_col = Expense.date
+
+        if sort_order == 'asc':
+            query = query.order_by(order_col.asc())
+        else:
+            query = query.order_by(order_col.desc())
+
+        rows = query.all()
+
+        # Build DataFrame
+        data = [{
+            'ID': e.id,
+            'Amount': float(e.amount),
+            'Type': 'Expense' if e.is_expense else 'Income',
+            'Category': e.category,
+            'Description': sanitize_string(e.description, max_length=500) if e.description else '',
+            'Date': e.date.isoformat() if e.date else '',
+            'WalletID': e.wallet_id,
+        } for e in rows]
+        df = pd.DataFrame(data, columns=['ID','Amount','Type','Category','Description','Date','WalletID'])
+
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name='Expenses')
+        output.seek(0)
+
+        filename = f"expenses_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        return Response(
+            output.read(),
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={'Content-Disposition': f'attachment; filename={filename}'}
+        )
+    except SQLAlchemyError as e:
+        logger.exception(f"Database error exporting expenses xlsx: {e}")
+        abort(500, description="Failed to export expenses")
+    except Exception as e:
+        logger.exception(f"Error exporting expenses xlsx: {e}")
+        abort(500, description="An error occurred")
+
+
+@bp.route('/expenses/import_xlsx', methods=['POST'])
+@login_required
+def import_expenses_xlsx():
+    """Import expenses from an XLSX file. Expected columns (case-insensitive): Amount, Type/IsExpense, Category, Description, Date, WalletID"""
+    try:
+        if 'file' not in request.files:
+            abort(400, description="No file part")
+        file = request.files['file']
+        if file.filename == '':
+            abort(400, description="No selected file")
+        if not file.filename.lower().endswith(('.xlsx',)):
+            abort(400, description="Invalid file type. Please upload an .xlsx file.")
+
+        # Read excel to DataFrame
+        df = pd.read_excel(file, dtype=str)
+        created = 0
+        errors = []
+
+        for idx, row in df.iterrows():
+            try:
+                # Normalize headers: try multiple aliases
+                amount_str = (row.get('Amount') or row.get('amount') or '').strip()
+                if not amount_str:
+                    raise ValueError("Missing Amount")
+                amount = float(str(amount_str).replace(',', '').replace(' ', ''))
+
+                type_val = (row.get('Type') or row.get('type') or row.get('IsExpense') or row.get('is_expense') or '').strip().lower()
+                is_expense = True
+                if type_val in ('income', 'thu', 'false', '0'):
+                    is_expense = False
+
+                category = (row.get('Category') or row.get('category') or 'khác').strip().lower()
+                category = validate_category(category)
+
+                description = (row.get('Description') or row.get('description') or '').strip()
+
+                date_val = (row.get('Date') or row.get('date') or '').strip()
+                date = validate_date(date_val) if date_val else datetime.utcnow()
+
+                wallet_val = (row.get('WalletID') or row.get('wallet_id') or '').strip()
+                wallet_id = int(wallet_val) if wallet_val else None
+
+                # Default wallet if not provided
+                if not wallet_id:
+                    wallet = current_user.get_default_wallet()
+                    wallet_id = wallet.id
+
+                expense = Expense(
+                    amount=amount,
+                    is_expense=is_expense,
+                    category=category,
+                    description=description or None,
+                    date=date,
+                    user_id=current_user.id,
+                    wallet_id=wallet_id
+                )
+                db.session.add(expense)
+                created += 1
+            except Exception as e:
+                errors.append({'row': int(idx)+2, 'error': str(e)})
+                continue
+
+        db.session.commit()
+        return jsonify({'created': created, 'errors': errors}), 200
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logger.exception(f"Database error importing expenses xlsx: {e}")
+        abort(500, description="Failed to import expenses")
+    except Exception as e:
+        db.session.rollback()
+        logger.exception(f"Error importing expenses xlsx: {e}")
+        abort(500, description="An error occurred")
 @bp.route('/expenses/<int:expense_id>', methods=['GET'])
 @login_required
 def get_expense(expense_id):
@@ -810,8 +968,7 @@ def import_expenses_csv():
                 if not wallet:
                     raise ValueError("Wallet not found or not owned by user")
 
-                if is_expense and wallet.balance < float(amount):
-                    raise ValueError("Insufficient wallet balance for this expense")
+                # Allow negative balance - no balance check for expenses
 
                 expense = Expense(
                     amount=float(amount),

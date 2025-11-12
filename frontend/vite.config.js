@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['app-icon.png', 'favicon.ico'],
+      includeAssets: ['img/app-icon.png', 'favicon.ico'],
       manifest: {
         name: 'Money Keeper - Quản lý Chi tiêu Thông minh',
         short_name: 'Money Keeper',
@@ -21,13 +21,13 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/img/icon-192x192.png',
+            src: '/img/app-icon.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/img/icon-512x512.png',
+            src: '/img/app-icon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'

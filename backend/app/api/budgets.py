@@ -6,7 +6,7 @@ from flask import jsonify, request, abort
 from flask_login import login_required, current_user
 from app.api import bp
 from app.models import Budget, Expense
-from app import db, limiter
+from app import db
 from app.security import (
     validate_amount, validate_category, sanitize_string,
     validate_positive_integer

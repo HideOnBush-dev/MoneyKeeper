@@ -30,6 +30,11 @@ class Config:
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+    # Persistent sessions / remember-me
+    REMEMBER_COOKIE_DURATION = timedelta(days=3650)  # ~10 years
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SECURE = False  # Set to True in production with HTTPS
+    REMEMBER_COOKIE_SAMESITE = "Lax"
     
     # Localization
     BABEL_DEFAULT_LOCALE = "vi"
@@ -62,7 +67,7 @@ class Config:
     AI_MAX_RETRIES = int(os.environ.get("AI_MAX_RETRIES", 3))
     
     # Rate Limiting
-    RATELIMIT_ENABLED = True
+    RATELIMIT_ENABLED = False
     RATELIMIT_STORAGE_URL = os.environ.get("REDIS_URL", "memory://")
     RATELIMIT_DEFAULT = "200 per day, 50 per hour"
     RATELIMIT_HEADERS_ENABLED = True

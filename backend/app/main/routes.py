@@ -450,8 +450,9 @@ def handle_connect():
     logger.info(f"Client attempting to connect: {request.sid}")
     if not current_user.is_authenticated:
         logger.warning(f"Unauthorized connection attempt: {request.sid}")
-        return False  # Reject connection
-    
+        # Allow connection but do not join user room; client will receive error on actions
+        emit("connected", {"status": "connected"})
+        return
     join_room(str(current_user.id))
     logger.info(f"Client connected successfully: {request.sid}, User: {current_user.id}")
     emit("connected", {"status": "connected", "user_id": current_user.id})
@@ -635,6 +636,26 @@ def get_chat_messages(session_id):
     ]
     return jsonify({"messages": message_data})
 
+
+@bp.route("/api/chat/sessions", methods=["GET"])
+@login_required
+def list_chat_sessions():
+    """List current user's chat sessions"""
+    sessions = (
+        ChatSession.query.filter_by(user_id=current_user.id)
+        .order_by(ChatSession.updated_at.desc())
+        .all()
+    )
+    data = [
+        {
+            "id": s.id,
+            "personality": s.personality,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+            "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+        }
+        for s in sessions
+    ]
+    return jsonify({"sessions": data})
 
 @bp.route("/ai/get_analysis_data", methods=["POST"])
 @login_required

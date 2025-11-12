@@ -21,7 +21,7 @@ class ChatSocket {
     // Connect to the chat namespace
     this.socket = io(socketPath, {
       withCredentials: true,
-      transports: ['polling', 'websocket'], // Try polling first, then upgrade to websocket
+      transports: ['polling'], // Force polling for compatibility with dev server
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,

@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Send, Bot, User, Settings, Sparkles, Heart, Zap, Brain, 
+  Send, Bot, User, Sparkles, Heart, Zap, Brain, 
   Trash2, TrendingUp, PieChart, Lightbulb, Copy, Check, 
-  Download, MessageSquare, Plus, ChevronLeft, Menu, X,
+  Download, MessageSquare, Plus, ChevronLeft, X,
   Mic, MicOff, Clock, Star, BarChart3, Maximize2, Paperclip, Smile
 } from "lucide-react";
 import { chatSocket } from "../services/socket";
@@ -32,7 +32,6 @@ const Chat = () => {
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
   const [personality, setPersonality] = useState("friendly");
-  const [showPersonality, setShowPersonality] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [conversations, setConversations] = useState([]);
@@ -50,12 +49,6 @@ const Chat = () => {
 
     socket.on('connect', () => {
       setConnected(true);
-      // Send initial greeting message
-      setMessages([{ 
-        role: "ai", 
-        text: "Xin chào! Mình là MoneyKeeper AI, trợ lý tài chính của bạn! 🤗 Bạn muốn mình giúp gì hôm nay?",
-        timestamp: new Date()
-      }]);
     });
 
     socket.on('disconnect', () => {
@@ -98,16 +91,47 @@ const Chat = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading, streamingMessage]);
 
-  // Load conversations from localStorage
+  // Load sessions from backend and initial messages
   useEffect(() => {
-    const saved = localStorage.getItem('chatConversations');
-    if (saved) {
+    const init = async () => {
       try {
-        setConversations(JSON.parse(saved));
+        const { data } = await chatAPI.getSessions();
+        const sessions = data?.sessions || [];
+        setConversations(sessions);
+        if (sessions.length > 0) {
+          const first = sessions[0];
+          setCurrentConversation(first.id);
+          setPersonality(first.personality || 'friendly');
+          const hist = await chatAPI.getHistory(first.id);
+          const msgs = (hist?.data?.messages || []).map(m => ({
+            role: m.user ? 'user' : 'ai',
+            text: m.content,
+            timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
+          }));
+          setMessages(msgs.length ? msgs : [{
+            role: 'ai',
+            text: 'Xin chào! Mình là MoneyKeeper AI, trợ lý tài chính của bạn! 🤗 Bạn muốn mình giúp gì hôm nay?',
+            timestamp: new Date(),
+          }]);
+        } else {
+          // No sessions yet: create one and greet
+          const res = await chatAPI.createSession(personality);
+          const newId = res?.data?.session_id;
+          if (newId) {
+            setCurrentConversation(newId);
+            setConversations([{ id: newId, personality, updated_at: new Date().toISOString() }]);
+          }
+          setMessages([{
+            role: 'ai',
+            text: 'Xin chào! Mình là MoneyKeeper AI, trợ lý tài chính của bạn! 🤗 Bạn muốn mình giúp gì hôm nay?',
+            timestamp: new Date(),
+          }]);
+        }
       } catch (e) {
-        console.error('Error loading conversations:', e);
+        console.error('Error initializing chat sessions:', e);
       }
-    }
+    };
+    init();
   }, []);
 
   const sendMessage = async (customMessage = null) => {
@@ -129,6 +153,16 @@ const Chat = () => {
       }
     }
     
+    // Ensure server will route next socket message to the selected session
+    try {
+      if (currentConversation) {
+        await chatAPI.updateSession(currentConversation, { personality });
+      }
+    } catch (e) {
+      // Non-blocking
+      console.warn('Failed to touch session before send', e);
+    }
+
     // Add user message to UI
     setMessages((prev) => [...prev, { 
       role: "user", 
@@ -281,7 +315,8 @@ const Chat = () => {
         }
         case '/balance': {
           const { data } = await walletAPI.getAll();
-          const wallets = data?.wallets || data || [];
+          const walletsData = data?.wallets || data || [];
+          const wallets = Array.isArray(walletsData) ? walletsData : [];
           const total = wallets.reduce((s, w) => s + (w.balance || 0), 0);
           const lines = wallets.map(w => `• ${w.name}: ${Intl.NumberFormat('vi-VN').format(w.balance || 0)} ₫`).join('\n');
           addSystemMessage(`Số dư ví:\n${lines}\n\nTổng: ${Intl.NumberFormat('vi-VN').format(total)} ₫`, [
@@ -377,84 +412,76 @@ const Chat = () => {
     }
   };
 
-  const clearChat = async () => {
-    if (window.confirm('Bạn có chắc muốn xóa toàn bộ lịch sử chat?')) {
-      try {
-        await chatAPI.clearHistory();
-        setMessages([{ 
-          role: "ai", 
-          text: "Lịch sử chat đã được xóa. Hãy bắt đầu cuộc trò chuyện mới! 🤗",
-          timestamp: new Date()
-        }]);
-      } catch (error) {
-        console.error('Error clearing chat:', error);
-      }
-    }
-  };
-
   const copyMessage = (text, index) => {
     navigator.clipboard.writeText(text);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
-  const exportChat = () => {
-    const chatText = messages.map(msg => 
-      `[${msg.role.toUpperCase()}] ${new Date(msg.timestamp).toLocaleString('vi-VN')}\n${msg.text}\n`
-    ).join('\n---\n\n');
-    
-    const blob = new Blob([chatText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `chat-${new Date().toISOString().slice(0, 10)}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const saveConversation = () => {
-    if (messages.length <= 1) return;
-    
-    const title = messages.find(m => m.role === 'user')?.text?.slice(0, 50) || 'Cuộc trò chuyện mới';
-    const newConv = {
-      id: Date.now(),
-      title,
-      messages: [...messages],
-      timestamp: new Date(),
-      personality
-    };
-    
-    const updatedConversations = [newConv, ...conversations];
-    setConversations(updatedConversations);
-    localStorage.setItem('chatConversations', JSON.stringify(updatedConversations));
-  };
-
-  const loadConversation = (conv) => {
-    setMessages(conv.messages);
-    setPersonality(conv.personality);
-    setCurrentConversation(conv.id);
-    setShowSidebar(false);
-  };
-
-  const deleteConversation = (id) => {
-    const updatedConversations = conversations.filter(c => c.id !== id);
-    setConversations(updatedConversations);
-    localStorage.setItem('chatConversations', JSON.stringify(updatedConversations));
-    if (currentConversation === id) {
-      setCurrentConversation(null);
+  const loadConversation = async (conv) => {
+    try {
+      setCurrentConversation(conv.id);
+      setPersonality(conv.personality || 'friendly');
+      const hist = await chatAPI.getHistory(conv.id);
+      const msgs = (hist?.data?.messages || []).map(m => ({
+        role: m.user ? 'user' : 'ai',
+        text: m.content,
+        timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
+      }));
+      setMessages(msgs.length ? msgs : [{
+        role: 'ai',
+        text: 'Xin chào! Mình là MoneyKeeper AI, trợ lý tài chính của bạn! 🤗 Bạn muốn mình giúp gì hôm nay?',
+        timestamp: new Date(),
+      }]);
+      setShowSidebar(false);
+      // Touch selected session to make it active on server
+      await chatAPI.updateSession(conv.id, { personality: conv.personality || personality });
+    } catch (e) {
+      console.error('Error loading conversation:', e);
     }
   };
 
-  const startNewChat = () => {
-    setMessages([{ 
-      role: "ai", 
-      text: "Xin chào! Mình là MoneyKeeper AI, trợ lý tài chính của bạn! 🤗 Bạn muốn mình giúp gì hôm nay?",
-      timestamp: new Date()
-    }]);
-    setCurrentConversation(null);
-    setShowSidebar(false);
+  const deleteConversation = async (id) => {
+    try {
+      await chatAPI.deleteSession(id);
+      const { data } = await chatAPI.getSessions();
+      const sessions = data?.sessions || [];
+      setConversations(sessions);
+      if (currentConversation === id) {
+        if (sessions.length) {
+          await loadConversation(sessions[0]);
+        } else {
+          setCurrentConversation(null);
+          setMessages([{
+            role: 'ai',
+            text: 'Xin chào! Mình là MoneyKeeper AI, trợ lý tài chính của bạn! 🤗 Bạn muốn mình giúp gì hôm nay?',
+            timestamp: new Date(),
+          }]);
+        }
+      }
+    } catch (e) {
+      console.error('Error deleting conversation:', e);
+    }
+  };
+
+  const startNewChat = async () => {
+    try {
+      const res = await chatAPI.createSession(personality);
+      const newId = res?.data?.session_id;
+      const { data } = await chatAPI.getSessions();
+      setConversations(data?.sessions || []);
+      if (newId) {
+        setCurrentConversation(newId);
+        setMessages([{
+          role: 'ai',
+          text: 'Xin chào! Mình là MoneyKeeper AI, trợ lý tài chính của bạn! 🤗 Bạn muốn mình giúp gì hôm nay?',
+          timestamp: new Date(),
+        }]);
+      }
+      setShowSidebar(false);
+    } catch (e) {
+      console.error('Error starting new chat:', e);
+    }
   };
 
   const selectedPersonality = PERSONALITIES.find(p => p.id === personality);
@@ -468,24 +495,57 @@ const Chat = () => {
             <MessageSquare className="h-5 w-5 text-blue-600" />
             Lịch sử chat
           </h2>
-          <motion.button
-            whileHover={{ scale: 1.1, rotate: 90 }}
-            whileTap={{ scale: 0.9 }}
+          <button
             onClick={() => setShowSidebar(false)}
             className="p-2 rounded-xl hover:bg-gray-100 transition-colors lg:hidden"
           >
             <X className="h-5 w-5 text-gray-600" />
-          </motion.button>
+          </button>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+        <button
           onClick={startNewChat}
           className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
         >
           <Plus className="h-5 w-5" />
           Cuộc trò chuyện mới
-        </motion.button>
+        </button>
+      </div>
+
+      {/* Personality Selector */}
+      <div className="p-4 border-b border-gray-200/50 bg-white">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-purple-600" />
+          Tính cách AI
+        </h3>
+        <div className="grid grid-cols-2 gap-2">
+          {PERSONALITIES.map((p) => {
+            const Icon = p.icon;
+            const isSelected = personality === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={async () => {
+                  setPersonality(p.id);
+                  if (currentConversation) {
+                    await chatAPI.updateSession(currentConversation, { personality: p.id });
+                  }
+                }}
+                className={`p-2.5 rounded-lg border-2 transition-all text-left ${
+                  isSelected
+                    ? `border-transparent bg-gradient-to-br ${p.color} text-white shadow-md`
+                    : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon className={`h-4 w-4 ${isSelected ? 'text-white' : `text-gray-600`}`} />
+                  <span className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-gray-700'}`}>
+                    {p.name}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -497,12 +557,8 @@ const Chat = () => {
           </div>
         ) : (
           conversations.map((conv, idx) => (
-            <motion.div
+            <div
               key={conv.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              whileHover={{ scale: 1.02, x: 4 }}
               className={`group relative p-3 rounded-xl cursor-pointer transition-all ${
                 currentConversation === conv.id
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
@@ -513,23 +569,21 @@ const Chat = () => {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm line-clamp-2 mb-1.5">
-                    {conv.title}
+                    {conv.title || 'Cuộc trò chuyện mới'}
                   </p>
                   <div className="flex items-center gap-2 text-xs opacity-75">
                     <Clock className="h-3 w-3" />
                     <span>
-                      {new Date(conv.timestamp).toLocaleDateString('vi-VN', {
+                      {conv.updated_at ? new Date(conv.updated_at).toLocaleDateString('vi-VN', {
                         day: '2-digit',
                         month: '2-digit',
                         hour: '2-digit',
                         minute: '2-digit'
-                      })}
+                      }) : ''}
                     </span>
                   </div>
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.2, rotate: 10 }}
-                  whileTap={{ scale: 0.9 }}
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     deleteConversation(conv.id);
@@ -541,26 +595,14 @@ const Chat = () => {
                   } opacity-0 group-hover:opacity-100`}
                 >
                   <Trash2 className="h-4 w-4" />
-                </motion.button>
+                </button>
               </div>
-            </motion.div>
+            </div>
           ))
         )}
       </div>
 
-      {messages.length > 1 && (
-        <div className="p-4 border-t border-gray-200/50 bg-gradient-to-br from-white to-blue-50/30 space-y-2">
-          <motion.button
-            whileHover={{ scale: 1.02, y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={saveConversation}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-          >
-            <Download className="h-4 w-4" />
-            Lưu cuộc trò chuyện
-          </motion.button>
-        </div>
-      )}
+      
     </>
   );
 
@@ -643,169 +685,43 @@ const Chat = () => {
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="backdrop-blur-xl bg-white/80 border-b border-gray-200/50 shadow-lg z-30 flex-shrink-0"
-        >
-          <div className="flex items-center justify-between max-w-5xl mx-auto w-full p-4">
-            <div className="flex items-center gap-3">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowSidebar(!showSidebar)}
-                className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-md hover:shadow-lg transition-all lg:hidden"
-              >
-                <Menu className="h-5 w-5" />
-              </motion.button>
-
-              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 shadow-lg">
-                <Bot className="h-6 w-6 text-white" />
-              </div>
-              
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  MoneyKeeper AI
-                </h1>
-                <div className="flex items-center gap-2">
-                  {connected ? (
-                    <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
-                      <motion.span 
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="w-2 h-2 bg-green-500 rounded-full"
-                      />
-                      Đang hoạt động
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className="w-2 h-2 bg-gray-400 rounded-full" />
-                      Đang kết nối...
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
+        {/* Header with Menu Button (Mobile) and Personality Indicator */}
+        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Mở menu"
+            >
+              <MessageSquare className="h-5 w-5 text-gray-600" />
+            </button>
             <div className="flex items-center gap-2">
-              {messages.length > 1 && (
+              {selectedPersonality && (
                 <>
-                  <motion.button
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={exportChat}
-                    className="p-2.5 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-md hover:shadow-lg transition-all"
-                    title="Xuất file"
-                  >
-                    <Download className="h-5 w-5" />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={clearChat}
-                    className="p-2.5 rounded-xl bg-gradient-to-br from-red-500 to-rose-500 text-white shadow-md hover:shadow-lg transition-all"
-                    title="Xóa chat"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </motion.button>
+                  <div className={`p-1.5 rounded-lg bg-gradient-to-br ${selectedPersonality.color}`}>
+                    <selectedPersonality.icon className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700 hidden sm:inline">
+                    {selectedPersonality.name}
+                  </span>
                 </>
               )}
-              <motion.button
-                whileHover={{ scale: 1.1, rotate: 180 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowPersonality(!showPersonality)}
-                className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-md hover:shadow-lg transition-all"
-                title="Cài đặt"
-              >
-                <Settings className="h-5 w-5" />
-              </motion.button>
             </div>
           </div>
-
-          {/* Personality Selector */}
-          <AnimatePresence>
-            {showPersonality && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden border-t border-gray-200/50 bg-gradient-to-br from-white to-purple-50/30"
-              >
-                <div className="max-w-5xl mx-auto p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-purple-500" />
-                      Chọn phong cách trò chuyện
-                    </p>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setShowPersonality(false)}
-                      className="text-sm text-gray-500 hover:text-gray-700 font-medium px-3 py-1 rounded-lg hover:bg-gray-100"
-                    >
-                      Đóng ✕
-                    </motion.button>
-                  </div>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    {PERSONALITIES.map((p, idx) => {
-                      const Icon = p.icon;
-                      const isSelected = personality === p.id;
-                      return (
-                        <motion.button
-                          key={p.id}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: idx * 0.05 }}
-                          whileHover={{ scale: 1.05, y: -4 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => {
-                            setPersonality(p.id);
-                            setShowPersonality(false);
-                          }}
-                          className={`relative overflow-hidden flex flex-col items-center gap-3 p-4 rounded-2xl transition-all ${
-                            isSelected
-                              ? `bg-gradient-to-br ${p.color} text-white shadow-xl border-2 border-white`
-                              : 'bg-white text-gray-700 hover:shadow-lg border-2 border-gray-100 hover:border-gray-200'
-                          }`}
-                        >
-                          {isSelected && (
-                            <motion.div
-                              layoutId="selected-personality"
-                              className="absolute inset-0 bg-white/10"
-                              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                            />
-                          )}
-                          
-                          <motion.div 
-                            animate={isSelected ? { rotate: [0, 10, -10, 0] } : {}}
-                            transition={{ duration: 0.5 }}
-                            className={`p-3 rounded-xl ${isSelected ? 'bg-white/20' : 'bg-gray-100'}`}
-                          >
-                            <Icon className={`h-6 w-6 ${isSelected ? 'text-white' : 'text-gray-600'}`} />
-                          </motion.div>
-                          
-                          <div className="text-center">
-                            <span className="font-bold text-sm block mb-1">{p.name}</span>
-                            {isSelected && (
-                              <motion.span
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="text-xs opacity-90"
-                              >
-                                ✓ Đã chọn
-                              </motion.span>
-                            )}
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </motion.div>
+          <div className="flex items-center gap-2">
+            {connected ? (
+              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="hidden sm:inline">Đã kết nối</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-xs text-amber-600">
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                <span className="hidden sm:inline">Đang kết nối...</span>
+              </div>
             )}
-          </AnimatePresence>
-        </motion.div>
+          </div>
+        </div>
 
         {/* Chat Messages */}
         <div className="flex-1 overflow-y-auto px-2 py-2 md:px-4 md:py-4 space-y-4 max-w-4xl mx-auto w-full">

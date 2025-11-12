@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
   X,
@@ -8,16 +7,17 @@ import {
   Wallet as WalletIcon,
   ArrowRightLeft,
   DollarSign,
-  Sparkles,
-  CreditCard,
   TrendingUp,
   Check,
   AlertCircle
 } from 'lucide-react';
 import { walletAPI } from '../services/api';
 import { formatCurrency } from '../lib/utils';
+import PageHeader from '../components/PageHeader';
+import { useSettings } from '../contexts/SettingsContext';
 
 const Wallets = () => {
+  const { settings } = useSettings();
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -44,9 +44,11 @@ const Wallets = () => {
   const fetchWallets = async () => {
     try {
       const response = await walletAPI.getAll();
-      setWallets(response.data.wallets || []);
+      const walletsData = response?.data?.wallets || response?.data || [];
+      setWallets(Array.isArray(walletsData) ? walletsData : []);
     } catch (error) {
       console.error('Error fetching wallets:', error);
+      setWallets([]);
       alert('Lỗi khi tải danh sách ví');
     } finally {
       setLoading(false);
@@ -114,201 +116,130 @@ const Wallets = () => {
   if (loading) {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full"
-        />
+        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
         <p className="mt-4 text-gray-600 font-medium">Đang tải...</p>
       </div>
     );
   }
 
-  const totalBalance = wallets.reduce((sum, w) => sum + (w.balance || 0), 0);
+  const totalBalance = Array.isArray(wallets) ? wallets.reduce((sum, w) => sum + (w.balance || 0), 0) : 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Animated Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative"
-      >
-        {/* Background Blobs */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-blue-300/30 rounded-full blur-3xl animate-blob"></div>
-          <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-300/30 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+    <div className="max-w-7xl mx-auto space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <PageHeader 
+          icon={WalletIcon} 
+          title="Ví của tôi"
+          subtitle={`Tổng: ${formatCurrency(totalBalance, settings.currency, settings.numberFormat)}`}
+          iconColor="from-blue-500 to-cyan-600"
+        />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowTransferModal(true)}
+            className="px-3 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center gap-1.5"
+          >
+            <ArrowRightLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Chuyển</span>
+          </button>
+          <button
+            onClick={() => {
+              setEditingWallet(null);
+              setFormData({ name: '', balance: 0, description: '', currency: 'VND', is_default: false });
+              setShowModal(true);
+            }}
+            className="px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center gap-1.5"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Thêm</span>
+          </button>
         </div>
-
-        <div className="glass backdrop-blur-xl bg-white/80 rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
-                className="p-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-xl"
-              >
-                <WalletIcon className="h-8 w-8 text-white" />
-              </motion.div>
-              <div>
-                <h1 className="text-4xl font-bold font-display bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 bg-clip-text text-transparent">
-                  Ví của tôi
-                </h1>
-                <p className="text-gray-600 mt-1 flex items-center space-x-2">
-                  <Sparkles className="h-4 w-4 text-yellow-500" />
-                  <span>Tổng: {formatCurrency(totalBalance)}</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowTransferModal(true)}
-                className="px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center space-x-2"
-              >
-                <ArrowRightLeft className="h-5 w-5" />
-                <span className="hidden md:inline">Chuyển tiền</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  setEditingWallet(null);
-                  setFormData({ name: '', balance: 0, description: '', currency: 'VND', is_default: false });
-                  setShowModal(true);
-                }}
-                className="px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center space-x-2"
-              >
-                <Plus className="h-5 w-5" />
-                <span>Thêm ví</span>
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      </div>
 
       {/* Wallets Grid */}
       {wallets.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass backdrop-blur-xl bg-white/80 rounded-3xl p-16 text-center shadow-2xl border border-white/20"
-        >
-          <motion.div
-            animate={{ y: [0, -15, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="inline-block mb-6"
-          >
-            <div className="p-8 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-3xl">
-              <WalletIcon className="h-20 w-20 text-blue-500" />
+        <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
+          <div className="inline-block mb-4">
+            <div className="p-6 bg-gray-100 rounded-2xl">
+              <WalletIcon className="h-12 w-12 text-gray-400" />
             </div>
-          </motion.div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">Chưa có ví nào</h3>
-          <p className="text-gray-600 mb-6">Hãy tạo ví đầu tiên của bạn</p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-1">Chưa có ví nào</h3>
+          <p className="text-sm text-gray-600 mb-4">Hãy tạo ví đầu tiên của bạn</p>
+          <button
             onClick={() => setShowModal(true)}
-            className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all inline-flex items-center space-x-2"
+            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
           >
-            <Plus className="h-5 w-5" />
-            <span>Tạo ví đầu tiên</span>
-          </motion.button>
-        </motion.div>
+            <Plus className="h-4 w-4" />
+            <span>Tạo ví</span>
+          </button>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {wallets.map((wallet, index) => (
-            <motion.div
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {wallets.map((wallet) => (
+            <div
               key={wallet.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -8, transition: { duration: 0.2 } }}
-              className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 p-6 shadow-2xl"
+              className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-md transition-all"
             >
-              {/* Card Background Pattern */}
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white"></div>
-                <div className="absolute -left-8 -bottom-8 w-40 h-40 rounded-full bg-white"></div>
-              </div>
-
-              {/* Card Content */}
-              <div className="relative">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-white/20 backdrop-blur-sm rounded-xl">
-                      <CreditCard className="h-5 w-5 text-white" />
+              {/* Card Header */}
+              <div className="bg-gradient-to-br from-blue-500 to-cyan-600 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-white/20 backdrop-blur rounded-lg">
+                      <WalletIcon className="h-4 w-4 text-white" />
                     </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-white">{wallet.name}</h3>
-                      {wallet.is_default && (
-                        <span className="inline-flex items-center space-x-1 mt-1 px-2 py-0.5 text-xs bg-white/30 text-white rounded-full backdrop-blur-sm">
-                          <Check className="h-3 w-3" />
-                          <span>Mặc định</span>
-                        </span>
-                      )}
-                    </div>
+                    <p className="text-white font-semibold text-sm">{wallet.name}</p>
                   </div>
-                  <span className="text-sm text-white/80 font-semibold">{wallet.currency}</span>
+                  {wallet.is_default && (
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-yellow-500/30 backdrop-blur rounded-full">
+                      <Check className="h-3 w-3 text-white" />
+                      <span className="text-[10px] font-bold text-white">Mặc định</span>
+                    </div>
+                  )}
                 </div>
-
-                <div className="mb-4">
-                  <p className="text-sm text-white/80 mb-1">Số dư</p>
-                  <p className="text-3xl font-bold text-white">
-                    {formatCurrency(wallet.balance || 0)}
+                <div>
+                  <p className="text-xs text-white/70 mb-1">Số dư</p>
+                  <p className="text-2xl font-bold text-white">
+                    {formatCurrency(wallet.balance || 0, wallet.currency, settings.numberFormat)}
                   </p>
                 </div>
-
                 {wallet.description && (
-                  <p className="text-sm text-white/90 mb-4 line-clamp-2">{wallet.description}</p>
+                  <p className="text-xs text-white/70 mt-2 line-clamp-1">{wallet.description}</p>
                 )}
-
-                {/* Action Buttons */}
-                <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => openEditModal(wallet)}
-                    className="flex-1 px-3 py-2 bg-white/20 backdrop-blur-sm text-white rounded-xl hover:bg-white/30 transition-all font-semibold flex items-center justify-center space-x-2"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                    <span>Sửa</span>
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleDelete(wallet.id)}
-                    className="flex-1 px-3 py-2 bg-red-500/80 backdrop-blur-sm text-white rounded-xl hover:bg-red-600 transition-all font-semibold flex items-center justify-center space-x-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span>Xóa</span>
-                  </motion.button>
-                </div>
               </div>
-            </motion.div>
+
+              {/* Card Actions */}
+              <div className="p-3 flex items-center justify-end gap-2 bg-gray-50">
+                <button
+                  onClick={() => openEditModal(wallet)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium border border-blue-200"
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                  <span>Sửa</span>
+                </button>
+                <button
+                  onClick={() => handleDelete(wallet.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium border border-red-200"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Xóa</span>
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}
 
       {/* Modal thêm/sửa ví */}
-      <AnimatePresence>
-        {showModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={() => setShowModal(false)}
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="glass backdrop-blur-2xl bg-white/90 rounded-3xl p-8 w-full max-w-md shadow-2xl border border-white/20"
-            >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                   {editingWallet ? 'Sửa ví' : 'Thêm ví mới'}
@@ -376,50 +307,38 @@ const Wallets = () => {
                 </div>
 
                 <div className="flex space-x-3 pt-4">
-                  <motion.button
+                  <button
                     type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       setShowModal(false);
                       setEditingWallet(null);
                     }}
-                    className="flex-1 px-6 py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+                    className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
                   >
                     Hủy
-                  </motion.button>
-                  <motion.button
+                  </button>
+                  <button
                     type="submit"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all"
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-semibold hover:shadow-md transition-all"
                   >
                     {editingWallet ? 'Cập nhật' : 'Tạo mới'}
-                  </motion.button>
+                  </button>
                 </div>
               </form>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* Modal chuyển tiền */}
-      <AnimatePresence>
-        {showTransferModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={() => setShowTransferModal(false)}
+      {showTransferModal && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowTransferModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="glass backdrop-blur-2xl bg-white/90 rounded-3xl p-8 w-full max-w-md shadow-2xl border border-white/20"
-            >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                   Chuyển tiền
@@ -508,30 +427,25 @@ const Wallets = () => {
                 </div>
 
                 <div className="flex space-x-3 pt-4">
-                  <motion.button
+                  <button
                     type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     onClick={() => setShowTransferModal(false)}
-                    className="flex-1 px-6 py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+                    className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
                   >
                     Hủy
-                  </motion.button>
-                  <motion.button
+                  </button>
+                  <button
                     type="submit"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex-1 px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2"
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2"
                   >
-                    <TrendingUp className="h-5 w-5" />
+                    <TrendingUp className="h-4 w-4" />
                     <span>Chuyển tiền</span>
-                  </motion.button>
+                  </button>
                 </div>
               </form>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 };

@@ -17,6 +17,7 @@ import {
   PieChart,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { notificationsAPI } from '../services/api';
 
 // NavLink component with icon
 const NavLink = ({ to, icon: Icon, label, isActive }) => (
@@ -45,6 +46,24 @@ const Layout = ({ children }) => {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   const isActive = (path) => location.pathname === path;
+
+  useEffect(() => {
+    let active = true;
+    const loadCount = async () => {
+      try {
+        const { data } = await notificationsAPI.unreadCount();
+        if (active) setUnreadNotifications(data?.unread || 0);
+      } catch {
+        // ignore
+      }
+    };
+    loadCount();
+    const id = setInterval(loadCount, 60000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [location.pathname]);
 
   return (
     <div className="flex flex-col min-h-screen pb-16 md:pb-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -269,24 +288,30 @@ const Layout = ({ children }) => {
             <div className="flex flex-col items-center justify-center relative">
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="flex flex-col items-center justify-center relative"
+                className="flex flex-col items-center justify-center relative w-full h-full"
               >
                 {showMobileMenu ? (
                   <motion.div
-                    animate={{ rotate: 90 }}
+                    initial={{ scale: 0.8, rotate: -90 }}
+                    animate={{ scale: 1, rotate: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     className="flex flex-col items-center gap-0.5"
                   >
-                    <X className="h-5 w-5 text-gray-700" strokeWidth={2.5} />
+                    <div className="p-2 bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl shadow-lg">
+                      <X className="h-5 w-5 text-white" strokeWidth={2.5} />
+                    </div>
                     <span className="text-[10px] font-bold text-gray-700">Đóng</span>
                   </motion.div>
                 ) : (
                   <motion.div
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     className="flex flex-col items-center gap-0.5"
                   >
-                    <Menu className="h-5 w-5 text-gray-400" strokeWidth={2} />
-                    <span className="text-[10px] font-medium text-gray-500">Menu</span>
+                    <div className="p-2 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl border border-gray-300 shadow-sm hover:shadow-md transition-all">
+                      <Menu className="h-5 w-5 text-gray-600" strokeWidth={2.5} />
+                    </div>
+                    <span className="text-[10px] font-semibold text-gray-600">Menu</span>
                   </motion.div>
                 )}
               </button>
