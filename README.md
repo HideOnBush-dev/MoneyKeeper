@@ -5,7 +5,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/catalizcs/moneykeeper/badge?style=for-the-badge)](https://www.codefactor.io/repository/github/catalizcs/moneykeeper)
 
 Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập ngân sách và đạt được mục tiêu tài chính một cách dễ dàng và hiệu quả. Ứng dụng được xây dựng với kiến trúc hiện đại:
-- **Backend**: Flask REST API với Python, SQLite, và tích hợp AI (LLM cục bộ)
+- **Backend**: Flask REST API với Python, SQLite, và tích hợp AI (Google Gemini)
 - **Frontend**: React + Vite SPA (Single Page Application)
 
 ## Tính năng chính
@@ -14,7 +14,7 @@ Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập n
 - **Quản lý ví:** Tạo và quản lý nhiều ví tiền (ví dụ: Tiền mặt, Tài khoản ngân hàng, v.v.).
 - **Lập ngân sách:** Đặt ngân sách cho từng danh mục chi tiêu.
 - **Phân tích chi tiêu:** Nhận báo cáo chi tiết, biểu đồ trực quan và phân tích xu hướng chi tiêu.
-- **Trợ lý AI (MoneyKeeper AI):**
+- **Trợ lý AI (MoneyKeeper AI - Powered by Google Gemini):**
   - Tự động phân loại chi tiêu.
   - Đề xuất ngân sách.
   - Phân tích mẫu chi tiêu và đưa ra lời khuyên.
@@ -32,17 +32,17 @@ Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập n
 
 Ứng dụng sử dụng kiến trúc tách biệt Frontend/Backend:
 
-- **Frontend (React + Vite)**: Chạy trên port 3000 trong development, build thành static files cho production
-- **Backend (Flask API)**: Chạy trên port 8000, cung cấp REST API endpoints
+- **Frontend (React + Vite)**: nằm trong thư mục `frontend/`, chạy port 3000 (dev), build ra static files
+- **Backend (Flask API)**: nằm trong thư mục `backend/`, chạy port 8000 (dev), cung cấp REST API
 - **Database**: SQLite cho dữ liệu persistent
-- **AI Engine**: LLM cục bộ để phân tích và gợi ý thông minh
+- **AI Engine**: Google Gemini API để phân tích và gợi ý thông minh
 
 ## Yêu cầu
 
 ### Backend
 - Python 3.7+
-- Các thư viện Python (xem file `requirements.txt`)
-- (Tùy chọn) CUDA-enabled GPU (để tăng tốc độ xử lý AI, nếu không sẽ dùng CPU)
+- Các thư viện Python (xem file `backend/requirements.txt`)
+- Google API Key (miễn phí) - Lấy tại https://aistudio.google.com/app/apikey
 
 ### Frontend
 - Node.js 18+ và npm
@@ -61,12 +61,15 @@ Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập n
 
 ### Cài đặt Backend
 
-2.  **Tạo và kích hoạt virtual environment (tùy chọn, nhưng rất khuyến khích):**
+2.  **Tạo và kích hoạt virtual environment (tùy chọn, nhưng khuyến khích):**
 
     ```bash
-    python3 -m venv venv
-    source venv/bin/activate   # Linux/macOS
-    venv\Scripts\activate    # Windows
+    cd backend
+    python -m venv venv
+    # Linux/macOS
+    source venv/bin/activate
+    # Windows PowerShell
+    .\venv\Scripts\Activate.ps1
     ```
 
 3.  **Cài đặt Python dependencies:**
@@ -75,42 +78,66 @@ Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập n
     pip install -r requirements.txt
     ```
 
-4.  **Tải model (nếu chưa có):**
+4.  **Cấu hình Google AI API:**
 
-    - Tạo thư mục `models` ở thư mục gốc của project.
-    - Tải model về và đặt vào thư mục này (ví dụ: `models/Llama-3.2-3B-Instruct`)
+    - Tạo file `.env` từ template:
 
       ```bash
-         mkdir models
-         cd models
-         git lfs install
-         git clone https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct # Ví dụ download model
+      cp .env.example .env
+      ```
+
+    - Lấy API key miễn phí tại: https://aistudio.google.com/app/apikey
+    - Mở file `.env` và thêm API key của bạn:
+
+      ```
+      GOOGLE_API_KEY=your-api-key-here
+      AI_MODEL_NAME=gemini-flash-latest
       ```
 
 5.  **Khởi tạo database (nếu chạy lần đầu):**
 
-    ```bash
-    flask init-db
-    ```
+    Bạn có thể dùng 1 trong 2 cách:
+
+    - Dùng Flask CLI:
+      ```bash
+      # từ thư mục backend (đã kích hoạt venv)
+      flask --app app:create_app create-tables
+      ```
+    - Hoặc chạy nhanh bằng Python:
+      ```bash
+      python - << "PY"
+      from app import create_app
+      from app.database import db
+      app = create_app()
+      with app.app_context():
+          db.create_all()
+          print("Created tables.")
+      PY
+      ```
 
     Hoặc nếu đã có dữ liệu
 
     ```
-     flask create-tables
+    flask --app app:create_app create-tables
     ```
 
 6.  (Optional) **Tạo tài khoản admin:**
 
     ```bash
-    python manage.py create-admin
+    # TODO: thêm lệnh create-admin nếu cần
     ```
 
-    (Sửa `manage.py` để thay đổi username/password mặc định)
+    (Có thể bổ sung lệnh CLI tạo admin sau)
 
 7.  **Chạy Flask backend:**
 
     ```bash
-    python run.py
+    # từ thư mục gốc dự án
+    # có thể dùng script tiện lợi (cả FE/BE):
+    .\dev.bat
+
+    # hoặc chỉ chạy backend
+    python backend\run.py
     ```
 
     Backend API sẽ chạy trên `http://localhost:8000`.
@@ -138,30 +165,30 @@ Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập n
     npm run build
     ```
 
-    Build sẽ tạo static files trong `app/static/dist` để Flask backend có thể serve.
+    Build sẽ tạo static files trong `backend/app/static/dist` để Flask backend có thể serve.
 
 ## Sử dụng
 
 ### Development Mode
-1. Chạy Flask backend: `python run.py` (port 8000)
+1. Chạy Flask backend: `python backend\run.py` (port 8000) hoặc dùng `dev.bat`
 2. Chạy Vite dev server: `cd frontend && npm run dev` (port 3000)
 3. Truy cập `http://localhost:3000` trên trình duyệt
 
 ### Production Mode
 1. Build frontend: `cd frontend && npm run build`
-2. Chạy Flask backend: `python run.py`
+2. Chạy Flask backend: `python backend\run.py`
 3. Truy cập `http://localhost:8000` trên trình duyệt (Flask sẽ serve static files từ `app/static/dist`)
 
 ## Cấu hình
 
-- Các tùy chọn cấu hình được đặt trong file `config.py`.
+- Các tùy chọn cấu hình được đặt trong file `backend/config.py`.
 - Bạn có thể tạo các cấu hình khác nhau (ví dụ: `DevelopmentConfig`, `ProductionConfig`) và chọn cấu hình bằng cách set biến môi trường `FLASK_ENV`. Ví dụ:
 
   ```bash
   export FLASK_ENV=production  # hoặc set FLASK_DEBUG=0
   ```
 
-- **Quan trọng:** Thay đổi `SECRET_KEY` trong `config.py` khi triển khai ứng dụng trên môi trường production.
+- **Quan trọng:** Thay đổi `SECRET_KEY` trong `backend/config.py` hoặc đặt qua biến môi trường khi triển khai production.
 
 ## Triển khai (Deployment)
 
@@ -169,7 +196,8 @@ Money Keeper là một ứng dụng web giúp bạn theo dõi chi tiêu, lập n
 
   ```bash
   pip install gunicorn
-  gunicorn --workers 4 --bind 0.0.0.0:8000 app:app  # Thay app:app nếu cần
+  # Từ thư mục backend
+  gunicorn --workers 4 --bind 0.0.0.0:8000 "app:create_app()"
   ```
 
 - Cấu hình reverse proxy (ví dụ: Nginx) để xử lý các static files và forward request đến Gunicorn.

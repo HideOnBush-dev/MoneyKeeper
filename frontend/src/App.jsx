@@ -1,6 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Wallet } from 'lucide-react';
 import { AuthProvider } from './contexts/AuthContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 import { useAuth } from './contexts/AuthContext';
+import { ToastProvider } from './components/Toast';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -13,16 +17,53 @@ import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
 import Landing from './pages/Landing';
 
+// Loading Screen Component
+const LoadingScreen = () => (
+  <div className="flex items-center justify-center min-h-screen gradient-bg">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="text-center"
+    >
+      <motion.div
+        animate={{
+          rotate: 360,
+          scale: [1, 1.2, 1],
+        }}
+        transition={{
+          rotate: { duration: 2, repeat: Infinity, ease: "linear" },
+          scale: { duration: 1, repeat: Infinity, ease: "easeInOut" },
+        }}
+        className="inline-flex p-6 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl shadow-2xl mb-4"
+      >
+        <Wallet className="h-12 w-12 text-white" />
+      </motion.div>
+      <motion.h2
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="text-2xl font-bold text-gradient"
+      >
+        Money Keeper
+      </motion.h2>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="text-gray-600 mt-2"
+      >
+        Đang tải...
+      </motion.p>
+    </motion.div>
+  </div>
+);
+
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full"></div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return user ? children : <Navigate to="/login" />;
@@ -33,11 +74,7 @@ const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full"></div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return !user ? children : <Navigate to="/dashboard" />;
@@ -46,10 +83,12 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
+      <SettingsProvider>
+        <ToastProvider>
+          <Router>
+            <Routes>
           {/* Public Routes */}
-          <Route
+            <Route
             path="/"
             element={
               <PublicRoute>
@@ -57,7 +96,7 @@ function App() {
               </PublicRoute>
             }
           />
-          <Route
+            <Route
             path="/login"
             element={
               <PublicRoute>
@@ -65,7 +104,7 @@ function App() {
               </PublicRoute>
             }
           />
-          <Route
+            <Route
             path="/register"
             element={
               <PublicRoute>
@@ -75,7 +114,7 @@ function App() {
           />
 
           {/* Protected Routes */}
-          <Route
+            <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
@@ -85,7 +124,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
+            <Route
             path="/expenses"
             element={
               <ProtectedRoute>
@@ -95,7 +134,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
+            <Route
             path="/wallets"
             element={
               <ProtectedRoute>
@@ -105,7 +144,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
+            <Route
             path="/budgets"
             element={
               <ProtectedRoute>
@@ -115,7 +154,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
+            <Route
             path="/chat"
             element={
               <ProtectedRoute>
@@ -125,7 +164,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
+            <Route
             path="/settings"
             element={
               <ProtectedRoute>
@@ -135,7 +174,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
+            <Route
             path="/notifications"
             element={
               <ProtectedRoute>
@@ -145,8 +184,10 @@ function App() {
               </ProtectedRoute>
             }
           />
-        </Routes>
-      </Router>
+            </Routes>
+          </Router>
+        </ToastProvider>
+      </SettingsProvider>
     </AuthProvider>
   );
 }

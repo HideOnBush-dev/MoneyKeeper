@@ -1,6 +1,41 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Home,
+  Wallet,
+  TrendingUp,
+  MessageSquare,
+  Bell,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  User,
+  DollarSign,
+  PieChart,
+} from 'lucide-react';
+import { cn } from '../lib/utils';
+
+// NavLink component with icon
+const NavLink = ({ to, icon: Icon, label, isActive }) => (
+  <Link to={to}>
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className={cn(
+        'flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all',
+        isActive
+          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+          : 'text-gray-600 hover:bg-gray-100'
+      )}
+    >
+      <Icon className="h-5 w-5" />
+      <span className="text-sm">{label}</span>
+    </motion.div>
+  </Link>
+);
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -12,60 +47,52 @@ const Layout = ({ children }) => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="flex flex-col min-h-screen pb-16 md:pb-0">
+    <div className="flex flex-col min-h-screen pb-16 md:pb-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Desktop Navigation */}
-      <nav className="bg-gradient-to-r from-blue-600 to-blue-800 shadow-md md:block hidden">
+      <motion.nav
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        className="bg-white/80 backdrop-blur-lg border-b border-gray-200 shadow-sm md:block hidden sticky top-0 z-50"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/dashboard" className="flex items-center">
-              <span className="text-xl font-bold text-white tracking-tight">Money Keeper</span>
+            <Link to="/dashboard" className="flex items-center space-x-2 group">
+              <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg group-hover:shadow-xl transition-all">
+                <Wallet className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Money Keeper</span>
             </Link>
 
-            <div className="ml-6 flex items-center space-x-6">
-              <Link
-                to="/dashboard"
-                className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-              >
-                Trang chủ
-              </Link>
-              <Link
-                to="/expenses"
-                className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-              >
-                Chi tiêu
-              </Link>
-              <Link
-                to="/wallets"
-                className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-              >
-                Ví
-              </Link>
-              <Link
-                to="/budgets"
-                className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-              >
-                Ngân sách
-              </Link>
-              <Link
-                to="/chat"
-                className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-              >
-                Trò chuyện
-              </Link>
+            <div className="ml-6 flex items-center space-x-2">
+              <NavLink to="/dashboard" icon={Home} label="Trang chủ" isActive={isActive('/dashboard')} />
+              <NavLink to="/expenses" icon={DollarSign} label="Chi tiêu" isActive={isActive('/expenses')} />
+              <NavLink to="/wallets" icon={Wallet} label="Ví" isActive={isActive('/wallets')} />
+              <NavLink to="/budgets" icon={PieChart} label="Ngân sách" isActive={isActive('/budgets')} />
+              <NavLink to="/chat" icon={MessageSquare} label="AI Chat" isActive={isActive('/chat')} />
 
               {/* User Menu */}
-              <div className="ml-3 relative">
-                <button
+              <div className="ml-6 relative">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center max-w-xs rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-lg transition-all"
                 >
-                  <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+                  <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold">
                     {user?.username?.[0]?.toUpperCase()}
                   </div>
-                </button>
+                  <span className="text-sm font-medium hidden lg:block">{user?.username}</span>
+                </motion.button>
 
-                {showUserMenu && (
-                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-50">
+                <AnimatePresence>
+                  {showUserMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="origin-top-right absolute right-0 mt-2 w-56 rounded-2xl shadow-xl py-2 bg-white/90 backdrop-blur-lg ring-1 ring-black ring-opacity-5 z-50"
+                  >
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900">{user?.username}</p>
                       <p className="text-xs text-gray-500">{user?.email}</p>
@@ -73,11 +100,12 @@ const Layout = ({ children }) => {
 
                     <Link
                       to="/notifications"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors rounded-lg mx-2"
                     >
-                      Thông báo
+                      <Bell className="h-4 w-4" />
+                      <span>Thông báo</span>
                       {unreadNotifications > 0 && (
-                        <span className="ml-auto bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-xs">
+                        <span className="ml-auto bg-red-500 text-white py-0.5 px-2 rounded-full text-xs font-medium">
                           {unreadNotifications}
                         </span>
                       )}
@@ -85,156 +113,272 @@ const Layout = ({ children }) => {
 
                     <Link
                       to="/settings"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors rounded-lg mx-2"
                     >
-                      Cài đặt
+                      <Settings className="h-4 w-4" />
+                      <span>Cài đặt</span>
                     </Link>
 
-                    <div className="border-t border-gray-100"></div>
+                    <div className="border-t border-gray-200 my-2"></div>
 
                     <button
                       onClick={logout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+                      className="flex items-center space-x-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors rounded-lg mx-2"
                     >
-                      Đăng xuất
+                      <LogOut className="h-4 w-4" />
+                      <span>Đăng xuất</span>
                     </button>
-                  </div>
+                  </motion.div>
                 )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Main Content */}
-      <main className="flex-1 mx-auto w-full py-10 px-4 sm:px-6 lg:px-8">
+      <motion.main
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex-1 mx-auto w-full py-10 px-4 sm:px-6 lg:px-8"
+      >
         {children}
-      </main>
+      </motion.main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 md:hidden">
-        <div className="grid grid-cols-5 h-16">
-          <Link
-            to="/dashboard"
-            className={`flex flex-col items-center justify-center ${
-              isActive('/dashboard') ? 'text-blue-600' : 'text-gray-500'
-            }`}
-          >
-            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-              />
-            </svg>
-            <span className="text-xs mt-1 font-medium">Trang chủ</span>
-          </Link>
+      <motion.div
+        initial={{ y: 100 }}
+        animate={{ y: 0 }}
+        className="fixed bottom-0 left-0 w-full z-50 md:hidden px-2 pb-2"
+      >
+        <nav className="glass backdrop-blur-2xl bg-white/90 rounded-[1.5rem] shadow-2xl border border-white/30 overflow-hidden">
+          <div className="grid grid-cols-5 h-16">
+            {/* Dashboard */}
+            <Link
+              to="/dashboard"
+              className="flex flex-col items-center justify-center transition-all relative"
+            >
+              {isActive('/dashboard') ? (
+                <motion.div
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  className="flex flex-col items-center gap-0.5"
+                >
+                  <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
+                    <Home className="h-5 w-5 text-white" strokeWidth={2.5} />
+                  </div>
+                  <span className="text-[10px] font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Trang chủ</span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  whileTap={{ scale: 0.9 }}
+                  className="flex flex-col items-center gap-0.5"
+                >
+                  <Home className="h-5 w-5 text-gray-400" strokeWidth={2} />
+                  <span className="text-[10px] font-medium text-gray-500">Trang chủ</span>
+                </motion.div>
+              )}
+            </Link>
 
-          <Link
-            to="/expenses"
-            className={`flex flex-col items-center justify-center ${
-              isActive('/expenses') ? 'text-blue-600' : 'text-gray-500'
-            }`}
-          >
-            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span className="text-xs mt-1 font-medium">Chi tiêu</span>
-          </Link>
+            {/* Expenses */}
+            <Link
+              to="/expenses"
+              className="flex flex-col items-center justify-center transition-all relative"
+            >
+              {isActive('/expenses') ? (
+                <motion.div
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  className="flex flex-col items-center gap-0.5"
+                >
+                  <div className="p-2 bg-gradient-to-br from-pink-600 to-rose-600 rounded-xl shadow-lg">
+                    <DollarSign className="h-5 w-5 text-white" strokeWidth={2.5} />
+                  </div>
+                  <span className="text-[10px] font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">Chi tiêu</span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  whileTap={{ scale: 0.9 }}
+                  className="flex flex-col items-center gap-0.5"
+                >
+                  <DollarSign className="h-5 w-5 text-gray-400" strokeWidth={2} />
+                  <span className="text-[10px] font-medium text-gray-500">Chi tiêu</span>
+                </motion.div>
+              )}
+            </Link>
 
-          <Link
-            to="/wallets"
-            className={`flex flex-col items-center justify-center ${
-              isActive('/wallets') ? 'text-blue-600' : 'text-gray-500'
-            }`}
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M19 6H5a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2z"
-              />
-            </svg>
-            <span className="text-xs mt-1 font-medium">Ví</span>
-          </Link>
+            {/* Wallets - Center FAB */}
+            <Link
+              to="/wallets"
+              className="flex flex-col items-center justify-center transition-all relative -mt-2"
+            >
+              {isActive('/wallets') ? (
+                <motion.div
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  className="flex flex-col items-center"
+                >
+                  <div className="p-3 bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600 rounded-[1.25rem] shadow-2xl border-2 border-white">
+                    <Wallet className="h-6 w-6 text-white" strokeWidth={2.5} />
+                  </div>
+                  <span className="text-[10px] mt-1 font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">Ví</span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  whileTap={{ scale: 0.9 }}
+                  className="flex flex-col items-center"
+                >
+                  <div className="p-3 bg-white rounded-[1.25rem] shadow-xl border-2 border-gray-100 text-gray-400">
+                    <Wallet className="h-6 w-6" strokeWidth={2} />
+                  </div>
+                  <span className="text-[10px] mt-1 font-medium text-gray-500">Ví</span>
+                </motion.div>
+              )}
+            </Link>
 
-          <Link
-            to="/budgets"
-            className={`flex flex-col items-center justify-center ${
-              isActive('/budgets') ? 'text-blue-600' : 'text-gray-500'
-            }`}
-          >
-            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-              />
-            </svg>
-            <span className="text-xs mt-1 font-medium">Ngân sách</span>
-          </Link>
+            {/* Budgets */}
+            <Link
+              to="/budgets"
+              className="flex flex-col items-center justify-center transition-all relative"
+            >
+              {isActive('/budgets') ? (
+                <motion.div
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  className="flex flex-col items-center gap-0.5"
+                >
+                  <div className="p-2 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-lg">
+                    <PieChart className="h-5 w-5 text-white" strokeWidth={2.5} />
+                  </div>
+                  <span className="text-[10px] font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Ngân sách</span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  whileTap={{ scale: 0.9 }}
+                  className="flex flex-col items-center gap-0.5"
+                >
+                  <PieChart className="h-5 w-5 text-gray-400" strokeWidth={2} />
+                  <span className="text-[10px] font-medium text-gray-500">Ngân sách</span>
+                </motion.div>
+              )}
+            </Link>
 
-          <button
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="flex flex-col items-center justify-center relative text-gray-500"
-          >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-            <span className="text-xs mt-1 font-medium">Thêm</span>
-
-            {showMobileMenu && (
-              <div className="absolute bottom-full right-0 mb-2 w-48 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5">
-                <div className="py-1">
-                  <Link
-                    to="/chat"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            {/* Menu */}
+            <div className="flex flex-col items-center justify-center relative">
+              <button
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className="flex flex-col items-center justify-center relative"
+              >
+                {showMobileMenu ? (
+                  <motion.div
+                    animate={{ rotate: 90 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className="flex flex-col items-center gap-0.5"
                   >
-                    Trò chuyện AI
-                  </Link>
-                  <Link
-                    to="/notifications"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    <X className="h-5 w-5 text-gray-700" strokeWidth={2.5} />
+                    <span className="text-[10px] font-bold text-gray-700">Đóng</span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    whileTap={{ scale: 0.9 }}
+                    className="flex flex-col items-center gap-0.5"
                   >
-                    Thông báo
-                    {unreadNotifications > 0 && (
-                      <span className="ml-auto bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-xs">
-                        {unreadNotifications}
-                      </span>
-                    )}
-                  </Link>
-                  <Link
-                    to="/settings"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Cài đặt
-                  </Link>
-                  <div className="border-t border-gray-100 my-1"></div>
-                  <button
-                    onClick={logout}
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-                  >
-                    Đăng xuất
-                  </button>
+                    <Menu className="h-5 w-5 text-gray-400" strokeWidth={2} />
+                    <span className="text-[10px] font-medium text-gray-500">Menu</span>
+                  </motion.div>
+                )}
+              </button>
+            </div>
+          </div>
+        </nav>
+      </motion.div>
+
+      {/* Overlay & Menu Popup */}
+      {showMobileMenu && (
+        <>
+          <div
+            className="fixed left-0 right-0 top-0 bottom-16 bg-black/40 z-[99]"
+            onClick={() => setShowMobileMenu(false)}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="fixed left-0 right-0 bottom-20 mx-auto w-[90vw] max-w-xs z-[101] rounded-3xl glass backdrop-blur-2xl bg-white/95 shadow-2xl border border-white/20 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* User Info */}
+            <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                  {user?.username?.[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">{user?.username}</p>
+                  <p className="text-xs text-gray-600">{user?.email}</p>
                 </div>
               </div>
-            )}
-          </button>
-        </div>
-      </nav>
+            </div>
+
+            <div className="py-2">
+              <Link
+                to="/chat"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all mx-2 rounded-2xl group"
+              >
+                <div className="p-2 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors">
+                  <MessageSquare className="h-4 w-4 text-blue-600" />
+                </div>
+                <span className="font-medium">Trò chuyện AI</span>
+              </Link>
+              
+              <Link
+                to="/notifications"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-yellow-50 hover:to-orange-50 transition-all mx-2 rounded-2xl group"
+              >
+                <div className="p-2 bg-yellow-100 rounded-xl group-hover:bg-yellow-200 transition-colors relative">
+                  <Bell className="h-4 w-4 text-yellow-600" />
+                  {unreadNotifications > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">
+                      {unreadNotifications}
+                    </span>
+                  )}
+                </div>
+                <span className="font-medium">Thông báo</span>
+              </Link>
+              
+              <Link
+                to="/settings"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-slate-50 transition-all mx-2 rounded-2xl group"
+              >
+                <div className="p-2 bg-gray-100 rounded-xl group-hover:bg-gray-200 transition-colors">
+                  <Settings className="h-4 w-4 text-gray-600" />
+                </div>
+                <span className="font-medium">Cài đặt</span>
+              </Link>
+              
+              <div className="border-t border-gray-200 my-2 mx-4"></div>
+              
+              <button
+                onClick={() => {
+                  logout();
+                  setShowMobileMenu(false);
+                }}
+                className="flex items-center space-x-3 w-full px-4 py-3 text-sm text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 transition-all mx-2 rounded-2xl group"
+              >
+                <div className="p-2 bg-red-100 rounded-xl group-hover:bg-red-200 transition-colors">
+                  <LogOut className="h-4 w-4 text-red-600" />
+                </div>
+                <span className="font-medium">Đăng xuất</span>
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
     </div>
   );
 };
