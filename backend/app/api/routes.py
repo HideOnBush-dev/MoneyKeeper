@@ -7,10 +7,15 @@ from app.security import (
     validate_amount, validate_category, sanitize_string,
     validate_positive_integer, validate_date
 )
+from app.utils.ocr import ReceiptOCR
+from app.utils.ai_invoice_extractor import ai_invoice_extractor
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Initialize processors
+receipt_ocr = ReceiptOCR()
 
 
 @bp.route('/auth/me')
@@ -152,7 +157,9 @@ def get_wallets():
                 'id': w.id,
                 'name': sanitize_string(w.name, max_length=100),
                 'balance': float(w.balance),
-                'currency': getattr(w, 'currency', 'VND')
+                'currency': getattr(w, 'currency', 'VND'),
+                'description': getattr(w, 'description', '') or '',
+                'is_default': getattr(w, 'is_default', False)
             } for w in wallets]
         }), 200
         
@@ -187,3 +194,122 @@ def get_budgets():
     except Exception as e:
         logger.exception(f"Error fetching budgets: {e}")
         abort(500, description="An error occurred")
+
+
+@bp.route('/process_receipt', methods=['POST'])
+@login_required
+def process_receipt():
+    """Process receipt image using OCR"""
+    try:
+        if 'receipt' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'Không tìm thấy ảnh'
+            }), 400
+
+        file = request.files['receipt']
+        if not file.filename:
+            return jsonify({
+                'success': False,
+                'error': 'Không tìm thấy ảnh'
+            }), 400
+
+        if not file.filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+            return jsonify({
+                'success': False,
+                'error': 'Chỉ hỗ trợ file ảnh (.jpg, .png)'
+            }), 400
+
+        # Read file content
+        try:
+            file_content = file.read()
+            if not file_content or len(file_content) == 0:
+                return jsonify({
+                    'success': False,
+                    'error': 'File is empty or could not be read'
+                }), 400
+        except Exception as e:
+            logger.exception(f"Error reading file: {e}")
+            return jsonify({
+                'success': False,
+                'error': f'Error reading file: {str(e)}'
+            }), 400
+
+        # Try AI extraction first (more accurate)
+        result = None
+        use_ai = True
+        
+        try:
+            result = ai_invoice_extractor.extract_from_image(file_content)
+            logger.info("AI extraction successful")
+        except Exception as ai_error:
+            logger.warning(f"AI extraction failed, falling back to OCR: {ai_error}")
+            use_ai = False
+        
+        # Fallback to OCR if AI fails or returns no data
+        if not use_ai or (result and not result.get('amount')):
+            logger.info("Using OCR as fallback")
+            result = receipt_ocr.process_image(file_content)
+            
+            # Check for OCR failures
+            if result.get('error'):
+                logger.warning(f"OCR processing failed: {result['error']}")
+                return jsonify({
+                    'success': False,
+                    'error': result['error']
+                }), 400
+        
+        # Format date if it's a datetime object (from OCR) or string (from AI)
+        date_value = None
+        if result.get('date'):
+            if isinstance(result['date'], str):
+                date_value = result['date']
+            else:
+                # It's a datetime object from OCR
+                date_value = result['date'].isoformat() if hasattr(result['date'], 'isoformat') else None
+
+        # If OCR was used and we have text, try to suggest category
+        suggested_category = result.get('suggested_category')
+        if not suggested_category and result.get('text'):
+            try:
+                from app.ai_engine.features.categorizer import ExpenseCategorizer
+                categorizer = ExpenseCategorizer()
+                # Use note or text for categorization
+                description = result.get('note') or result.get('text', '')[:200]  # Limit text length
+                if description:
+                    vi_category = categorizer.predict_category(description)
+                    # Map Vietnamese category to English slug
+                    category_mapping = {
+                        "ăn uống": "food",
+                        "di chuyển": "transport",
+                        "mua sắm": "shopping",
+                        "giải trí": "entertainment",
+                        "sức khỏe": "health",
+                        "giáo dục": "education",
+                        "hóa đơn": "utilities",
+                        "công việc": "other",
+                        "khác": "other",
+                    }
+                    suggested_category = category_mapping.get(vi_category, "other")
+            except Exception as e:
+                logger.warning(f"Failed to suggest category from OCR: {e}")
+
+        return jsonify({
+            'success': True,
+            'amount': result.get('amount'),
+            'date': date_value,
+            'fee': result.get('fee'),
+            'note': result.get('note'),
+            'merchant': result.get('merchant'),
+            'invoice_number': result.get('invoice_number'),
+            'suggested_category': suggested_category,
+            'text': result.get('text', ''),
+            'method': 'ai' if use_ai else 'ocr'  # Indicate which method was used
+        }), 200
+
+    except Exception as e:
+        logger.exception(f"Error processing receipt: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Không thể xử lý ảnh'
+        }), 500

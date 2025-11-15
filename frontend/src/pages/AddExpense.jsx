@@ -7,6 +7,23 @@ import QuickTransactionForm from '../components/QuickTransactionForm';
 import OCRScanner from '../components/OCRScanner';
 import PageHeader from '../components/PageHeader';
 
+// Category mappings for display
+const EXPENSE_CATEGORIES = [
+  { value: 'food', label: 'Ăn uống', emoji: '🍔' },
+  { value: 'transport', label: 'Di chuyển', emoji: '🚗' },
+  { value: 'shopping', label: 'Mua sắm', emoji: '🛍️' },
+  { value: 'entertainment', label: 'Giải trí', emoji: '🎮' },
+  { value: 'health', label: 'Sức khỏe', emoji: '💊' },
+  { value: 'education', label: 'Giáo dục', emoji: '📚' },
+  { value: 'utilities', label: 'Tiện ích', emoji: '💡' },
+  { value: 'other', label: 'Khác', emoji: '📦' },
+];
+
+const getCategoryLabel = (categoryValue) => {
+  const category = EXPENSE_CATEGORIES.find(c => c.value === categoryValue);
+  return category ? `${category.emoji} ${category.label}` : categoryValue;
+};
+
 const AddExpense = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -102,20 +119,37 @@ const AddExpense = () => {
 
       {/* OCR Result Badge */}
       {ocrData && (
-        <div className="mb-3 p-2.5 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-          <Receipt className="h-4 w-4 text-green-600 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-xs font-semibold text-green-800">Dữ liệu OCR</p>
-            <p className="text-[11px] text-green-600">
-              {ocrData.amount?.toLocaleString('vi-VN')} đ
-            </p>
+        <div className="mb-3 p-2.5 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2 mb-1">
+            <Receipt className="h-4 w-4 text-green-600 flex-shrink-0" />
+            <p className="text-xs font-semibold text-green-800">Dữ liệu OCR đã quét</p>
+            <button
+              onClick={() => setOcrData(null)}
+              className="ml-auto text-xs text-green-600 hover:text-green-700 font-medium px-2"
+            >
+              ✕
+            </button>
           </div>
-          <button
-            onClick={() => setOcrData(null)}
-            className="text-xs text-green-600 hover:text-green-700 font-medium px-2"
-          >
-            ✕
-          </button>
+          <div className="space-y-0.5 text-[11px] text-green-700">
+            <p>Số tiền: <strong>{ocrData.amount?.toLocaleString('vi-VN')} đ</strong></p>
+            {ocrData.fee && ocrData.fee > 0 && (
+              <p>Phí/VAT: <strong>{ocrData.fee.toLocaleString('vi-VN')} đ</strong></p>
+            )}
+            {ocrData.suggested_category && (
+              <p className="text-blue-600">
+                Danh mục: <strong>🤖 {getCategoryLabel(ocrData.suggested_category)}</strong>
+              </p>
+            )}
+            {ocrData.merchant && (
+              <p>Cửa hàng: <strong>{ocrData.merchant}</strong></p>
+            )}
+            {ocrData.invoice_number && (
+              <p>Mã HĐ: <strong>{ocrData.invoice_number}</strong></p>
+            )}
+            {ocrData.note && (
+              <p className="text-blue-600">Ghi chú: <strong>{ocrData.note}</strong></p>
+            )}
+          </div>
         </div>
       )}
 

@@ -59,8 +59,10 @@ const Wallets = () => {
     e.preventDefault();
     try {
       if (editingWallet) {
-        await walletAPI.update(editingWallet.id, formData);
-        alert('Cập nhật ví thành công!');
+        const response = await walletAPI.update(editingWallet.id, formData);
+        if (response?.data?.message) {
+          alert('Cập nhật ví thành công!');
+        }
       } else {
         await walletAPI.create(formData);
         alert('Tạo ví mới thành công!');
@@ -71,7 +73,8 @@ const Wallets = () => {
       fetchWallets();
     } catch (error) {
       console.error('Error saving wallet:', error);
-      alert(error.response?.data?.error || 'Lỗi khi lưu ví');
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Lỗi khi lưu ví';
+      alert(errorMessage);
     }
   };
 
@@ -92,12 +95,15 @@ const Wallets = () => {
   const handleDelete = async (id) => {
     if (!confirm('Bạn có chắc muốn xóa ví này?')) return;
     try {
-      await walletAPI.delete(id);
-      alert('Xóa ví thành công!');
+      const response = await walletAPI.delete(id);
+      if (response?.data?.message) {
+        alert('Xóa ví thành công!');
+      }
       fetchWallets();
     } catch (error) {
       console.error('Error deleting wallet:', error);
-      alert(error.response?.data?.error || 'Lỗi khi xóa ví');
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Lỗi khi xóa ví';
+      alert(errorMessage);
     }
   };
 
@@ -270,7 +276,9 @@ const Wallets = () => {
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Số dư ban đầu</label>
                   <div className="relative">
-                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    {/* // chang to VND sign  */}
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 ">đ</span>
+                      {/* <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" /> */}
                     <input
                       type="number"
                       value={formData.balance}

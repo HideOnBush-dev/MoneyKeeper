@@ -403,7 +403,8 @@ const Budgets = () => {
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Số tiền ngân sách *</label>
                   <div className="relative">
-                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    {/* <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" /> */}
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 ">đ</span>
                     <input
                       type="text"
                       value={amountInput}

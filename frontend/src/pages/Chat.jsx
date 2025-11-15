@@ -18,12 +18,12 @@ const PERSONALITIES = [
 ];
 
 const QUICK_ACTIONS = [
-  { icon: TrendingUp, text: "/spending month=THIS", label: "Phân tích chi tiêu tháng này", color: "from-blue-500 to-cyan-500", emoji: "📊" },
-  { icon: PieChart, text: "/balance", label: "Tổng quan tài chính của tôi", color: "from-purple-500 to-pink-500", emoji: "💰" },
-  { icon: Lightbulb, text: "/efficiency month=THIS", label: "Đánh giá hiệu quả ngân sách", color: "from-amber-500 to-orange-500", emoji: "🧮" },
-  { icon: Sparkles, text: "/budget month=THIS category=\"Ăn uống\" limit=3000000", label: "Lên kế hoạch ngân sách", color: "from-green-500 to-emerald-500", emoji: "✨" },
-  { icon: BarChart3, text: "/trends months=6", label: "Xu hướng thu - chi 6 tháng", color: "from-indigo-500 to-purple-500", emoji: "📈" },
-  { icon: Star, text: "/allocation month=THIS", label: "Phân bổ chi tiêu", color: "from-rose-500 to-pink-500", emoji: "🧩" },
+  { icon: TrendingUp, text: "Phân tích chi tiêu tháng này", label: "Phân tích chi tiêu tháng này", color: "from-blue-500 to-cyan-500", emoji: "📊" },
+  { icon: PieChart, text: "Tổng quan tài chính của tôi", label: "Tổng quan tài chính của tôi", color: "from-purple-500 to-pink-500", emoji: "💰" },
+  { icon: Lightbulb, text: "Đánh giá hiệu quả ngân sách", label: "Đánh giá hiệu quả ngân sách", color: "from-amber-500 to-orange-500", emoji: "🧮" },
+  { icon: Sparkles, text: "Lên kế hoạch ngân sách", label: "Lên kế hoạch ngân sách", color: "from-green-500 to-emerald-500", emoji: "✨" },
+  { icon: BarChart3, text: "Xu hướng thu - chi 6 tháng", label: "Xu hướng thu - chi 6 tháng", color: "from-indigo-500 to-purple-500", emoji: "📈" },
+  { icon: Star, text: "Phân bổ chi tiêu", label: "Phân bổ chi tiêu", color: "from-rose-500 to-pink-500", emoji: "🧩" },
 ];
 
 const Chat = () => {

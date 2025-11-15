@@ -175,12 +175,15 @@ def update_wallet(wallet_id):
             is_default = bool(data['is_default'])
             if is_default and not wallet.is_default:
                 # Unset other defaults
-                Wallet.query.filter_by(
+                other_defaults = Wallet.query.filter_by(
                     user_id=current_user.id,
                     is_default=True
-                ).update({'is_default': False})
+                ).all()
+                for other_wallet in other_defaults:
+                    other_wallet.is_default = False
             wallet.is_default = is_default
         
+        db.session.add(wallet)
         db.session.commit()
         
         logger.info(f"User {current_user.id} updated wallet {wallet_id}")
@@ -221,16 +224,29 @@ def delete_wallet(wallet_id):
         ).first()
         
         if not wallet:
-            abort(404, description="Wallet not found")
+            return jsonify({
+                'error': 'Wallet not found',
+                'message': 'Wallet not found'
+            }), 404
         
         # Check if it's the default wallet
         if wallet.is_default:
-            abort(400, description="Cannot delete default wallet")
+            return jsonify({
+                'error': 'Cannot delete default wallet',
+                'message': 'Cannot delete default wallet. Please set another wallet as default first.'
+            }), 400
         
         # Check if wallet has transactions
-        transaction_count = Expense.query.filter_by(wallet_id=wallet_id).count()
-        if transaction_count > 0:
-            abort(400, description="Cannot delete wallet with existing transactions")
+        try:
+            transaction_count = Expense.query.filter_by(wallet_id=wallet_id).count()
+            if transaction_count > 0:
+                return jsonify({
+                    'error': 'Cannot delete wallet with transactions',
+                    'message': f'Cannot delete wallet with {transaction_count} existing transaction(s). Please delete or move the transactions first.'
+                }), 400
+        except Exception as e:
+            logger.exception(f"Error checking transactions: {e}")
+            # Continue with deletion if we can't check transactions
         
         db.session.delete(wallet)
         db.session.commit()
@@ -244,11 +260,17 @@ def delete_wallet(wallet_id):
     except SQLAlchemyError as e:
         db.session.rollback()
         logger.exception(f"Database error deleting wallet: {e}")
-        abort(500, description="Failed to delete wallet")
+        return jsonify({
+            'error': 'Database error',
+            'message': 'Failed to delete wallet due to database error'
+        }), 500
     except Exception as e:
         db.session.rollback()
         logger.exception(f"Error deleting wallet: {e}")
-        abort(500, description="An error occurred")
+        return jsonify({
+            'error': 'Internal server error',
+            'message': 'An unexpected error occurred while deleting the wallet'
+        }), 500
 
 
 @bp.route('/wallets/<int:wallet_id>/transactions', methods=['GET'])

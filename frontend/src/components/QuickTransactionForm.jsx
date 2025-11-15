@@ -6,7 +6,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/numberFormat';
 import Select from './Select';
 import CategoryGrid from './CategoryGrid';
-
+  
 // Expense categories
 const EXPENSE_CATEGORIES = [
   { value: 'food', label: 'Ăn uống', emoji: '🍔' },
@@ -38,7 +38,7 @@ const QuickTransactionForm = ({
   initialType = 'expense', // 'expense' | 'income'
   wallets: walletsProp,
   onCancel,
-  initialData = null, // OCR data: { amount, date }
+  initialData = null, // OCR/AI data: { amount, date, fee, note, merchant, invoice_number, suggested_category }
 }) => {
   const { toast } = useToast();
   const { settings } = useSettings();
@@ -48,6 +48,9 @@ const QuickTransactionForm = ({
   // Safely handle initialData amount
   const initialAmount = initialData?.amount && !isNaN(initialData.amount) ? initialData.amount : 0;
   const initialDate = initialData?.date || todayStr();
+  const initialFee = initialData?.fee && !isNaN(initialData.fee) ? initialData.fee : null;
+  const initialNote = initialData?.note || '';
+  const suggestedCategory = initialData?.suggested_category;
   
   const [amountInput, setAmountInput] = useState(
     initialAmount > 0 ? formatAmountInput(initialAmount, { numberFormat: settings.numberFormat }) : ''
@@ -58,15 +61,56 @@ const QuickTransactionForm = ({
   const getDefaultCategory = (isExpense) => {
     return isExpense ? 'food' : 'salary';
   };
+  
+  // Determine initial category: use suggested if available and valid, otherwise default
+  const getInitialCategory = (isExpense) => {
+    if (suggestedCategory) {
+      // Validate that suggested category exists in current category list
+      const categories = isExpense ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+      const isValid = categories.some(c => c.value === suggestedCategory);
+      if (isValid) {
+        return suggestedCategory;
+      }
+    }
+    return getDefaultCategory(isExpense);
+  };
 
   const [formData, setFormData] = useState({
     amount: initialAmount,
-    category: getDefaultCategory(initialType === 'expense'),
-    description: '',
+    category: getInitialCategory(initialType === 'expense'),
+    description: initialNote, // Use OCR note as initial description
     wallet_id: '',
     is_expense: initialType === 'expense',
     date: initialDate,
   });
+  
+  // Update form when initialData changes (from OCR)
+  useEffect(() => {
+    if (initialData) {
+      if (initialData.amount && !isNaN(initialData.amount)) {
+        const isExpense = formData.is_expense;
+        const categories = isExpense ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+        
+        // Determine category to use
+        let categoryToUse = formData.category;
+        if (initialData.suggested_category) {
+          const isValid = categories.some(c => c.value === initialData.suggested_category);
+          if (isValid) {
+            categoryToUse = initialData.suggested_category;
+          }
+        }
+        
+        setFormData(prev => ({
+          ...prev,
+          amount: initialData.amount,
+          category: categoryToUse,
+          description: initialData.note || prev.description,
+          date: initialData.date || prev.date,
+        }));
+        setAmountInput(formatAmountInput(initialData.amount, { numberFormat: settings.numberFormat }));
+      }
+    }
+  }, [initialData, settings.numberFormat, formData.is_expense]);
 
   // Get current categories based on transaction type
   const currentCategories = useMemo(() => {
@@ -79,9 +123,23 @@ const QuickTransactionForm = ({
     // Only reset if current category is not in the new category list
     const isValid = currentCategories.some(c => c.value === formData.category);
     if (!isValid) {
-      setFormData((prev) => ({ ...prev, category: defaultCat }));
+      // If we have a suggested category and it's valid, use it; otherwise use default
+      let categoryToUse = defaultCat;
+      if (suggestedCategory) {
+        const isSuggestedValid = currentCategories.some(c => c.value === suggestedCategory);
+        if (isSuggestedValid) {
+          categoryToUse = suggestedCategory;
+        }
+      }
+      setFormData((prev) => {
+        // Only update if category actually needs to change
+        if (prev.category !== categoryToUse) {
+          return { ...prev, category: categoryToUse };
+        }
+        return prev;
+      });
     }
-  }, [formData.is_expense, formData.category, currentCategories]);
+  }, [formData.is_expense, formData.category, currentCategories, suggestedCategory]);
 
   useEffect(() => {
     const fetchIfNeeded = async () => {
@@ -216,7 +274,14 @@ const QuickTransactionForm = ({
             name="amount"
             value={amountInput}
             onChange={handleChange}
-            onBlur={() => setAmountInput(formatAmountInput(amountInput || formData.amount, { numberFormat: settings.numberFormat }))}
+            onBlur={() => {
+              // Parse the current input to get the actual number, then format it
+              const parsed = parseAmountInput(amountInput || String(formData.amount || ''), { numberFormat: settings.numberFormat });
+              if (parsed > 0 || amountInput) {
+                setAmountInput(formatAmountInput(parsed, { numberFormat: settings.numberFormat }));
+                setFormData((prev) => ({ ...prev, amount: parsed }));
+              }
+            }}
             ref={amountRef}
             className={`w-full py-3 pl-10 pr-4 border-2 rounded-xl focus:outline-none focus:ring-2 transition-all text-lg font-semibold ${
               formData.is_expense 
@@ -227,12 +292,28 @@ const QuickTransactionForm = ({
             required
           />
         </div>
+        {initialFee && initialFee > 0 && (
+          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs text-blue-700">
+              <span className="font-semibold">Phí/VAT đã phát hiện:</span>{' '}
+              {formatAmountInput(initialFee, { numberFormat: settings.numberFormat })} đ
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Category - Grid for page, Select for modal */}
       {!isInline && (
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-2">Danh mục</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-semibold text-gray-600">Danh mục</label>
+            {suggestedCategory && formData.category === suggestedCategory && (
+              <span className="text-xs text-blue-600 font-medium flex items-center gap-1">
+                <span>🤖</span>
+                <span>Tự động chọn</span>
+              </span>
+            )}
+          </div>
           {isPage ? (
             <CategoryGrid
               categories={currentCategories}
