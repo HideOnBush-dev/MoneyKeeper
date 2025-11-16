@@ -156,7 +156,9 @@ def get_wallets():
                 'id': w.id,
                 'name': sanitize_string(w.name, max_length=100),
                 'balance': float(w.balance),
-                'currency': getattr(w, 'currency', 'VND')
+                'currency': getattr(w, 'currency', 'VND'),
+                'description': getattr(w, 'description', '') or '',
+                'is_default': getattr(w, 'is_default', False)
             } for w in wallets]
         }), 200
         
