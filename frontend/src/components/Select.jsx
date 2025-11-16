@@ -39,53 +39,53 @@ const Select = ({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-xl hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+        className={`w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl hover:border-gray-300 dark:hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
           disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
         }`}
       >
         <div className="flex items-center gap-3 flex-1 text-left">
           {Icon && (
             <div className="flex-shrink-0">
-              <Icon className="h-5 w-5 text-gray-400" />
+              <Icon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
             </div>
           )}
           {selectedOption ? (
-            <span className="font-medium text-gray-900 flex items-center gap-2">
+            <span className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
               {selectedOption.icon && <span className="text-lg">{selectedOption.icon}</span>}
               {selectedOption.label}
             </span>
           ) : (
-            <span className="text-gray-400">{placeholder}</span>
+            <span className="text-gray-400 dark:text-gray-500">{placeholder}</span>
           )}
         </div>
         <ChevronDown 
-          className={`h-5 w-5 text-gray-400 transition-transform ${
+          className={`h-5 w-5 text-gray-400 dark:text-gray-500 transition-transform ${
             isOpen ? 'transform rotate-180' : ''
           }`}
         />
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-auto">
+        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg max-h-64 overflow-auto">
           {options.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => handleSelect(option.value)}
-              className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
-                value === option.value ? 'bg-blue-50' : ''
+              className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors ${
+                value === option.value ? 'bg-blue-50 dark:bg-blue-900/20' : ''
               }`}
             >
               <span className="flex items-center gap-2">
                 {option.icon && <span className="text-lg">{option.icon}</span>}
                 <span className={`font-medium ${
-                  value === option.value ? 'text-blue-600' : 'text-gray-700'
+                  value === option.value ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
                 }`}>
                   {option.label}
                 </span>
               </span>
               {value === option.value && (
-                <Check className="h-5 w-5 text-blue-600" />
+                <Check className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               )}
             </button>
           ))}

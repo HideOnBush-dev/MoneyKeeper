@@ -15,6 +15,9 @@ import Budgets from './pages/Budgets';
 import Chat from './pages/Chat';
 import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
+import Goals from './pages/Goals';
+import Recurring from './pages/Recurring';
+import AddRecurring from './pages/AddRecurring';
 import Landing from './pages/Landing';
 
 // Loading Screen Component (simplified animations)
@@ -166,6 +169,46 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Notifications />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/goals"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Goals />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/recurring"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Recurring />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/recurring/new"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AddRecurring />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/recurring/:id/edit"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AddRecurring />
                 </Layout>
               </ProtectedRoute>
             }

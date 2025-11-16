@@ -195,4 +195,58 @@ export const categoriesAPI = {
   delete: (id) => api.delete(`/categories/${id}`),
 };
 
+// Goals API
+export const goalsAPI = {
+  // Get all goals
+  getAll: () => api.get('/goals'),
+  
+  // Get active goals (not achieved)
+  getActive: () => api.get('/goals/active'),
+  
+  // Get goal by ID
+  getById: (id) => api.get(`/goals/${id}`),
+  
+  // Create new goal
+  create: (data) => api.post('/goals', data),
+  
+  // Update goal
+  update: (id, data) => api.put(`/goals/${id}`, data),
+  
+  // Delete goal
+  delete: (id) => api.delete(`/goals/${id}`),
+  
+  // Add amount to goal
+  addAmount: (id, amount) => api.post(`/goals/${id}/add`, { amount }),
+  
+  // Get goal progress
+  getProgress: (id) => api.get(`/goals/${id}/progress`),
+};
+
+// Recurring Transactions API
+export const recurringAPI = {
+  // Get all recurring transactions
+  getAll: () => api.get('/recurring'),
+  
+  // Get upcoming recurring (next 7 days)
+  getUpcoming: () => api.get('/recurring/upcoming'),
+  
+  // Get by ID
+  getById: (id) => api.get(`/recurring/${id}`),
+  
+  // Create new recurring transaction
+  create: (data) => api.post('/recurring', data),
+  
+  // Update recurring transaction
+  update: (id, data) => api.put(`/recurring/${id}`, data),
+  
+  // Delete recurring transaction
+  delete: (id) => api.delete(`/recurring/${id}`),
+  
+  // Skip current due date
+  skip: (id) => api.post(`/recurring/${id}/skip`),
+  
+  // Execute immediately
+  execute: (id) => api.post(`/recurring/${id}/execute`),
+};
+
 export default api;

@@ -523,16 +523,67 @@ def handle_message(data):
                 message, session.personality, str(session.id)
             )
             full_response = ""
-            for chunk in response_chunks:
-                full_response += chunk
-
-            logger.info(f"AI response generated ({len(full_response)} chars) for user {current_user.id}")
-            socketio.emit(
-                "response",
-                {"data": full_response, "user": False, "done": True},
-                room=str(current_user.id),
-                namespace="/chat",
-            )
+            chunk_count = 0
+            try:
+                for chunk in response_chunks:
+                    if chunk:  # Only process non-empty chunks
+                        full_response += chunk
+                        chunk_count += 1
+                        # Emit each chunk for real-time streaming (optional, for better UX)
+                        # socketio.emit(
+                        #     "response",
+                        #     {"data": chunk, "user": False, "done": False},
+                        #     room=str(current_user.id),
+                        #     namespace="/chat",
+                        # )
+                
+                logger.info(f"AI response generated ({len(full_response)} chars, {chunk_count} chunks) for user {current_user.id}")
+                
+                # Ensure we have a complete response
+                if not full_response.strip():
+                    logger.warning(f"Empty response generated for user {current_user.id}")
+                    full_response = "Xin lỗi, tôi không thể tạo phản hồi. Vui lòng thử lại."
+                
+                socketio.emit(
+                    "response",
+                    {"data": full_response, "user": False, "done": True},
+                    room=str(current_user.id),
+                    namespace="/chat",
+                )
+            except StopIteration:
+                # Generator exhausted normally
+                logger.info(f"Response stream completed for user {current_user.id}")
+                if full_response:
+                    socketio.emit(
+                        "response",
+                        {"data": full_response, "user": False, "done": True},
+                        room=str(current_user.id),
+                        namespace="/chat",
+                    )
+                else:
+                    socketio.emit(
+                        "error",
+                        {"data": "Không thể tạo phản hồi. Vui lòng thử lại."},
+                        room=str(current_user.id),
+                        namespace="/chat",
+                    )
+            except Exception as stream_error:
+                logger.exception(f"Error during streaming for user {current_user.id}: {stream_error}")
+                # Try to send what we have so far
+                if full_response:
+                    socketio.emit(
+                        "response",
+                        {"data": full_response + "\n\n[Xin lỗi, phản hồi có thể bị cắt bớt do lỗi kỹ thuật.]", "user": False, "done": True},
+                        room=str(current_user.id),
+                        namespace="/chat",
+                    )
+                else:
+                    socketio.emit(
+                        "error",
+                        {"data": "Đã xảy ra lỗi khi tạo phản hồi. Vui lòng thử lại."},
+                        room=str(current_user.id),
+                        namespace="/chat",
+                    )
         except Exception as e:
             logger.exception(f"Error generating AI response for user {current_user.id}: {e}")
             emit("error", {"data": "Đã xảy ra lỗi khi xử lý tin nhắn. Vui lòng thử lại."}, room=str(current_user.id))

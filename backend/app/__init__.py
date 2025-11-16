@@ -58,13 +58,35 @@ def create_app(config_class=Config):
     if prod_origin:
         allowed_origins.append(prod_origin)
     
+    # In development, allow LAN access by validating origins dynamically
+    # This allows devices on the same network to access the API
+    if app.debug:
+        import re
+        # Function to validate origins - allows localhost and private IP ranges
+        def validate_origin(origin):
+            if not origin:
+                return False
+            # Allow localhost
+            if re.match(r'^https?://localhost(:\d+)?$', origin):
+                return True
+            # Allow private IP ranges: 192.168.x.x, 10.x.x.x, 172.16-31.x.x
+            if re.match(r'^https?://(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+)(:\d+)?$', origin):
+                return True
+            return False
+        
+        cors_origins = validate_origin
+        cors_supports_credentials = True
+    else:
+        cors_origins = allowed_origins
+        cors_supports_credentials = True
+    
     CORS(app, 
          resources={
-             r"/api/*": {"origins": allowed_origins},
-             r"/auth/*": {"origins": allowed_origins},
-             r"/socket.io/*": {"origins": allowed_origins}
+             r"/api/*": {"origins": cors_origins},
+             r"/auth/*": {"origins": cors_origins},
+             r"/socket.io/*": {"origins": cors_origins}
          }, 
-         supports_credentials=True,
+         supports_credentials=cors_supports_credentials,
          expose_headers=["Content-Type", "X-CSRFToken"],
          allow_headers=["Content-Type", "Authorization", "X-CSRFToken"]
     )
@@ -74,13 +96,19 @@ def create_app(config_class=Config):
     mail.init_app(app)
     moment.init_app(app)
     migrate = Migrate(app, db)
-    socketio.init_app(app, async_mode="threading", cors_allowed_origins=allowed_origins)
+    # Use same CORS policy for SocketIO
+    # SocketIO accepts "*" or a list, but for function-based validation we need to handle it differently
+    # In debug mode, allow all origins for SocketIO (it handles this better than Flask-CORS)
+    socketio_origins = "*" if app.debug else allowed_origins
+    socketio.init_app(app, async_mode="threading", cors_allowed_origins=socketio_origins)
     babel.init_app(app)
 
     login_manager.login_view = "auth.login"
     login_manager.login_message = "Vui lòng đăng nhập để truy cập trang này."
     login_manager.login_message_category = "info"
-    login_manager.session_protection = "strong"  # Protect against session hijacking
+    # Use "basic" instead of "strong" to avoid logout on server restart
+    # "strong" requires IP address matching which can cause issues
+    login_manager.session_protection = "basic"  # Protect against session hijacking
 
     from app.commands import init_db_command, create_tables_command
 
@@ -152,6 +180,9 @@ def create_app(config_class=Config):
         return response
 
     with app.app_context():
+        # Import all models to ensure they are registered with SQLAlchemy
+        from app.models import User, Expense, Budget, Notification, ChatSession, ChatMessage, Category, Wallet, SavingsGoal, RecurringTransaction
+        
         from app.auth import bp as auth_bp
         from app.main import bp as main_bp
         from app.settings import bp as settings_bp
@@ -166,29 +197,50 @@ def create_app(config_class=Config):
 
         configure_admin(app)
 
-        if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-            logger.info("Initializing Google AI...")
-            from app.ai_engine.core.model_manager import model_manager
+        # Initialize Google AI - try to initialize regardless of WERKZEUG_RUN_MAIN
+        # WERKZEUG_RUN_MAIN check was preventing initialization in some environments
+        logger.info("Initializing Google AI...")
+        from app.ai_engine.core.model_manager import model_manager
 
-            try:
-                model_manager.initialize()
-                from app.ai_engine.features.chat import AIChat
-                from app.ai_engine.features.analysis import ExpenseAnalyzer
-                from app.ai_engine.features.predictor import ExpensePredictor
-                from app.ai_engine.features.categorizer import ExpenseCategorizer
+        try:
+            model_manager.initialize()
+            from app.ai_engine.features.chat import AIChat
+            from app.ai_engine.features.analysis import ExpenseAnalyzer
+            from app.ai_engine.features.predictor import ExpensePredictor
+            from app.ai_engine.features.categorizer import ExpenseCategorizer
 
-                app.expense_analyzer = ExpenseAnalyzer()
-                app.expense_categorizer = ExpenseCategorizer()
-                app.expense_predictor = ExpensePredictor()
-                app.ai_chat = AIChat()
-                logger.info("Google AI initialized successfully.")
-            except Exception as e:
+            app.expense_analyzer = ExpenseAnalyzer()
+            app.expense_categorizer = ExpenseCategorizer()
+            app.expense_predictor = ExpensePredictor()
+            app.ai_chat = AIChat()
+            logger.info("Google AI initialized successfully.")
+        except ValueError as e:
+            error_msg = str(e)
+            if "GOOGLE_API_KEY" in error_msg:
+                logger.warning(f"Google AI not configured: {error_msg}")
+                logger.warning("To enable AI features, set GOOGLE_API_KEY environment variable or create .env file")
+            else:
                 logger.error(f"Failed to initialize Google AI: {e}")
-                logger.warning("Application will run without AI features. Please set GOOGLE_API_KEY environment variable.")
-                # Set None to indicate AI features are not available
-                app.expense_analyzer = None
-                app.expense_categorizer = None
-                app.expense_predictor = None
-                app.ai_chat = None
+            # Set None to indicate AI features are not available
+            app.expense_analyzer = None
+            app.expense_categorizer = None
+            app.expense_predictor = None
+            app.ai_chat = None
+        except Exception as e:
+            logger.error(f"Failed to initialize Google AI: {e}")
+            logger.warning("Application will run without AI features. Please set GOOGLE_API_KEY environment variable.")
+            # Set None to indicate AI features are not available
+            app.expense_analyzer = None
+            app.expense_categorizer = None
+            app.expense_predictor = None
+            app.ai_chat = None
+        
+        # Initialize recurring transactions scheduler
+        try:
+            from app.utils.recurring_scheduler import start_scheduler
+            start_scheduler(app)
+            logger.info("Recurring transactions scheduler initialized")
+        except Exception as e:
+            logger.warning(f"Failed to initialize recurring transactions scheduler: {e}")
 
     return app

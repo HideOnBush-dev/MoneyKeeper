@@ -34,14 +34,32 @@ def create_budget():
         if not data.get('category'):
             abort(400, description="Category is required")
         
-        if not data.get('amount'):
+        # Support both 'amount' and 'limit' for backward compatibility
+        amount_value = data.get('amount') or data.get('limit')
+        if amount_value is None:
             abort(400, description="Amount is required")
         
         # Validate inputs
         category = validate_category(data['category'])
-        amount = validate_amount(data['amount'])
-        month = validate_positive_integer(data.get('month', datetime.now().month))
-        year = validate_positive_integer(data.get('year', datetime.now().year))
+        amount = validate_amount(amount_value)
+        
+        # Ensure amount is positive
+        if float(amount) <= 0:
+            abort(400, description="Amount must be greater than 0")
+        
+        # Handle month: "THIS" or missing -> use current month
+        month_value = data.get('month')
+        if month_value == 'THIS' or month_value is None:
+            month = datetime.now().month
+        else:
+            month = validate_positive_integer(month_value)
+        
+        # Handle year: missing -> use current year
+        year_value = data.get('year')
+        if year_value is None:
+            year = datetime.now().year
+        else:
+            year = validate_positive_integer(year_value)
         
         # Validate month and year
         if month < 1 or month > 12:

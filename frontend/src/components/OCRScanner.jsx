@@ -32,14 +32,28 @@ const OCRScanner = ({ onSuccess }) => {
     formData.append('receipt', file);
 
     try {
-      const res = await fetch('/process_receipt', {
+      const res = await fetch('/api/process_receipt', {
         method: 'POST',
         body: formData,
         credentials: 'include',
       });
+
+      // Check if response is ok before parsing JSON
+      if (!res.ok) {
+        const errorText = await res.text();
+        let errorMessage = 'Không thể xử lý ảnh';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = `Lỗi ${res.status}: ${res.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.error || 'OCR processing failed');
       }
 

@@ -1,0 +1,383 @@
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Calendar, DollarSign, CheckCircle, Repeat } from 'lucide-react';
+import { recurringAPI, walletAPI } from '../services/api';
+import { useToast } from '../components/Toast';
+import { useSettings } from '../contexts/SettingsContext';
+import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/numberFormat';
+import PageHeader from '../components/PageHeader';
+
+const CATEGORIES = [
+  { value: 'food', label: 'Ăn uống', emoji: '🍔' },
+  { value: 'transport', label: 'Di chuyển', emoji: '🚗' },
+  { value: 'shopping', label: 'Mua sắm', emoji: '🛍️' },
+  { value: 'entertainment', label: 'Giải trí', emoji: '🎮' },
+  { value: 'health', label: 'Sức khỏe', emoji: '💊' },
+  { value: 'education', label: 'Giáo dục', emoji: '📚' },
+  { value: 'utilities', label: 'Tiện ích', emoji: '💡' },
+  { value: 'other', label: 'Khác', emoji: '📦' },
+];
+
+const FREQUENCIES = [
+  { value: 'daily', label: 'Hàng ngày', icon: '📅' },
+  { value: 'weekly', label: 'Hàng tuần', icon: '📆' },
+  { value: 'monthly', label: 'Hàng tháng', icon: '🗓️' },
+  { value: 'yearly', label: 'Hàng năm', icon: '📅' },
+];
+
+const AddRecurring = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = !!id;
+  const { toast } = useToast();
+  const { settings } = useSettings();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [wallets, setWallets] = useState([]);
+  const [formData, setFormData] = useState({
+    name: '',
+    amount: 0,
+    category: 'other',
+    frequency: 'monthly',
+    start_date: new Date().toISOString().split('T')[0],
+    end_date: '',
+    wallet_id: null,
+    description: '',
+    is_active: true,
+    auto_create: true,
+    is_expense: true,
+  });
+  const [amountInput, setAmountInput] = useState('');
+  const amountInputRef = useRef(null);
+
+  useEffect(() => {
+    fetchWallets();
+    if (isEdit) {
+      fetchTransaction();
+    } else {
+      setLoading(false);
+    }
+  }, [id]);
+
+  const fetchWallets = async () => {
+    try {
+      const response = await walletAPI.getAll();
+      setWallets(response.data.wallets || []);
+      if (response.data.wallets?.length > 0 && !formData.wallet_id) {
+        setFormData(prev => ({ ...prev, wallet_id: response.data.wallets[0].id }));
+      }
+    } catch (error) {
+      console.error('Error fetching wallets:', error);
+    }
+  };
+
+  const fetchTransaction = async () => {
+    try {
+      setLoading(true);
+      const response = await recurringAPI.getById(id);
+      const transaction = response.data.transaction;
+      
+      setFormData({
+        name: transaction.name || '',
+        amount: transaction.amount || 0,
+        category: transaction.category || 'other',
+        frequency: transaction.frequency || 'monthly',
+        start_date: transaction.start_date || new Date().toISOString().split('T')[0],
+        end_date: transaction.end_date || '',
+        wallet_id: transaction.wallet_id || null,
+        description: transaction.description || '',
+        is_active: transaction.is_active !== undefined ? transaction.is_active : true,
+        auto_create: transaction.auto_create !== undefined ? transaction.auto_create : true,
+        is_expense: transaction.is_expense !== undefined ? transaction.is_expense : true,
+      });
+      
+      setAmountInput(formatAmountInput(transaction.amount || 0, { numberFormat: settings.numberFormat }));
+    } catch (error) {
+      console.error('Error fetching transaction:', error);
+      toast({ type: 'error', message: 'Lỗi khi tải giao dịch' });
+      navigate('/recurring');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const parsedAmount = parseAmountInput(amountInput || String(formData.amount), { numberFormat: settings.numberFormat });
+    
+    if (!parsedAmount || parsedAmount <= 0) {
+      toast({ type: 'error', message: 'Vui lòng nhập số tiền hợp lệ' });
+      return;
+    }
+
+    if (!formData.wallet_id) {
+      toast({ type: 'error', message: 'Vui lòng chọn ví' });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const payload = {
+        name: formData.name,
+        amount: parsedAmount,
+        category: formData.category,
+        frequency: formData.frequency,
+        start_date: formData.start_date,
+        end_date: formData.end_date || null,
+        wallet_id: formData.wallet_id,
+        description: formData.description,
+        is_active: formData.is_active,
+        auto_create: formData.auto_create,
+        is_expense: formData.is_expense,
+      };
+
+      if (isEdit) {
+        await recurringAPI.update(id, payload);
+        toast({ type: 'success', message: 'Đã cập nhật giao dịch định kỳ thành công!' });
+      } else {
+        await recurringAPI.create(payload);
+        toast({ type: 'success', message: 'Đã tạo giao dịch định kỳ thành công!' });
+      }
+      
+      navigate('/recurring');
+    } catch (error) {
+      console.error('Error saving transaction:', error);
+      toast({ 
+        type: 'error', 
+        message: error.response?.data?.message || 'Lỗi khi lưu giao dịch' 
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen">
+        <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">Đang tải...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-xl mx-auto px-4 py-4 space-y-3">
+      {/* Back button */}
+      <button
+        onClick={() => navigate('/recurring')}
+        className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors text-sm"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        <span>Quay lại</span>
+      </button>
+      
+      <PageHeader 
+        icon={Repeat} 
+        title={isEdit ? 'Chỉnh sửa giao dịch định kỳ' : 'Tạo giao dịch định kỳ'} 
+        iconColor="from-purple-600 to-indigo-600" 
+      />
+
+      {/* Form */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 border border-gray-100 dark:border-slate-700">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tên giao dịch *</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-4 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all font-semibold"
+              placeholder="Ví dụ: Netflix, Điện thoại, Gym"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Số tiền *</label>
+            <div className="relative">
+              <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
+              <input
+                type="text"
+                value={amountInput}
+                onChange={(e) => {
+                  const caret = e.target.selectionStart || 0;
+                  const { text, caret: nextCaret } = formatAmountLive(e.target.value, caret, { numberFormat: settings.numberFormat });
+                  setAmountInput(text);
+                  const parsed = parseAmountInput(text, { numberFormat: settings.numberFormat });
+                  setFormData({ ...formData, amount: parsed });
+                  requestAnimationFrame(() => {
+                    if (amountInputRef.current) {
+                      amountInputRef.current.setSelectionRange(nextCaret, nextCaret);
+                    }
+                  });
+                }}
+                onBlur={() => {
+                  setAmountInput(formatAmountInput(amountInput || formData.amount, { numberFormat: settings.numberFormat }));
+                }}
+                ref={amountInputRef}
+                className="w-full pl-12 pr-4 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all text-lg font-semibold"
+                placeholder="0"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="min-w-0">
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Danh mục *</label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="w-full px-4 pr-10 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all font-semibold appearance-none"
+                required
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat.value} value={cat.value}>{cat.emoji} {cat.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="min-w-0">
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tần suất *</label>
+              <select
+                value={formData.frequency}
+                onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
+                className="w-full px-4 pr-10 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all font-semibold appearance-none"
+                required
+              >
+                {FREQUENCIES.map((freq) => (
+                  <option key={freq.value} value={freq.value}>{freq.icon} {freq.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="min-w-0">
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ngày bắt đầu *</label>
+              <div className="relative">
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500 z-10 pointer-events-none" />
+                <input
+                  type="date"
+                  value={formData.start_date}
+                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                  className="w-full pl-12 pr-4 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all font-semibold"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="min-w-0">
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ngày kết thúc (tùy chọn)</label>
+              <div className="relative">
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500 z-10 pointer-events-none" />
+                <input
+                  type="date"
+                  value={formData.end_date}
+                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  min={formData.start_date}
+                  className="w-full pl-12 pr-4 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all font-semibold"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ví *</label>
+            <select
+              value={formData.wallet_id || ''}
+              onChange={(e) => setFormData({ ...formData, wallet_id: parseInt(e.target.value) })}
+              className="w-full px-4 pr-10 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all font-semibold appearance-none"
+              required
+            >
+              <option value="">Chọn ví</option>
+              {wallets.map((wallet) => (
+                <option key={wallet.id} value={wallet.id}>{wallet.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Mô tả (tùy chọn)</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full px-4 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all font-semibold"
+              rows="3"
+              placeholder="Thêm mô tả cho giao dịch..."
+            />
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <label className="flex items-start space-x-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={formData.is_expense}
+                onChange={(e) => setFormData({ ...formData, is_expense: e.target.checked })}
+                className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 mt-0.5 flex-shrink-0"
+              />
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex-1">
+                Đây là chi tiêu (bỏ chọn nếu là thu nhập)
+              </span>
+            </label>
+
+            <label className="flex items-start space-x-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={formData.auto_create}
+                onChange={(e) => setFormData({ ...formData, auto_create: e.target.checked })}
+                className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 mt-0.5 flex-shrink-0"
+              />
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex-1">
+                Tự động tạo expense khi đến hạn
+              </span>
+            </label>
+
+            <label className="flex items-start space-x-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={formData.is_active}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 mt-0.5 flex-shrink-0"
+              />
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex-1">
+                Kích hoạt ngay
+              </span>
+            </label>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-slate-700 mt-6">
+            <button
+              type="button"
+              onClick={() => navigate('/recurring')}
+              className="flex-1 px-6 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                  <span>{isEdit ? 'Cập nhật' : 'Tạo giao dịch'}</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default AddRecurring;
+

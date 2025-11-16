@@ -70,15 +70,16 @@ class ModelManager:
                 temperature=0.7,
                 top_p=0.9,
                 top_k=40,
-                max_output_tokens=2048,
+                max_output_tokens=8192,  # Increased from 2048 to allow longer responses
             )
             
-            # Configure safety settings
+            # Configure safety settings - use BLOCK_ONLY_HIGH to be less restrictive
+            # This allows more content while still blocking truly harmful content
             self.safety_settings = [
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
             ]
             
             self.model = genai.GenerativeModel(
@@ -136,10 +137,57 @@ class ModelManager:
                 request_options={"timeout": self.timeout}
             )
             
-            if not response or not response.text:
+            if not response:
                 raise ValueError("Empty response from AI model")
             
-            return response.text.strip()
+            # Check for safety blocks or other finish reasons
+            if response.candidates:
+                candidate = response.candidates[0]
+                finish_reason = getattr(candidate, 'finish_reason', None)
+                
+                # finish_reason values:
+                # 0 = STOP (normal)
+                # 1 = MAX_TOKENS
+                # 2 = SAFETY (blocked by safety filters)
+                # 3 = RECITATION (blocked for recitation)
+                # 4 = OTHER
+                
+                if finish_reason == 2:  # SAFETY
+                    safety_ratings = getattr(candidate, 'safety_ratings', [])
+                    blocked_categories = [r.category.name for r in safety_ratings if r.probability.name in ['HIGH', 'MEDIUM']]
+                    error_msg = f"Response blocked by safety filters. Categories: {', '.join(blocked_categories) if blocked_categories else 'Unknown'}"
+                    logger.warning(f"Safety block detected: {error_msg}")
+                    raise ValueError(error_msg)
+                elif finish_reason == 3:  # RECITATION
+                    logger.warning("Response blocked for recitation")
+                    raise ValueError("Response blocked for recitation")
+                elif finish_reason not in [0, 1, None]:  # Other unexpected reasons
+                    logger.warning(f"Unexpected finish_reason: {finish_reason}")
+            
+            # Try to get text, handle ValueError if no parts
+            try:
+                response_text = response.text
+                if not response_text:
+                    raise ValueError("Empty response text from AI model")
+                return response_text.strip()
+            except ValueError as e:
+                # Check if it's the "no valid Part" error
+                if "requires the response to contain a valid `Part`" in str(e):
+                    finish_reason = None
+                    if response.candidates:
+                        candidate = response.candidates[0]
+                        finish_reason = getattr(candidate, 'finish_reason', None)
+                    
+                    if finish_reason == 2:
+                        error_msg = "Response blocked by safety filters. Please rephrase your message."
+                        logger.warning(error_msg)
+                        raise ValueError(error_msg)
+                    else:
+                        error_msg = f"Response has no valid content. Finish reason: {finish_reason}"
+                        logger.warning(error_msg)
+                        raise ValueError(error_msg)
+                else:
+                    raise
             
         except Exception as e:
             logger.exception(f"Error generating content: {e}")
@@ -178,30 +226,81 @@ class ModelManager:
                 request_options={"timeout": self.timeout}
             )
             
-            for chunk in response:
-                # Some streamed chunks may not contain text (e.g., prompt_feedback or
-                # final status-only candidates). Accessing chunk.text can raise when
-                # there's no valid Part, so guard it defensively.
-                try:
-                    text_delta = chunk.text  # quick accessor when available
-                except Exception:
-                    text_delta = None
-
-                if text_delta:
-                    yield text_delta
-                else:
-                    # Fallback: try extracting any text parts if present
+            # Use a flag to track if we've yielded anything
+            has_yielded = False
+            try:
+                for chunk in response:
+                    # Check for safety blocks in chunk
+                    if hasattr(chunk, 'candidates') and chunk.candidates:
+                        candidate = chunk.candidates[0]
+                        finish_reason = getattr(candidate, 'finish_reason', None)
+                        
+                        if finish_reason == 2:  # SAFETY
+                            safety_ratings = getattr(candidate, 'safety_ratings', [])
+                            blocked_categories = [r.category.name for r in safety_ratings if r.probability.name in ['HIGH', 'MEDIUM']]
+                            error_msg = f"Response blocked by safety filters. Categories: {', '.join(blocked_categories) if blocked_categories else 'Unknown'}"
+                            logger.warning(f"Safety block detected in stream: {error_msg}")
+                            raise ValueError(error_msg)
+                    
+                    # Some streamed chunks may not contain text (e.g., prompt_feedback or
+                    # final status-only candidates). Accessing chunk.text can raise when
+                    # there's no valid Part, so guard it defensively.
                     try:
-                        for cand in getattr(chunk, "candidates", []) or []:
-                            content = getattr(cand, "content", None)
-                            parts = getattr(content, "parts", []) if content else []
-                            for p in parts or []:
-                                t = getattr(p, "text", None)
-                                if t:
-                                    yield t
+                        text_delta = chunk.text  # quick accessor when available
+                    except ValueError as e:
+                        # Check if it's the "no valid Part" error due to safety block
+                        if "requires the response to contain a valid `Part`" in str(e):
+                            # Check finish_reason
+                            if hasattr(chunk, 'candidates') and chunk.candidates:
+                                candidate = chunk.candidates[0]
+                                finish_reason = getattr(candidate, 'finish_reason', None)
+                                if finish_reason == 2:
+                                    raise ValueError("Response blocked by safety filters. Please rephrase your message.")
+                        text_delta = None
                     except Exception:
-                        # Swallow silent non-text chunks
-                        pass
+                        text_delta = None
+
+                    if text_delta:
+                        has_yielded = True
+                        yield text_delta
+                    else:
+                        # Fallback: try extracting any text parts if present
+                        try:
+                            for cand in getattr(chunk, "candidates", []) or []:
+                                # Check for safety blocks
+                                finish_reason = getattr(cand, 'finish_reason', None)
+                                if finish_reason == 2:
+                                    raise ValueError("Response blocked by safety filters. Please rephrase your message.")
+                                
+                                content = getattr(cand, "content", None)
+                                parts = getattr(content, "parts", []) if content else []
+                                for p in parts or []:
+                                    t = getattr(p, "text", None)
+                                    if t:
+                                        has_yielded = True
+                                        yield t
+                        except ValueError:
+                            # Re-raise ValueError (safety blocks)
+                            raise
+                        except Exception:
+                            # Swallow silent non-text chunks
+                            pass
+            except (StopIteration, RuntimeError) as stream_error:
+                # In Python 3.7+, StopIteration from generators is converted to RuntimeError
+                # This is normal when the stream ends, so we just log it at debug level
+                if isinstance(stream_error, RuntimeError) and "StopIteration" in str(stream_error):
+                    logger.debug(f"Stream ended normally: {stream_error}")
+                elif isinstance(stream_error, StopIteration):
+                    logger.debug("Stream ended normally (StopIteration)")
+                else:
+                    # Re-raise if it's a different RuntimeError
+                    raise
+            except Exception as stream_error:
+                logger.warning(f"Unexpected error during streaming: {stream_error}")
+                # If we haven't yielded anything, this is a real error
+                if not has_yielded:
+                    raise
+                # Otherwise, stream ended normally with some chunks
                     
         except Exception as e:
             logger.exception(f"Error generating content stream: {e}")

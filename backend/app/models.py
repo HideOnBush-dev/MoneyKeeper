@@ -1,6 +1,6 @@
 from app import db, login_manager
 from flask_login import UserMixin
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from werkzeug.security import (
     generate_password_hash,
@@ -156,10 +156,146 @@ class Wallet(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     expenses = db.relationship("Expense", backref="wallet", lazy="dynamic")
 
-    def update_balance(self, amount, is_expense=True):
+    def update_balance(self, amount, is_expense=True, commit=True):
         """Updates the wallet balance based on expense/income."""
         if is_expense:
             self.balance -= amount
         else:
             self.balance += amount
+        if commit:
+            db.session.commit()
+
+
+class SavingsGoal(db.Model):
+    """Savings goals for users to track their financial targets"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    target_amount = db.Column(db.Float, nullable=False)
+    current_amount = db.Column(db.Float, default=0.0)
+    deadline = db.Column(db.Date)
+    description = db.Column(db.String(500))
+    icon = db.Column(db.String(10), default="🎯")  # Emoji icon
+    color = db.Column(db.String(50), default="blue")  # Tailwind gradient color
+    wallet_id = db.Column(db.Integer, db.ForeignKey("wallet.id"), nullable=True)  # Optional link to wallet
+    is_achieved = db.Column(db.Boolean, default=False)
+    achieved_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship("User", backref=db.backref("savings_goals", lazy="dynamic"))
+    wallet = db.relationship("Wallet", backref=db.backref("savings_goals", lazy="dynamic"))
+    
+    def get_progress_percentage(self):
+        """Calculate progress percentage"""
+        if self.target_amount <= 0:
+            return 0
+        return min(100, (self.current_amount / self.target_amount) * 100)
+    
+    def get_remaining_amount(self):
+        """Calculate remaining amount to reach goal"""
+        return max(0, self.target_amount - self.current_amount)
+    
+    def is_overdue(self):
+        """Check if goal deadline has passed"""
+        if not self.deadline:
+            return False
+        return date.today() > self.deadline and not self.is_achieved
+    
+    def add_amount(self, amount):
+        """Add amount to current savings"""
+        self.current_amount += amount
+        if self.current_amount >= self.target_amount and not self.is_achieved:
+            self.is_achieved = True
+            self.achieved_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
         db.session.commit()
+
+
+class RecurringTransaction(db.Model):
+    """Recurring transactions (subscriptions, bills, etc.)"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    frequency = db.Column(db.String(20), nullable=False)  # daily, weekly, monthly, yearly
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=True)  # Optional end date
+    next_due_date = db.Column(db.Date, nullable=False)
+    wallet_id = db.Column(db.Integer, db.ForeignKey("wallet.id"), nullable=False)
+    description = db.Column(db.String(500))
+    is_active = db.Column(db.Boolean, default=True)
+    auto_create = db.Column(db.Boolean, default=True)  # Auto create expense when due
+    is_expense = db.Column(db.Boolean, default=True)  # True for expense, False for income
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship("User", backref=db.backref("recurring_transactions", lazy="dynamic"))
+    wallet = db.relationship("Wallet", backref=db.backref("recurring_transactions", lazy="dynamic"))
+    
+    def calculate_next_due_date(self, from_date=None):
+        """Calculate next due date based on frequency"""
+        if from_date is None:
+            from_date = date.today()
+        
+        if self.frequency == 'daily':
+            return from_date + timedelta(days=1)
+        elif self.frequency == 'weekly':
+            return from_date + timedelta(weeks=1)
+        elif self.frequency == 'monthly':
+            # Add one month
+            if from_date.month == 12:
+                return date(from_date.year + 1, 1, from_date.day)
+            else:
+                return date(from_date.year, from_date.month + 1, from_date.day)
+        elif self.frequency == 'yearly':
+            return date(from_date.year + 1, from_date.month, from_date.day)
+        else:
+            return from_date
+    
+    def is_due(self):
+        """Check if transaction is due today or overdue"""
+        return self.next_due_date <= date.today()
+    
+    def can_execute(self):
+        """Check if transaction can be executed (active, not past end date)"""
+        if not self.is_active:
+            return False
+        if self.end_date and self.end_date < date.today():
+            return False
+        return True
+    
+    def execute(self):
+        """Execute the recurring transaction by creating an expense"""
+        if not self.can_execute():
+            return None
+        
+        from app.models import Expense
+        
+        # Create expense
+        expense = Expense(
+            user_id=self.user_id,
+            amount=self.amount,
+            category=self.category,
+            description=self.description or f"{self.name} (Tự động từ giao dịch định kỳ)",
+            date=datetime.combine(self.next_due_date, datetime.min.time()),
+            wallet_id=self.wallet_id,
+            is_expense=self.is_expense
+        )
+        
+        db.session.add(expense)
+        
+        # Update wallet balance
+        wallet = Wallet.query.get(self.wallet_id)
+        if wallet:
+            wallet.update_balance(self.amount, is_expense=self.is_expense, commit=False)
+        
+        # Update next due date
+        self.next_due_date = self.calculate_next_due_date(self.next_due_date)
+        self.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        return expense

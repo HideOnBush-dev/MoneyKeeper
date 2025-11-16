@@ -39,7 +39,14 @@ def login():
         if user is None or not user.check_password(password):
             return jsonify({"message": "Tên đăng nhập hoặc mật khẩu không đúng"}), 401
         
-        login_user(user, remember=data.get('remember', False))
+        remember = data.get('remember', True)  # Default to True for better UX
+        login_user(user, remember=remember)
+        
+        # Ensure session is marked as permanent if remember is True
+        from flask import session
+        if remember:
+            session.permanent = True
+        
         return jsonify({
             "message": "Đăng nhập thành công",
             "user": {

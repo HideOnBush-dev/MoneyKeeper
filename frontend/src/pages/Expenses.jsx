@@ -67,9 +67,6 @@ const Expenses = () => {
     try {
       const response = await walletAPI.getAll();
       setWallets(response.data.wallets || []);
-      if (response.data.wallets?.length > 0) {
-        setFormData(prev => ({ ...prev, wallet_id: response.data.wallets[0].id }));
-      }
     } catch (error) {
       console.error('Error fetching wallets:', error);
     }
@@ -293,7 +290,7 @@ const Expenses = () => {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
         <div className="w-16 h-16 border-4 border-pink-600 border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-gray-600 font-medium">Đang tải...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">Đang tải...</p>
       </div>
     );
   }
@@ -320,13 +317,13 @@ const Expenses = () => {
       <div className="flex items-center gap-2 flex-wrap">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
             placeholder="Tìm kiếm..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+            className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all text-sm"
           />
         </div>
 
@@ -337,7 +334,7 @@ const Expenses = () => {
             className={`p-2 rounded-lg transition-all ${
               showFilters 
                 ? 'bg-blue-600 text-white' 
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'
             }`}
             title="Bộ lọc"
           >
@@ -346,7 +343,7 @@ const Expenses = () => {
 
           <button
             onClick={exportCSV}
-            className="p-2 bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 rounded-lg transition-all"
+            className="p-2 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 rounded-lg transition-all"
             title="Xuất CSV"
           >
             <FileDown className="h-4 w-4" />
@@ -354,7 +351,7 @@ const Expenses = () => {
 
           <button
             onClick={exportExcel}
-            className="p-2 bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 rounded-lg transition-all"
+            className="p-2 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 rounded-lg transition-all"
             title="Xuất Excel"
           >
             <FileSpreadsheet className="h-4 w-4" />
@@ -362,7 +359,7 @@ const Expenses = () => {
 
           <button
             onClick={handleImportClick}
-            className="p-2 bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 rounded-lg transition-all"
+            className="p-2 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 rounded-lg transition-all"
             title="Nhập file"
           >
             <Upload className="h-4 w-4" />
@@ -380,24 +377,24 @@ const Expenses = () => {
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-blue-600" />
-                <h3 className="text-base font-bold text-gray-900">Bộ lọc</h3>
+                <Filter className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Bộ lọc</h3>
               </div>
-              <button onClick={() => setShowFilters(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
-                <X className="h-4 w-4 text-gray-500" />
+              <button onClick={() => setShowFilters(false)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Danh mục</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Danh mục</label>
                 <select
                   value={filters.category}
                   onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all text-sm"
                 >
                   {CATEGORIES.map((cat) => (
                     <option key={cat.value} value={cat.value}>{cat.emoji} {cat.label}</option>
@@ -406,11 +403,11 @@ const Expenses = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Ví</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Ví</label>
                 <select
                   value={filters.wallet_id}
                   onChange={(e) => setFilters({ ...filters, wallet_id: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all text-sm"
                 >
                   <option value="">Tất cả</option>
                   {wallets.map((w) => (
@@ -420,11 +417,11 @@ const Expenses = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Loại</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Loại</label>
                 <select
                   value={filters.is_expense}
                   onChange={(e) => setFilters({ ...filters, is_expense: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all text-sm"
                 >
                   <option value="">Tất cả</option>
                   <option value="true">Chi tiêu</option>
@@ -433,31 +430,31 @@ const Expenses = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Từ ngày</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Từ ngày</label>
                 <input
                   type="date"
                   value={filters.start_date}
                   onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Đến ngày</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Đến ngày</label>
                 <input
                   type="date"
                   value={filters.end_date}
                   onChange={(e) => setFilters({ ...filters, end_date: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Sắp xếp</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Sắp xếp</label>
                 <select
                   value={filters.sort_by}
                   onChange={(e) => setFilters({ ...filters, sort_by: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all text-sm"
                 >
                   <option value="date">Ngày</option>
                   <option value="amount">Số tiền</option>
@@ -469,7 +466,7 @@ const Expenses = () => {
             <div className="flex gap-2 pt-2">
               <button
                 onClick={resetFilters}
-                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                className="flex-1 px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
               >
                 Đặt lại
               </button>
@@ -484,16 +481,16 @@ const Expenses = () => {
       )}
 
       {/* Expenses List */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
         {filteredExpenses.length === 0 ? (
           <div className="p-12 text-center">
             <div className="inline-block mb-4">
-              <div className="p-6 bg-gray-100 rounded-2xl">
-                <DollarSign className="h-12 w-12 text-gray-400" />
+              <div className="p-6 bg-gray-100 dark:bg-slate-700 rounded-2xl">
+                <DollarSign className="h-12 w-12 text-gray-400 dark:text-gray-500" />
               </div>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Chưa có giao dịch nào</h3>
-            <p className="text-sm text-gray-600 mb-4">Hãy thêm giao dịch đầu tiên của bạn</p>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Chưa có giao dịch nào</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Hãy thêm giao dịch đầu tiên của bạn</p>
             <button
               onClick={() => navigate('/expenses/new')}
               className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
@@ -510,28 +507,28 @@ const Expenses = () => {
               return (
                 <div
                   key={expense.id}
-                  className="group relative bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all overflow-hidden"
+                  className="group relative bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 hover:shadow-md transition-all overflow-hidden"
                 >
                   <div className="p-4">
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
                       {/* Category Icon - Larger and more prominent */}
-                      <div className={`flex-shrink-0 p-3 rounded-2xl bg-gradient-to-br ${categoryData.gradient} shadow-lg`}>
-                        <span className="text-2xl block">{categoryData.emoji}</span>
+                      <div className={`flex-shrink-0 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br ${categoryData.gradient} shadow-lg`}>
+                        <span className="text-xl sm:text-2xl block">{categoryData.emoji}</span>
                       </div>
 
                       {/* Main Content */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 overflow-hidden">
                         {/* Header Row */}
-                        <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3 mb-2">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-gray-900 text-base mb-1.5 line-clamp-1">
+                            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base mb-1.5 line-clamp-2 break-words">
                               {expense.description || 'Không có mô tả'}
                             </h3>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                              <span className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs font-semibold flex-shrink-0 ${
                                 expense.is_expense 
-                                  ? 'bg-red-50 text-red-700 border border-red-200' 
-                                  : 'bg-green-50 text-green-700 border border-green-200'
+                                  ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800' 
+                                  : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
                               }`}>
                                 {expense.is_expense ? (
                                   <>
@@ -545,28 +542,30 @@ const Expenses = () => {
                                   </>
                                 )}
                               </span>
-                              <span className="text-xs text-gray-500 font-medium">
+                              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate">
                                 {categoryData.label}
                               </span>
                             </div>
                           </div>
 
                           {/* Amount - Prominent */}
-                          <div className="flex-shrink-0 text-right">
-                            <p className={`text-lg font-bold mb-0.5 ${
-                              expense.is_expense ? 'text-red-600' : 'text-green-600'
+                          <div className="flex-shrink-0 text-left sm:text-right min-w-0">
+                            <p className={`text-base sm:text-lg font-bold mb-0.5 ${
+                              expense.is_expense ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                             }`}>
-                              {expense.is_expense ? '-' : '+'}{formatCurrency(expense.amount || 0, settings.currency, settings.numberFormat)}
+                              <span className="block sm:inline-block whitespace-nowrap">
+                                {expense.is_expense ? '-' : '+'}{formatCurrency(expense.amount || 0, settings.currency, settings.numberFormat)}
+                              </span>
                             </p>
                           </div>
                         </div>
 
                         {/* Footer Row */}
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
-                            <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
+                          <div className="flex items-center gap-2 sm:gap-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+                            <div className="flex items-center gap-1 flex-shrink-0">
                               <Calendar className="h-3.5 w-3.5" />
-                              <span>{new Date(expense.date).toLocaleDateString('vi-VN', { 
+                              <span className="whitespace-nowrap">{new Date(expense.date).toLocaleDateString('vi-VN', { 
                                 day: '2-digit', 
                                 month: '2-digit', 
                                 year: 'numeric' 
@@ -574,10 +573,10 @@ const Expenses = () => {
                             </div>
                             {wallet && (
                               <>
-                                <span className="text-gray-300">•</span>
-                                <div className="flex items-center gap-1">
-                                  <Wallet className="h-3.5 w-3.5" />
-                                  <span className="truncate max-w-[120px]">{wallet.name}</span>
+                                <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">•</span>
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <Wallet className="h-3.5 w-3.5 flex-shrink-0" />
+                                  <span className="truncate max-w-[100px] sm:max-w-[120px]">{wallet.name}</span>
                                 </div>
                               </>
                             )}

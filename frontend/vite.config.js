@@ -37,6 +37,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // Add custom service worker code for push notifications
+        // This will be injected into the generated service worker
+        additionalManifestEntries: [],
+        // Inject custom code for push event listeners
+        importScripts: [],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -83,6 +88,8 @@ export default defineConfig({
     })
   ],
   server: {
+    host: '0.0.0.0', // Cho phép truy cập từ LAN
+      allowedHosts: ['workspace.tamaisme.studio', 'de4aa9419d06.ngrok-free.app'],
     port: 3000,
     proxy: {
       '/api': {

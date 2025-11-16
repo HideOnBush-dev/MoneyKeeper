@@ -7,10 +7,14 @@ from app.security import (
     validate_amount, validate_category, sanitize_string,
     validate_positive_integer, validate_date
 )
+from app.utils.ocr import ReceiptOCR
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Initialize OCR processor
+receipt_ocr = ReceiptOCR()
 
 
 @bp.route('/auth/me')
@@ -187,3 +191,43 @@ def get_budgets():
     except Exception as e:
         logger.exception(f"Error fetching budgets: {e}")
         abort(500, description="An error occurred")
+
+
+@bp.route('/process_receipt', methods=['POST'])
+@login_required
+def process_receipt():
+    """Process receipt image using OCR (Google AI)"""
+    try:
+        if "receipt" not in request.files:
+            abort(400, description="Không tìm thấy ảnh")
+        
+        file = request.files["receipt"]
+        if not file or not file.filename:
+            abort(400, description="File không hợp lệ")
+        
+        if not file.filename.lower().endswith((".jpg", ".jpeg", ".png")):
+            abort(400, description="Chỉ hỗ trợ file ảnh (.jpg, .png)")
+        
+        # Process image with OCR
+        result = receipt_ocr.process_image(file.read())
+        
+        # Check for OCR failures
+        if result.get("error"):
+            return jsonify({
+                "success": False,
+                "error": result["error"]
+            }), 400
+        
+        return jsonify({
+            "success": True,
+            "amount": result.get("amount"),
+            "date": result.get("date").isoformat() if result.get("date") else None,
+            "text": result.get("text", ""),
+        }), 200
+        
+    except ValueError as e:
+        logger.exception(f"Validation error processing receipt: {e}")
+        abort(400, description=str(e))
+    except Exception as e:
+        logger.exception(f"Error processing receipt: {e}")
+        abort(500, description="Lỗi khi xử lý ảnh hóa đơn")

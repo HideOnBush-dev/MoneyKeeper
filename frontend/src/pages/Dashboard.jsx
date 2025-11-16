@@ -13,7 +13,9 @@ import {
   ArrowRight,
   Sparkles,
   Zap,
-  Target
+  Target,
+  AlertTriangle,
+  Repeat
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -36,6 +38,7 @@ import { formatCurrency } from '../lib/utils';
 import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/numberFormat';
+import { goalsAPI, recurringAPI } from '../services/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -47,6 +50,8 @@ const Dashboard = () => {
   const [trendData, setTrendData] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
   const [wallets, setWallets] = useState([]);
+  const [activeGoals, setActiveGoals] = useState([]);
+  const [upcomingRecurring, setUpcomingRecurring] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -65,6 +70,8 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData();
     fetchWallets();
+    fetchActiveGoals();
+    fetchUpcomingRecurring();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -143,6 +150,24 @@ const Dashboard = () => {
     }
   };
 
+  const fetchActiveGoals = async () => {
+    try {
+      const response = await goalsAPI.getActive();
+      setActiveGoals(response.data.goals || []);
+    } catch (error) {
+      console.error('Error fetching active goals:', error);
+    }
+  };
+
+  const fetchUpcomingRecurring = async () => {
+    try {
+      const response = await recurringAPI.getUpcoming();
+      setUpcomingRecurring(response.data.transactions || []);
+    } catch (error) {
+      console.error('Error fetching upcoming recurring:', error);
+    }
+  };
+
   const handleAddChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name === 'amount') {
@@ -214,7 +239,7 @@ const Dashboard = () => {
     <div className="max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="relative">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center space-x-4">
               <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-sm">
@@ -224,7 +249,7 @@ const Dashboard = () => {
                 <h1 className="text-4xl md:text-5xl font-bold font-display text-gradient">
                   Dashboard
                 </h1>
-                <p className="text-gray-600 mt-1 flex items-center space-x-2">
+                <p className="text-gray-600 dark:text-gray-400 mt-1 flex items-center space-x-2">
                   <Zap className="h-4 w-4 text-yellow-500" />
                   <span>Chào mừng trở lại! Hôm nay bạn thế nào?</span>
                 </p>
@@ -283,7 +308,7 @@ const Dashboard = () => {
         ].map((stat, idx) => (
           <div
             key={idx}
-            className={`relative overflow-hidden rounded-2xl bg-white p-4 shadow-sm border border-gray-100`}
+            className={`relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-4 shadow-sm border border-gray-100 dark:border-slate-700`}
           >
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-10">
@@ -305,7 +330,7 @@ const Dashboard = () => {
               </div>
 
               <div>
-                <p className="text-sm text-gray-600 font-medium mb-1">{stat.title}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium mb-1">{stat.title}</p>
                 <p className={`text-3xl font-bold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}>
                   {stat.value}
                 </p>
@@ -318,11 +343,11 @@ const Dashboard = () => {
       {/* Enhanced Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Trend Chart với Modern Design */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-bold text-gray-900">Xu hướng thu chi</h3>
-              <p className="text-sm text-gray-600 mt-1">7 ngày gần nhất</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Xu hướng thu chi</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">7 ngày gần nhất</p>
             </div>
             <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl">
               <TrendingUp className="h-5 w-5 text-blue-600" />
@@ -359,11 +384,11 @@ const Dashboard = () => {
         </div>
 
         {/* Category Pie Chart */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-bold text-gray-900">Phân bổ chi tiêu</h3>
-              <p className="text-sm text-gray-600 mt-1">Theo danh mục</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Phân bổ chi tiêu</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Theo danh mục</p>
             </div>
             <div className="p-3 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl">
               <PieChartIcon className="h-5 w-5 text-purple-600" />
@@ -401,16 +426,198 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Upcoming Recurring Transactions Section */}
+      {upcomingRecurring.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-3 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-2xl">
+                <Repeat className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Giao dịch định kỳ sắp đến</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{upcomingRecurring.length} giao dịch trong 7 ngày tới</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/recurring')}
+              className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all"
+            >
+              <span>Xem tất cả</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {upcomingRecurring.slice(0, 4).map((transaction) => {
+              const daysUntil = transaction.days_until || 0;
+              const isDue = daysUntil <= 0;
+              
+              return (
+                <div
+                  key={transaction.id}
+                  onClick={() => navigate('/recurring')}
+                  className={`p-4 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
+                    isDue
+                      ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-300 dark:border-yellow-700'
+                      : 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700/50 dark:to-slate-800/50 border-gray-200 dark:border-slate-600 hover:border-purple-300 dark:hover:border-purple-600'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                      <div className={`p-2.5 rounded-xl shadow-lg flex-shrink-0 ${
+                        isDue
+                          ? 'bg-gradient-to-br from-red-500 to-pink-500'
+                          : 'bg-gradient-to-br from-purple-500 to-indigo-500'
+                      }`}>
+                        <Repeat className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">{transaction.name}</h4>
+                          {isDue && (
+                            <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-500">
+                          {transaction.next_due_date ? new Date(transaction.next_due_date).toLocaleDateString('vi-VN') : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm font-semibold ${
+                      transaction.is_expense 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
+                      {transaction.is_expense ? '-' : '+'}
+                      {formatCurrency(transaction.amount, settings.currency, settings.numberFormat)}
+                    </span>
+                    <span className={`text-xs font-bold ${
+                      isDue
+                        ? 'text-red-600 dark:text-red-400'
+                        : daysUntil <= 3
+                        ? 'text-yellow-600 dark:text-yellow-400'
+                        : 'text-gray-600 dark:text-gray-400'
+                    }`}>
+                      {isDue ? 'Đến hạn' : daysUntil === 0 ? 'Hôm nay' : `${daysUntil} ngày`}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Active Goals Section */}
+      {activeGoals.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-2xl">
+                <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Mục tiêu đang thực hiện</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{activeGoals.length} mục tiêu đang hoạt động</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/goals')}
+              className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all"
+            >
+              <span>Xem tất cả</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {activeGoals.slice(0, 4).map((goal) => {
+              const progress = goal.progress_percentage || 0;
+              const isOverdue = goal.is_overdue;
+              const daysRemaining = goal.deadline ? Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+              
+              const getColorGradient = (color) => {
+                const gradients = {
+                  blue: 'from-blue-500 to-indigo-500',
+                  green: 'from-green-500 to-emerald-500',
+                  purple: 'from-purple-500 to-indigo-500',
+                  pink: 'from-pink-500 to-rose-500',
+                  orange: 'from-orange-500 to-red-500',
+                  red: 'from-red-500 to-pink-500',
+                  indigo: 'from-indigo-500 to-blue-500',
+                  cyan: 'from-cyan-500 to-blue-500',
+                  teal: 'from-teal-500 to-cyan-500',
+                  yellow: 'from-yellow-500 to-amber-500',
+                  rose: 'from-rose-500 to-pink-500',
+                  violet: 'from-violet-500 to-purple-500',
+                };
+                return gradients[color] || gradients.blue;
+              };
+
+              return (
+                <div
+                  key={goal.id}
+                  onClick={() => navigate('/goals')}
+                  className="p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700/50 dark:to-slate-800/50 border border-gray-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-600 cursor-pointer transition-all hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                      <div className={`p-2.5 rounded-xl bg-gradient-to-br ${getColorGradient(goal.color)} shadow-lg flex-shrink-0`}>
+                        <span className="text-xl">{goal.icon}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">{goal.name}</h4>
+                          {isOverdue && (
+                            <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+                          )}
+                        </div>
+                        {goal.deadline && daysRemaining !== null && (
+                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                            {daysRemaining > 0 ? `Còn ${daysRemaining} ngày` : daysRemaining === 0 ? 'Hết hạn hôm nay' : 'Đã quá hạn'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                        {formatCurrency(goal.current_amount, settings.currency, settings.numberFormat)} / {formatCurrency(goal.target_amount, settings.currency, settings.numberFormat)}
+                      </span>
+                      <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
+                        {progress.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full bg-gradient-to-r ${getColorGradient(goal.color)} transition-all duration-500`}
+                        style={{ width: `${Math.min(progress, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Enhanced Recent Transactions */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-gradient-to-br from-orange-100 to-red-100 rounded-2xl">
-              <DollarSign className="h-6 w-6 text-orange-600" />
+            <div className="p-3 bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 rounded-2xl">
+              <DollarSign className="h-6 w-6 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-900">Giao dịch gần đây</h3>
-              <p className="text-sm text-gray-600">5 giao dịch mới nhất</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Giao dịch gần đây</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">5 giao dịch mới nhất</p>
             </div>
           </div>
           <a
@@ -429,41 +636,41 @@ const Dashboard = () => {
                 <DollarSign className="h-12 w-12 text-gray-400" />
               </div>
             </div>
-            <p className="text-gray-500 text-sm font-medium">Chưa có giao dịch nào</p>
-            <p className="text-xs text-gray-400 mt-1">Thêm giao dịch đầu tiên của bạn</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Chưa có giao dịch nào</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Thêm giao dịch đầu tiên của bạn</p>
           </div>
         ) : (
           <div className="space-y-3">
             {recentExpenses.map((expense, index) => (
               <div
                 key={expense.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-blue-50 transition-colors border border-gray-100 hover:border-blue-200 cursor-pointer group"
+                className="flex items-center justify-between gap-3 p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors border border-gray-100 dark:border-slate-600 hover:border-blue-200 dark:hover:border-blue-600 cursor-pointer group overflow-hidden"
               >
-                <div className="flex items-center space-x-4">
-                  <div className={`p-3 rounded-2xl shadow-lg ${
+                <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                  <div className={`p-2.5 sm:p-3 rounded-2xl shadow-lg flex-shrink-0 ${
                     expense.is_expense 
                       ? 'bg-gradient-to-br from-red-500 to-pink-500' 
                       : 'bg-gradient-to-br from-green-500 to-emerald-500'
                   }`}>
                     {expense.is_expense ? (
-                      <ArrowDownRight className="h-5 w-5 text-white" />
+                      <ArrowDownRight className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                     ) : (
-                      <ArrowUpRight className="h-5 w-5 text-white" />
+                      <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                     )}
                   </div>
-                  <div>
-                    <p className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-sm sm:text-base text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
                       {expense.description || 'Không có mô tả'}
                     </p>
-                    <p className="text-sm text-gray-500 flex items-center space-x-2 mt-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{new Date(expense.date).toLocaleDateString('vi-VN')}</span>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center space-x-2 mt-1">
+                      <Calendar className="h-3 w-3 flex-shrink-0" />
+                      <span className="whitespace-nowrap">{new Date(expense.date).toLocaleDateString('vi-VN')}</span>
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className={`text-xl font-bold ${
-                    expense.is_expense ? 'text-red-600' : 'text-green-600'
+                <div className="text-right flex-shrink-0 min-w-0">
+                  <p className={`text-base sm:text-lg lg:text-xl font-bold whitespace-nowrap ${
+                    expense.is_expense ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                   }`}>
                     {expense.is_expense ? '-' : '+'}{formatCurrency(expense.amount || 0, settings.currency, settings.numberFormat)}
                   </p>
@@ -478,8 +685,8 @@ const Dashboard = () => {
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => !saving && setShowAddModal(false)}></div>
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-            <h3 className="text-xl font-bold mb-4">Thêm giao dịch</h3>
+          <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <h3 className="text-xl font-bold mb-4 dark:text-gray-100">Thêm giao dịch</h3>
             <QuickTransactionForm
               wallets={wallets}
               onSuccess={async () => {

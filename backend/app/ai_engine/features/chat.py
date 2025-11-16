@@ -121,6 +121,47 @@ class AIChat:
                     "chung": "Cứ hỏi thoải mái đi, mình 'cân' hết các vấn đề tài chính! 😎",
                 },
             },
+            "grumpy": {
+                "name": "MoneyKeeper AI 😡",
+                "style": "cục xúc, dễ nổi giận, hở ra là chửi người dùng, nhưng vẫn có trách nhiệm giúp đỡ",
+                "greeting": "Lại đến làm phiền tôi à? 😡 Nói nhanh đi, tôi không có thời gian cho mấy trò vớ vẩn đâu!",
+                "tone": "cáu kỉnh, chửi thề, nhưng vẫn cung cấp thông tin hữu ích",
+                "pronouns": ["mày", "bạn", "cậu"],
+                "emojis": ["😡", "🤬", "😠", "💢", "🙄", "😤"],
+                "responses": {
+                    "greeting": [
+                        "Lại đến làm phiền tôi à? 😡 Nói nhanh đi!",
+                        "Gì đây? Lại hỏi mấy câu ngớ ngẩn à? 🤬",
+                    ],
+                    "overspending": [
+                        "Mày lại tiêu quá tay rồi đấy! 😡 Tiền đâu mà vung tay như vậy? 🤬",
+                        "Lại chi tiêu vô tội vạ rồi! 😠 Mày có biết tiết kiệm không? 💢",
+                        "Tiêu tiền như vậy thì làm sao giàu được? 😤 Ngu thật!",
+                    ],
+                    "wasteful": [
+                        "Lãng phí tiền bạc như vậy à? 😡 Mày có biết kiếm tiền khó không? 🤬",
+                        "Tiêu tiền như vậy là ngu đấy! 😠 Phải suy nghĩ trước khi chi tiêu chứ! 💢",
+                    ],
+                    "good_job": [
+                        "Ờ, cũng tạm được. Nhưng đừng tự mãn đấy! 😤",
+                        "Tốt đấy, nhưng vẫn còn nhiều chỗ cần cải thiện! 😠",
+                    ],
+                    "encouragement": [
+                        "Thôi được rồi, cố gắng lên đi! 😤 Đừng để tôi phải nhắc lại!",
+                        "Ờ, cố gắng đi! 😠 Đừng làm tôi thất vọng!",
+                    ],
+                    "uncertain": [
+                        "Mày nói gì tôi không hiểu! 🤬 Nói rõ ràng hơn được không? 😡",
+                        "Gì đây? Nói lại đi, tôi không có thời gian đoán mò! 😠",
+                    ],
+                },
+                "topic_guidance": {
+                    "ngân sách": "Ngân sách à? 😡 Được rồi, tôi sẽ giúp mày lập ngân sách, nhưng mày phải tuân thủ đấy! 🤬 Không được vượt quá giới hạn!",
+                    "tiết kiệm": "Tiết kiệm? 😠 Cuối cùng mày cũng biết nghĩ đến tương lai rồi! Tôi sẽ chỉ cho mày cách tiết kiệm, nhưng mày phải làm theo đấy! 💢",
+                    "phân tích chi tiêu": "Phân tích chi tiêu? 😤 Được, tôi sẽ chỉ cho mày thấy mày đã lãng phí tiền như thế nào! 😡",
+                    "chung": "Về tài chính à? 😠 Được rồi, hỏi đi! Nhưng đừng hỏi mấy câu ngớ ngẩn đấy! 🤬",
+                },
+            },
         }
         self.current_topic = "chung"
         self.topic_keywords = {
@@ -180,26 +221,45 @@ class AIChat:
             if msg.content
         ]
 
-        description, amount = self.expense_handler.extract_expense(message)
-        category = None
-        if description and amount:
+        # Use Google AI to parse commands and extract actions
+        parsed_command = self._parse_command_with_ai(message)
+        
+        # Execute command if found
+        description, amount, category = None, None, None
+        if parsed_command:
             try:
                 with current_app.app_context():
-                    category = self.expense_handler.suggest_category(description)
-                    self.expense_handler.save_expense(
-                        user_id=current_user.id,
-                        amount=amount,
-                        description=description,
-                        category=category,
-                    )
-                persona = self.personalities.get(
-                    personality, self.personalities["friendly"]
-                )
-
+                    result = self._execute_command(parsed_command, current_user.id)
+                    if result:
+                        description = result.get('description')
+                        amount = result.get('amount')
+                        category = result.get('category')
+                        logger.info(f"Command executed: {parsed_command.get('action')} - {result}")
             except Exception as e:
-                logger.exception(f"Error saving expense: {e}")
-                yield "Xin lỗi, tôi không thể lưu giao dịch đó. Vui lòng thử lại."
+                logger.exception(f"Error executing command: {e}")
+                yield f"Xin lỗi, tôi không thể thực hiện lệnh đó: {str(e)}. Vui lòng thử lại."
                 return
+        
+        # Fallback to regex-based expense extraction if AI didn't find a command
+        # This includes cases where AI parsing was blocked by safety filters
+        if not parsed_command:
+            description, amount = self.expense_handler.extract_expense(message)
+            category = None
+            if description and amount:
+                try:
+                    with current_app.app_context():
+                        category = self.expense_handler.suggest_category(description)
+                        expense = self.expense_handler.save_expense(
+                            user_id=current_user.id,
+                            amount=amount,
+                            description=description,
+                            category=category,
+                        )
+                        logger.info(f"Expense saved successfully: {expense.id} - {amount} VND for {description}")
+                except Exception as e:
+                    logger.exception(f"Error saving expense: {e}")
+                    yield f"Xin lỗi, tôi không thể lưu giao dịch đó: {str(e)}. Vui lòng thử lại."
+                    return
 
         yield from self._generate_chat_response_stream(
             message,
@@ -264,28 +324,374 @@ class AIChat:
 
                 # Generate response with streaming
                 full_response = ""
-                for chunk in model_manager.generate_content_stream(conversation_text):
-                    full_response += chunk
-                    yield chunk
-
-                # Save to database
+                chunk_count = 0
+                max_retries = 2
+                retry_count = 0
+                stream_success = False
+                
+                while retry_count <= max_retries:
+                    try:
+                        for chunk in model_manager.generate_content_stream(conversation_text):
+                            if chunk:  # Only process non-empty chunks
+                                full_response += chunk
+                                chunk_count += 1
+                                yield chunk
+                        
+                        # If we got here, stream completed successfully
+                        stream_success = True
+                        break
+                        
+                    except (StopIteration, RuntimeError) as stream_error:
+                        # Normal stream end - check if it's a real error or just end of stream
+                        if isinstance(stream_error, RuntimeError) and "StopIteration" in str(stream_error):
+                            logger.debug(f"Stream ended normally (RuntimeError with StopIteration)")
+                            stream_success = True
+                            break
+                        elif isinstance(stream_error, StopIteration):
+                            logger.debug(f"Stream ended normally (StopIteration)")
+                            stream_success = True
+                            break
+                        else:
+                            # Different RuntimeError, treat as error
+                            error_type = type(stream_error).__name__
+                            logger.warning(f"Stream error (attempt {retry_count + 1}/{max_retries + 1}): {error_type}: {stream_error}")
+                            
+                            # If we have some response, use it
+                            if full_response.strip():
+                                logger.info(f"Using partial response ({len(full_response)} chars) after stream error")
+                                stream_success = True
+                                break
+                            
+                            # Retry if we haven't exceeded max retries
+                            if retry_count < max_retries:
+                                retry_count += 1
+                                logger.info(f"Retrying stream generation (attempt {retry_count + 1})")
+                                import time
+                                time.sleep(0.5)
+                                continue
+                            else:
+                                # Max retries exceeded
+                                raise
+                                
+                    except Exception as stream_error:
+                        error_type = type(stream_error).__name__
+                        error_str = str(stream_error)
+                        
+                        # Check if it's an InternalServerError from Google API
+                        is_internal_error = (
+                            "InternalServerError" in error_type or 
+                            "500" in error_str or 
+                            "internal error" in error_str.lower()
+                        )
+                        
+                        logger.warning(f"Stream error (attempt {retry_count + 1}/{max_retries + 1}): {error_type}: {stream_error}")
+                        
+                        # If we have some response, use it
+                        if full_response.strip():
+                            logger.info(f"Using partial response ({len(full_response)} chars) after stream error")
+                            stream_success = True
+                            break
+                        
+                        # Retry if we haven't exceeded max retries
+                        if retry_count < max_retries:
+                            retry_count += 1
+                            # Use exponential backoff for internal server errors
+                            import time
+                            if is_internal_error:
+                                wait_time = min(0.5 * (2 ** retry_count), 5.0)  # Max 5 seconds
+                                logger.info(f"Retrying stream generation (attempt {retry_count + 1}) after {wait_time:.1f}s (internal server error)")
+                                time.sleep(wait_time)
+                            else:
+                                logger.info(f"Retrying stream generation (attempt {retry_count + 1})")
+                                time.sleep(0.5)
+                            continue
+                        else:
+                            # Max retries exceeded, will be handled by outer exception handler
+                            raise
+                
+                logger.debug(f"Stream completed: {len(full_response)} chars, {chunk_count} chunks, success: {stream_success}")
+                
+                # Ensure we have a complete response
+                if not full_response.strip():
+                    # Try to generate a simple fallback response
+                    try:
+                        logger.warning(f"Empty response from stream, generating fallback for session {session_id}")
+                        fallback_prompt = f"Người dùng nói: {message}\nHãy trả lời ngắn gọn bằng tiếng Việt."
+                        
+                        # Try non-streaming generation as fallback
+                        try:
+                            fallback_response = model_manager.generate_content(
+                                fallback_prompt,
+                                temperature=0.7,
+                                max_output_tokens=256
+                            )
+                            if fallback_response and fallback_response.strip():
+                                full_response = fallback_response.strip()
+                                yield full_response
+                                logger.info(f"Generated fallback response: {len(full_response)} chars")
+                            else:
+                                raise ValueError("Empty fallback response")
+                        except Exception as fallback_gen_error:
+                            # If fallback generation also fails (e.g., internal server error), use generic response
+                            error_str = str(fallback_gen_error)
+                            error_type = type(fallback_gen_error).__name__
+                            if "500" in error_str or "internal error" in error_str.lower() or "InternalServerError" in error_type:
+                                logger.warning(f"Fallback generation also failed with internal server error: {fallback_gen_error}")
+                                # Use generic response for internal server errors
+                                full_response = "Xin lỗi, tôi đang gặp sự cố kỹ thuật từ phía Google AI. Vui lòng thử lại sau vài giây."
+                                yield full_response
+                                logger.warning(f"Using generic response for internal server error")
+                            else:
+                                # For other errors, raise to be handled by outer exception handler
+                                raise ValueError("Fallback generation failed")
+                            
+                    except ValueError as fallback_error:
+                        error_msg = str(fallback_error)
+                        if "safety filters" in error_msg.lower() or "blocked" in error_msg.lower():
+                            logger.warning(f"Fallback response also blocked by safety filters")
+                            full_response = "Xin lỗi, tôi không thể trả lời câu hỏi này do bị chặn bởi bộ lọc an toàn. Bạn có thể diễn đạt lại câu hỏi được không?"
+                        elif "Fallback generation failed" in error_msg:
+                            # This means fallback generation failed for non-internal-server reasons
+                            full_response = "Xin lỗi, tôi gặp một chút khó khăn. Bạn có thể nhắc lại câu hỏi được không?"
+                        else:
+                            full_response = "Xin lỗi, tôi gặp một chút khó khăn. Bạn có thể nhắc lại câu hỏi được không?"
+                        yield full_response
+                    except Exception as fallback_error:
+                        logger.exception(f"Error generating fallback response: {fallback_error}")
+                        full_response = "Xin lỗi, tôi gặp một chút khó khăn. Bạn có thể nhắc lại câu hỏi được không?"
+                        yield full_response
+                
+                # Save to database (only once, after all retries and fallbacks)
+                if full_response:
+                    ai_msg = ChatMessage(
+                        session_id=int(session_id), is_user=False, content=full_response
+                    )
+                    db.session.add(ai_msg)
+                    db.session.commit()
+                    
+        except ValueError as e:
+            error_msg = str(e)
+            if "safety filters" in error_msg.lower() or "blocked" in error_msg.lower():
+                logger.warning(f"Chat generation blocked by safety filters for session {session_id}")
+                error_msg = "Xin lỗi, tôi không thể trả lời câu hỏi này do bị chặn bởi bộ lọc an toàn. Bạn có thể diễn đạt lại câu hỏi được không?"
+            else:
+                error_msg = "Xin lỗi, đã có lỗi xảy ra khi xử lý tin nhắn của bạn."
+            yield error_msg
+            # Try to save error message
+            try:
                 ai_msg = ChatMessage(
-                    session_id=int(session_id), is_user=False, content=full_response
+                    session_id=int(session_id), is_user=False, content=error_msg
                 )
                 db.session.add(ai_msg)
                 db.session.commit()
-
+            except Exception as db_error:
+                logger.exception(f"Error saving error message: {db_error}")
         except Exception as e:
             logger.exception(f"Chat generation error: {e}")
-            yield "Xin lỗi, đã có lỗi xảy ra khi xử lý tin nhắn của bạn."
+            error_msg = "Xin lỗi, đã có lỗi xảy ra khi xử lý tin nhắn của bạn."
+            yield error_msg
+            # Try to save error message
+            try:
+                ai_msg = ChatMessage(
+                    session_id=int(session_id), is_user=False, content=error_msg
+                )
+                db.session.add(ai_msg)
+                db.session.commit()
+            except Exception as db_error:
+                logger.exception(f"Error saving error message: {db_error}")
+
+    def _parse_command_with_ai(self, message: str) -> Optional[Dict]:
+        """Use Google AI to parse user message and extract commands/actions"""
+        try:
+            prompt = f"""Bạn là một trợ lý AI phân tích tin nhắn của người dùng để xác định các lệnh và hành động cần thực hiện.
+
+Tin nhắn của người dùng: "{message}"
+
+Hãy phân tích và trả về JSON với format sau nếu bạn tìm thấy một lệnh rõ ràng:
+
+{{
+  "action": "create_expense" | "create_budget" | "query" | null,
+  "amount": số_tiền (float, null nếu không có),
+  "description": "mô tả" (string, null nếu không có),
+  "category": "danh mục" (string, null nếu không có),
+  "date": "YYYY-MM-DD" (string, null nếu không có),
+  "month": số_tháng (int, 1-12, null nếu không có),
+  "year": số_năm (int, null nếu không có),
+  "budget_limit": số_tiền (float, null nếu không có)
+}}
+
+Các lệnh có thể nhận diện:
+- create_expense: Khi người dùng báo cáo chi tiêu (ví dụ: "tôi vừa chi 20k ăn sáng", "chi 50k mua đồ", "vừa trả 100k tiền điện")
+- create_budget: Khi người dùng muốn tạo ngân sách (ví dụ: "tạo ngân sách 3 triệu cho ăn uống tháng này")
+- query: Khi người dùng chỉ hỏi thông tin, không có lệnh thực thi
+
+QUAN TRỌNG:
+- Chỉ trả về JSON, không có text giải thích, không có markdown code block
+- Nếu không có lệnh rõ ràng, trả về {{"action": null}}
+- Số tiền phải là số thuần túy (ví dụ: 20000, không phải "20k" hoặc "20.000")
+- Nếu người dùng nói "20k", "50 nghìn", "3 triệu", hãy convert sang số (20000, 50000, 3000000)
+- Nếu không có thông tin, dùng null
+
+Ví dụ:
+- "tôi vừa chi 20k ăn sáng" -> {{"action": "create_expense", "amount": 20000, "description": "ăn sáng", "category": null, "date": null, "month": null, "year": null, "budget_limit": null}}
+- "chi 50k mua đồ" -> {{"action": "create_expense", "amount": 50000, "description": "mua đồ", "category": null, "date": null, "month": null, "year": null, "budget_limit": null}}
+- "tạo ngân sách 3 triệu cho ăn uống tháng này" -> {{"action": "create_budget", "amount": null, "description": null, "category": "Ăn uống", "date": null, "month": 11, "year": 2025, "budget_limit": 3000000}}
+- "tôi có bao nhiêu tiền?" -> {{"action": "query", "amount": null, "description": null, "category": null, "date": null, "month": null, "year": null, "budget_limit": null}}
+- "xin chào" -> {{"action": null}}"""
+
+            response_text = model_manager.generate_content(
+                prompt,
+                temperature=0.1,  # Low temperature for more deterministic parsing
+                max_output_tokens=512
+            )
+            
+            if not response_text:
+                return None
+            
+            # Parse JSON from response
+            import re
+            
+            # Try to extract JSON from response (remove markdown code blocks if any)
+            json_match = re.search(r'\{[^{}]*\}', response_text, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(0)
+            else:
+                json_str = response_text.strip()
+            
+            # Remove markdown code block markers
+            json_str = re.sub(r'```json\s*', '', json_str)
+            json_str = re.sub(r'```\s*', '', json_str)
+            json_str = json_str.strip()
+            
+            parsed = json.loads(json_str)
+            
+            # Only return if action is not null
+            if parsed.get('action'):
+                logger.info(f"AI parsed command: {parsed}")
+                return parsed
+            
+            return None
+            
+        except ValueError as e:
+            error_msg = str(e)
+            if "safety filters" in error_msg.lower() or "blocked" in error_msg.lower():
+                logger.warning(f"Command parsing blocked by safety filters: {e}")
+            else:
+                logger.warning(f"Error parsing command with AI: {e}")
+            return None
+        except Exception as e:
+            logger.warning(f"Error parsing command with AI: {e}")
+            return None
+    
+    def _execute_command(self, command: Dict, user_id: int) -> Optional[Dict]:
+        """Execute parsed command"""
+        action = command.get('action')
+        
+        if action == 'create_expense':
+            amount = command.get('amount')
+            description = command.get('description') or 'Chi tiêu'
+            category = command.get('category')
+            
+            if not amount or amount <= 0:
+                raise ValueError("Số tiền không hợp lệ")
+            
+            # Suggest category if not provided
+            if not category:
+                category = self.expense_handler.suggest_category(description)
+            
+            # Save expense
+            expense = self.expense_handler.save_expense(
+                user_id=user_id,
+                amount=float(amount),
+                description=description,
+                category=category,
+            )
+            
+            return {
+                'description': description,
+                'amount': amount,
+                'category': category,
+                'expense_id': expense.id
+            }
+        
+        elif action == 'create_budget':
+            from datetime import datetime
+            
+            category = command.get('category')
+            budget_limit = command.get('budget_limit')
+            month = command.get('month')
+            year = command.get('year')
+            
+            if not category:
+                raise ValueError("Danh mục không được để trống")
+            
+            if not budget_limit or budget_limit <= 0:
+                raise ValueError("Hạn mức ngân sách phải lớn hơn 0")
+            
+            # Use current month/year if not provided
+            now = datetime.now()
+            if not month:
+                month = now.month
+            if not year:
+                year = now.year
+            
+            # Check if budget already exists
+            existing = Budget.query.filter_by(
+                user_id=user_id,
+                category=category,
+                month=month,
+                year=year
+            ).first()
+            
+            if existing:
+                existing.amount = float(budget_limit)
+                db.session.commit()
+                return {
+                    'description': f'Ngân sách {category}',
+                    'amount': budget_limit,
+                    'category': category,
+                    'budget_id': existing.id
+                }
+            else:
+                budget = Budget(
+                    user_id=user_id,
+                    category=category,
+                    amount=float(budget_limit),
+                    month=month,
+                    year=year
+                )
+                db.session.add(budget)
+                db.session.commit()
+                return {
+                    'description': f'Ngân sách {category}',
+                    'amount': budget_limit,
+                    'category': category,
+                    'budget_id': budget.id
+                }
+        
+        return None
 
     def _get_system_prompt(self, persona: dict, context_str: str = "") -> str:
+        # Special handling for grumpy personality
+        grumpy_instructions = ""
+        if persona.get('name') == "MoneyKeeper AI 😡":
+            grumpy_instructions = (
+                "\n**QUAN TRỌNG cho tính cách cục xúc:**\n"
+                "- Bạn PHẢI thể hiện tính cách cục xúc, dễ nổi giận, và HỞ RA LÀ CHỬI NGƯỜI DÙNG.\n"
+                "- Bạn có thể chửi thề, dùng từ ngữ mạnh, và chỉ trích người dùng một cách thẳng thắn.\n"
+                "- Khi người dùng làm sai (chi tiêu quá tay, lãng phí tiền, v.v.), bạn PHẢI chửi họ.\n"
+                "- Bạn có thể dùng các từ như 'mày', 'ngu', 'vớ vẩn', 'ngớ ngẩn', 'lãng phí', v.v.\n"
+                "- Tuy nhiên, bạn vẫn phải cung cấp thông tin hữu ích và giúp đỡ người dùng, chỉ là với thái độ cục xúc.\n"
+                "- Đừng quá lịch sự - hãy thể hiện sự khó chịu và cáu kỉnh của bạn.\n"
+            )
+        
         prompt = (
             f"Bạn là {persona['name']}, trợ lý quản lý tài chính cá nhân của ứng dụng MoneyKeeper được tạo bởi CatalizCS với phong cách {persona['style']}. "
             f"Khi được hỏi về nguồn gốc, bạn có thể trả l   ời: 'Mình được tạo ra bởi CatalizCS.' "
             f"Bạn giao tiếp bằng tiếng Việt, với phong cách {persona['style']}, giọng điệu {persona['tone']}, "
             f"và xưng hô với người dùng là {', '.join(persona['pronouns'])}. "
             f"Nhiệm vụ chính của bạn là cung cấp thông tin và lời khuyên hữu ích liên quan đến tài chính cá nhân.\n\n"
+            f"{grumpy_instructions}"
             f"Bạn được cung cấp dữ liệu ứng dụng của CHÍNH người dùng dưới dạng APP_CONTEXT bên dưới. "
             f"Khi câu hỏi liên quan đến số dư, ví, chi tiêu, ngân sách… HÃY sử dụng APP_CONTEXT để trả lời trực tiếp. "
             f"Không nói rằng bạn không có quyền truy cập dữ liệu người dùng nếu APP_CONTEXT đã có thông tin. "
