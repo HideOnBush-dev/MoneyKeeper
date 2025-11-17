@@ -17,6 +17,7 @@ import {
   PieChart,
   Target,
   Repeat,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { notificationsAPI } from '../services/api';
@@ -91,6 +92,7 @@ const Layout = ({ children }) => {
               <NavLink to="/budgets" icon={PieChart} label="Ngân sách" isActive={isActive('/budgets')} />
               <NavLink to="/goals" icon={Target} label="Mục tiêu" isActive={isActive('/goals')} />
               <NavLink to="/recurring" icon={Repeat} label="Định kỳ" isActive={isActive('/recurring')} />
+              <NavLink to="/debts" icon={CreditCard} label="Quản lý nợ" isActive={isActive('/debts')} />
               <NavLink to="/chat" icon={MessageSquare} label="AI Chat" isActive={isActive('/chat')} />
 
               {/* User Menu */}
@@ -372,6 +374,17 @@ const Layout = ({ children }) => {
                   <Repeat className="h-4 w-4 text-purple-600" />
                 </div>
                 <span className="font-medium">Định kỳ</span>
+              </Link>
+              
+              <Link
+                to="/debts"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-red-50 hover:to-rose-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all mx-2 rounded-2xl group"
+              >
+                <div className="p-2 bg-red-100 rounded-xl group-hover:bg-red-200 transition-colors">
+                  <CreditCard className="h-4 w-4 text-red-600" />
+                </div>
+                <span className="font-medium">Quản lý nợ</span>
               </Link>
               
               <Link

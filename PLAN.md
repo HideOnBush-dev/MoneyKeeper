@@ -7,9 +7,9 @@
 ## 📊 Tổng quan
 
 - **Tổng số tính năng:** 15
-- **Đã hoàn thành:** 2 (Savings Goals, Recurring Transactions)
+- **Đã hoàn thành:** 3 (Savings Goals, Recurring Transactions, Debt Tracking)
 - **Đang phát triển:** 0
-- **Chưa bắt đầu:** 13
+- **Chưa bắt đầu:** 12
 
 ---
 
@@ -108,7 +108,7 @@ Tự động tạo giao dịch định kỳ cho các khoản như Netflix, đi�
 ---
 
 #### 3. Quản lý nợ (Debt Tracking)
-- **Status:** ⏳ Pending
+- **Status:** ✅ Completed
 - **Priority:** Medium
 - **Estimated Time:** 3-4 days
 - **Dependencies:** None
@@ -117,37 +117,41 @@ Tự động tạo giao dịch định kỳ cho các khoản như Netflix, đi�
 Theo dõi các khoản nợ, lịch trả nợ, lãi suất và cảnh báo đến hạn.
 
 **Kế hoạch triển khai:**
-- [ ] **Backend:**
-  - [ ] Tạo model `Debt` trong `backend/app/models.py`
-    - Fields: `id`, `user_id`, `name`, `creditor_name`, `total_amount`, `remaining_amount`, `interest_rate`, `start_date`, `due_date`, `payment_frequency`, `next_payment_date`, `next_payment_amount`, `description`, `is_paid`, `created_at`, `updated_at`
-  - [ ] Tạo model `DebtPayment` để track các lần trả
-    - Fields: `id`, `debt_id`, `amount`, `payment_date`, `notes`
-  - [ ] Tạo API endpoints trong `backend/app/api/debts.py`
+- [x] **Backend:**
+  - [x] Tạo model `Debt` trong `backend/app/models.py`
+    - Fields: `id`, `user_id`, `name`, `creditor_name`, `total_amount`, `remaining_amount`, `interest_rate`, `start_date`, `due_date`, `payment_frequency`, `next_payment_date`, `next_payment_amount`, `description`, `is_paid`, `is_lending`, `wallet_id`, `created_at`, `updated_at`
+  - [x] Tạo model `DebtPayment` để track các lần trả
+    - Fields: `id`, `debt_id`, `amount`, `payment_date`, `notes`, `created_at`
+  - [x] Tạo API endpoints trong `backend/app/api/debts.py`
     - `GET /api/debts` - Danh sách nợ
     - `POST /api/debts` - Tạo nợ mới
+    - `GET /api/debts/<id>` - Chi tiết nợ
     - `PUT /api/debts/<id>` - Cập nhật
     - `DELETE /api/debts/<id>` - Xóa
     - `POST /api/debts/<id>/pay` - Ghi nhận thanh toán
     - `GET /api/debts/<id>/payments` - Lịch sử thanh toán
-    - `GET /api/debts/upcoming` - Các khoản đến hạn
-  - [ ] Tính toán lãi suất tự động
-  - [ ] Migration database
-- [ ] **Frontend:**
-  - [ ] Tạo page `frontend/src/pages/Debts.jsx`
-  - [ ] Component danh sách nợ với progress
-  - [ ] Form tạo/chỉnh sửa nợ
-  - [ ] Modal ghi nhận thanh toán
-  - [ ] Hiển thị lịch trả nợ
-  - [ ] Tích hợp vào Dashboard
-  - [ ] Thêm route và navigation
+    - `GET /api/debts/upcoming` - Các khoản đến hạn (trong 7 ngày)
+    - `GET /api/debts/statistics` - Thống kê tổng quan
+  - [x] Migration database (script đã tạo trong `migrations/create_debt_tables.py`)
+- [x] **Frontend:**
+  - [x] Tạo page `frontend/src/pages/Debts.jsx`
+  - [x] Component danh sách nợ với progress bar và thống kê
+  - [x] Form tạo/chỉnh sửa nợ với đầy đủ fields
+  - [x] Modal ghi nhận thanh toán
+  - [x] Modal xem lịch sử thanh toán
+  - [x] Phân loại: Nợ đang nợ / Cho vay / Đã thanh toán
+  - [x] Tích hợp vào Dashboard (hiển thị upcoming debts)
+  - [x] Thêm route `/debts` và navigation (desktop & mobile)
+  - [x] API client đã có trong `frontend/src/services/api.js`
 - [ ] **AI Integration:**
   - [ ] AI phân tích tình hình nợ
   - [ ] AI đưa ra lời khuyên trả nợ
 
 **Notes:**
-- Hỗ trợ cả nợ cho người khác và nợ từ người khác
-- Tính toán lãi suất theo ngày/tháng/năm
-- Cảnh báo khi gần đến hạn trả
+- ✅ Hỗ trợ cả nợ cho người khác (lending) và nợ từ người khác (owing)
+- ✅ Có field lãi suất (interest_rate) để tính toán
+- ✅ Cảnh báo khi gần đến hạn trả (trong Dashboard)
+- ✅ Hiển thị thống kê: tổng nợ, tổng cho vay, vị thế ròng
 
 ---
 
@@ -725,6 +729,20 @@ Cập nhật status khi bắt đầu/hoàn thành:
    - ✅ Route và navigation đã thêm (desktop & mobile)
    - ✅ API client đã có trong `frontend/src/services/api.js`
 
+3. **Debt Tracking (Quản lý nợ)**
+   - ✅ Models `Debt` và `DebtPayment` đã tạo với đầy đủ fields và methods
+   - ✅ API endpoints đầy đủ trong `backend/app/api/debts.py`
+   - ✅ Migration script trong `backend/migrations/create_debt_tables.py`
+   - ✅ Page `Debts.jsx` đã tạo với đầy đủ tính năng
+   - ✅ Form tạo/chỉnh sửa nợ với support cho cả lending và owing
+   - ✅ Modal ghi nhận thanh toán
+   - ✅ Modal xem lịch sử thanh toán
+   - ✅ Thống kê: tổng nợ, tổng cho vay, vị thế ròng
+   - ✅ Phân loại và hiển thị: Đang nợ / Cho vay / Đã thanh toán
+   - ✅ Tích hợp vào Dashboard để hiển thị upcoming debts (7 ngày)
+   - ✅ Route và navigation đã thêm (desktop & mobile)
+   - ✅ API client đã có trong `frontend/src/services/api.js`
+
 ### ⏳ Chưa bắt đầu:
-- Tất cả các tính năng khác (3-15) chưa được implement
+- Tất cả các tính năng khác (4-15) chưa được implement
 

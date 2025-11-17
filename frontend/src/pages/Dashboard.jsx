@@ -15,7 +15,8 @@ import {
   Zap,
   Target,
   AlertTriangle,
-  Repeat
+  Repeat,
+  CreditCard
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -38,7 +39,7 @@ import { formatCurrency } from '../lib/utils';
 import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/numberFormat';
-import { goalsAPI, recurringAPI } from '../services/api';
+import { goalsAPI, recurringAPI, debtsAPI } from '../services/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -52,6 +53,7 @@ const Dashboard = () => {
   const [wallets, setWallets] = useState([]);
   const [activeGoals, setActiveGoals] = useState([]);
   const [upcomingRecurring, setUpcomingRecurring] = useState([]);
+  const [upcomingDebts, setUpcomingDebts] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -72,6 +74,7 @@ const Dashboard = () => {
     fetchWallets();
     fetchActiveGoals();
     fetchUpcomingRecurring();
+    fetchUpcomingDebts();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -165,6 +168,15 @@ const Dashboard = () => {
       setUpcomingRecurring(response.data.transactions || []);
     } catch (error) {
       console.error('Error fetching upcoming recurring:', error);
+    }
+  };
+
+  const fetchUpcomingDebts = async () => {
+    try {
+      const response = await debtsAPI.getUpcoming(7);
+      setUpcomingDebts(response.data.debts || []);
+    } catch (error) {
+      console.error('Error fetching upcoming debts:', error);
     }
   };
 
@@ -503,6 +515,96 @@ const Dashboard = () => {
                         : 'text-gray-600 dark:text-gray-400'
                     }`}>
                       {isDue ? 'Đến hạn' : daysUntil === 0 ? 'Hôm nay' : `${daysUntil} ngày`}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Debts Section */}
+      {upcomingDebts.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-3 bg-gradient-to-br from-red-100 to-rose-100 dark:from-red-900/30 dark:to-rose-900/30 rounded-2xl">
+                <CreditCard className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Khoản nợ sắp đến hạn</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{upcomingDebts.length} khoản trong 7 ngày tới</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/debts')}
+              className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all"
+            >
+              <span>Xem tất cả</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {upcomingDebts.slice(0, 4).map((debt) => {
+              const daysUntil = debt.days_until || 0;
+              const isOverdue = debt.is_overdue;
+              
+              return (
+                <div
+                  key={debt.id}
+                  onClick={() => navigate('/debts')}
+                  className={`p-4 border rounded-xl cursor-pointer transition-all hover:shadow-md ${
+                    isOverdue
+                      ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                      : daysUntil <= 3
+                      ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                      : 'bg-gray-50 dark:bg-slate-700/50 border-gray-200 dark:border-slate-600'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      {debt.is_lending ? (
+                        <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                      )}
+                      <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                        {debt.name}
+                      </span>
+                    </div>
+                    {isOverdue && (
+                      <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    )}
+                  </div>
+                  
+                  {debt.creditor_name && (
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                      {debt.is_lending ? 'Người vay: ' : 'Người cho vay: '}
+                      {debt.creditor_name}
+                    </p>
+                  )}
+                  
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm font-semibold ${
+                      debt.is_lending 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : 'text-red-600 dark:text-red-400'
+                    }`}>
+                      {debt.next_payment_amount 
+                        ? formatCurrency(debt.next_payment_amount, settings.currency, settings.numberFormat)
+                        : formatCurrency(debt.remaining_amount, settings.currency, settings.numberFormat)
+                      }
+                    </span>
+                    <span className={`text-xs font-bold ${
+                      isOverdue
+                        ? 'text-red-600 dark:text-red-400'
+                        : daysUntil <= 3
+                        ? 'text-orange-600 dark:text-orange-400'
+                        : 'text-gray-600 dark:text-gray-400'
+                    }`}>
+                      {isOverdue ? 'Quá hạn!' : daysUntil === 0 ? 'Hôm nay' : `${daysUntil} ngày`}
                     </span>
                   </div>
                 </div>

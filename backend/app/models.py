@@ -299,3 +299,104 @@ class RecurringTransaction(db.Model):
         
         db.session.commit()
         return expense
+
+
+class Debt(db.Model):
+    """Track debts - money you owe or money owed to you"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    name = db.Column(db.String(100), nullable=False)  # e.g., "Loan from John", "Credit card debt"
+    creditor_name = db.Column(db.String(100))  # Name of person/institution
+    total_amount = db.Column(db.Float, nullable=False)  # Original debt amount
+    remaining_amount = db.Column(db.Float, nullable=False)  # Current remaining amount
+    interest_rate = db.Column(db.Float, default=0.0)  # Annual interest rate in percentage
+    start_date = db.Column(db.Date, nullable=False)
+    due_date = db.Column(db.Date, nullable=True)  # Final due date
+    payment_frequency = db.Column(db.String(20), nullable=True)  # daily, weekly, monthly, yearly
+    next_payment_date = db.Column(db.Date, nullable=True)
+    next_payment_amount = db.Column(db.Float, nullable=True)
+    description = db.Column(db.String(500))
+    is_paid = db.Column(db.Boolean, default=False)
+    is_lending = db.Column(db.Boolean, default=False)  # False = you owe money, True = someone owes you
+    wallet_id = db.Column(db.Integer, db.ForeignKey("wallet.id"), nullable=True)  # Optional link to wallet
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship("User", backref=db.backref("debts", lazy="dynamic"))
+    wallet = db.relationship("Wallet", backref=db.backref("debts", lazy="dynamic"))
+    payments = db.relationship("DebtPayment", backref="debt", lazy="dynamic", cascade="all, delete-orphan")
+    
+    def get_progress_percentage(self):
+        """Calculate how much of the debt has been paid"""
+        if self.total_amount <= 0:
+            return 0
+        paid_amount = self.total_amount - self.remaining_amount
+        return min(100, (paid_amount / self.total_amount) * 100)
+    
+    def is_overdue(self):
+        """Check if debt payment is overdue"""
+        if not self.next_payment_date or self.is_paid:
+            return False
+        return date.today() > self.next_payment_date
+    
+    def calculate_next_payment_date(self, from_date=None):
+        """Calculate next payment date based on frequency"""
+        if from_date is None:
+            from_date = date.today()
+        
+        if not self.payment_frequency:
+            return None
+            
+        if self.payment_frequency == 'daily':
+            return from_date + timedelta(days=1)
+        elif self.payment_frequency == 'weekly':
+            return from_date + timedelta(weeks=1)
+        elif self.payment_frequency == 'monthly':
+            # Add one month
+            if from_date.month == 12:
+                return date(from_date.year + 1, 1, from_date.day)
+            else:
+                return date(from_date.year, from_date.month + 1, from_date.day)
+        elif self.payment_frequency == 'yearly':
+            return date(from_date.year + 1, from_date.month, from_date.day)
+        else:
+            return None
+    
+    def add_payment(self, amount, payment_date=None, notes=None):
+        """Record a payment towards this debt"""
+        if payment_date is None:
+            payment_date = date.today()
+        
+        # Create payment record
+        payment = DebtPayment(
+            debt_id=self.id,
+            amount=amount,
+            payment_date=payment_date,
+            notes=notes
+        )
+        db.session.add(payment)
+        
+        # Update remaining amount
+        self.remaining_amount -= amount
+        if self.remaining_amount <= 0:
+            self.remaining_amount = 0
+            self.is_paid = True
+        
+        # Update next payment date
+        if self.payment_frequency and not self.is_paid:
+            self.next_payment_date = self.calculate_next_payment_date(payment_date)
+        
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+        return payment
+
+
+class DebtPayment(db.Model):
+    """Track individual payments made towards a debt"""
+    id = db.Column(db.Integer, primary_key=True)
+    debt_id = db.Column(db.Integer, db.ForeignKey("debt.id"), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    payment_date = db.Column(db.Date, nullable=False, default=date.today)
+    notes = db.Column(db.String(500))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

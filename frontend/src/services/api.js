@@ -249,4 +249,34 @@ export const recurringAPI = {
   execute: (id) => api.post(`/recurring/${id}/execute`),
 };
 
+// Debts API
+export const debtsAPI = {
+  // Get all debts
+  getAll: () => api.get('/debts'),
+  
+  // Get upcoming debts (with payments due within next 7 days)
+  getUpcoming: (days = 7) => api.get('/debts/upcoming', { params: { days } }),
+  
+  // Get debt statistics
+  getStatistics: () => api.get('/debts/statistics'),
+  
+  // Get debt by ID
+  getById: (id) => api.get(`/debts/${id}`),
+  
+  // Create new debt
+  create: (data) => api.post('/debts', data),
+  
+  // Update debt
+  update: (id, data) => api.put(`/debts/${id}`, data),
+  
+  // Delete debt
+  delete: (id) => api.delete(`/debts/${id}`),
+  
+  // Record a payment
+  recordPayment: (id, data) => api.post(`/debts/${id}/pay`, data),
+  
+  // Get payment history
+  getPayments: (id) => api.get(`/debts/${id}/payments`),
+};
+
 export default api;

@@ -18,6 +18,8 @@ import Notifications from './pages/Notifications';
 import Goals from './pages/Goals';
 import Recurring from './pages/Recurring';
 import AddRecurring from './pages/AddRecurring';
+import Debts from './pages/Debts';
+import AddDebt from './pages/AddDebt';
 import Landing from './pages/Landing';
 
 // Loading Screen Component (simplified animations)
@@ -209,6 +211,36 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <AddRecurring />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/debts"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Debts />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/debts/new"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AddDebt />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/debts/:id/edit"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AddDebt />
                 </Layout>
               </ProtectedRoute>
             }
