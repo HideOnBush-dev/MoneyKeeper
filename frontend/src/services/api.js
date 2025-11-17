@@ -279,4 +279,17 @@ export const debtsAPI = {
   getPayments: (id) => api.get(`/debts/${id}/payments`),
 };
 
+// Bills API
+export const billsAPI = {
+  getAll: (status) => api.get('/bills', { params: status ? { status } : undefined }),
+  getUpcoming: (days = 7) => api.get('/bills/upcoming', { params: { days } }),
+  getById: (id) => api.get(`/bills/${id}`),
+  create: (data) => api.post('/bills', data),
+  update: (id, data) => api.put(`/bills/${id}`, data),
+  delete: (id) => api.delete(`/bills/${id}`),
+  markPaid: (id, payload = {}) => api.post(`/bills/${id}/mark-paid`, payload),
+  getPayments: (id) => api.get(`/bills/${id}/payments`),
+  addPayment: (id, data) => api.post(`/bills/${id}/payments`, data),
+};
+
 export default api;

@@ -16,7 +16,8 @@ import {
   Target,
   AlertTriangle,
   Repeat,
-  CreditCard
+  CreditCard,
+  Bell
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -39,7 +40,7 @@ import { formatCurrency } from '../lib/utils';
 import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/numberFormat';
-import { goalsAPI, recurringAPI, debtsAPI } from '../services/api';
+import { goalsAPI, recurringAPI, debtsAPI, billsAPI } from '../services/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -53,6 +54,7 @@ const Dashboard = () => {
   const [wallets, setWallets] = useState([]);
   const [activeGoals, setActiveGoals] = useState([]);
   const [upcomingRecurring, setUpcomingRecurring] = useState([]);
+  const [upcomingBills, setUpcomingBills] = useState([]);
   const [upcomingDebts, setUpcomingDebts] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -74,6 +76,7 @@ const Dashboard = () => {
     fetchWallets();
     fetchActiveGoals();
     fetchUpcomingRecurring();
+    fetchUpcomingBills();
     fetchUpcomingDebts();
   }, []);
 
@@ -168,6 +171,15 @@ const Dashboard = () => {
       setUpcomingRecurring(response.data.transactions || []);
     } catch (error) {
       console.error('Error fetching upcoming recurring:', error);
+    }
+  };
+
+  const fetchUpcomingBills = async () => {
+    try {
+      const response = await billsAPI.getUpcoming(14);
+      setUpcomingBills(response.data.bills || []);
+    } catch (error) {
+      console.error('Error fetching upcoming bills:', error);
     }
   };
 
@@ -516,6 +528,67 @@ const Dashboard = () => {
                     }`}>
                       {isDue ? 'Đến hạn' : daysUntil === 0 ? 'Hôm nay' : `${daysUntil} ngày`}
                     </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Bills Section */}
+      {upcomingBills.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-3 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/30 dark:to-violet-900/30 rounded-2xl">
+                <Bell className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Hóa đơn sắp đến hạn</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{upcomingBills.length} hóa đơn trong 14 ngày tới</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/bills')}
+              className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all"
+            >
+              <span>Xem tất cả</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {upcomingBills.slice(0, 4).map((bill) => {
+              const daysUntil = bill.days_until_due || 0;
+              const isOverdue = daysUntil < 0;
+              return (
+                <div
+                  key={bill.id}
+                  className={`p-4 border rounded-xl transition-all hover:shadow-md ${
+                    isOverdue
+                      ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                      : 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800'
+                  }`}
+                  onClick={() => navigate('/bills')}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">{bill.name}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{bill.due_date}</p>
+                    </div>
+                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      {formatCurrency(bill.amount, settings.currency)}
+                    </span>
+                  </div>
+                  <div className={`text-xs font-semibold ${
+                    isOverdue ? 'text-red-600 dark:text-red-400' : 'text-indigo-700 dark:text-indigo-300'
+                  }`}>
+                    {isOverdue
+                      ? `Quá hạn ${Math.abs(daysUntil)} ngày`
+                      : daysUntil === 0
+                      ? 'Hôm nay'
+                      : `Còn ${daysUntil} ngày`}
                   </div>
                 </div>
               );

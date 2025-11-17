@@ -7,9 +7,9 @@
 ## 📊 Tổng quan
 
 - **Tổng số tính năng:** 15
-- **Đã hoàn thành:** 3 (Savings Goals, Recurring Transactions, Debt Tracking)
+- **Đã hoàn thành:** 4 (Savings Goals, Recurring Transactions, Debt Tracking, Bill Reminders)
 - **Đang phát triển:** 0
-- **Chưa bắt đầu:** 12
+- **Chưa bắt đầu:** 11
 
 ---
 
@@ -158,7 +158,7 @@ Theo dõi các khoản nợ, lịch trả nợ, lãi suất và cảnh báo đ�
 ### 🟡 Priority 2 - Tính năng hỗ trợ
 
 #### 4. Nhắc nhở hóa đơn (Bill Reminders)
-- **Status:** ⏳ Pending
+- **Status:** ✅ Completed
 - **Priority:** Medium
 - **Estimated Time:** 2-3 days
 - **Dependencies:** Recurring Transactions (có thể tái sử dụng logic)
@@ -167,25 +167,18 @@ Theo dõi các khoản nợ, lịch trả nợ, lãi suất và cảnh báo đ�
 Lưu thông tin hóa đơn, ngày đến hạn, tự động nhắc nhở và đánh dấu đã thanh toán.
 
 **Kế hoạch triển khai:**
-- [ ] **Backend:**
-  - [ ] Tạo model `Bill` trong `backend/app/models.py`
-    - Fields: `id`, `user_id`, `name`, `amount`, `category`, `due_date`, `reminder_days` (số ngày trước khi nhắc), `is_paid`, `paid_date`, `wallet_id`, `description`, `recurring_id` (link với recurring), `created_at`, `updated_at`
-  - [ ] Tạo API endpoints trong `backend/app/api/bills.py`
-    - `GET /api/bills` - Danh sách hóa đơn
-    - `POST /api/bills` - Tạo mới
-    - `PUT /api/bills/<id>` - Cập nhật
-    - `DELETE /api/bills/<id>` - Xóa
-    - `POST /api/bills/<id>/mark-paid` - Đánh dấu đã trả
-    - `GET /api/bills/upcoming` - Hóa đơn sắp đến hạn
-  - [ ] Tạo notification system cho bills
-  - [ ] Migration database
-- [ ] **Frontend:**
-  - [ ] Tạo page `frontend/src/pages/Bills.jsx`
-  - [ ] Component danh sách hóa đơn với due date
-  - [ ] Form tạo/chỉnh sửa hóa đơn
-  - [ ] Quick action: mark as paid
-  - [ ] Tích hợp vào Dashboard (upcoming bills)
-  - [ ] Thêm route và navigation
+- [x] **Backend:**
+  - [x] Tạo model `Bill` và `BillPayment` trong `backend/app/models.py`
+  - [x] Tạo API endpoints trong `backend/app/api/bills.py`
+    - CRUD hóa đơn, mark-paid, payments, upcoming
+  - [x] Tạo script migration `backend/migrations/create_bill_tables.py`
+- [x] **Frontend:**
+  - [x] Tạo page `frontend/src/pages/Bills.jsx`
+  - [x] Danh sách hóa đơn với filters, stats, upcoming section
+  - [x] Trang riêng `AddBill.jsx` cho tạo/chỉnh sửa
+  - [x] Quick action: mark as paid với modal
+  - [x] Tích hợp vào Dashboard (upcoming bills widget)
+  - [x] Thêm route và navigation (desktop & mobile)
 - [ ] **AI Integration:**
   - [ ] AI nhắc nhở về bills sắp đến hạn
   - [ ] AI có thể tạo bill từ chat
@@ -742,6 +735,16 @@ Cập nhật status khi bắt đầu/hoàn thành:
    - ✅ Tích hợp vào Dashboard để hiển thị upcoming debts (7 ngày)
    - ✅ Route và navigation đã thêm (desktop & mobile)
    - ✅ API client đã có trong `frontend/src/services/api.js`
+
+4. **Bill Reminders (Nhắc nhở hóa đơn)**
+   - ✅ Models `Bill` và `BillPayment` đã tạo
+   - ✅ API `/api/bills`, mark-paid, payments, upcoming
+   - ✅ Migration script `create_bill_tables.py`
+   - ✅ Page `Bills.jsx` với filters, stats, upcoming & mark paid modal
+   - ✅ Trang riêng `AddBill.jsx` cho tạo/chỉnh sửa
+   - ✅ Tích hợp Dashboard (Upcoming bills widget)
+   - ✅ Route & navigation đã thêm (desktop & mobile)
+   - ✅ API client `billsAPI` trong `frontend/src/services/api.js`
 
 ### ⏳ Chưa bắt đầu:
 - Tất cả các tính năng khác (4-15) chưa được implement

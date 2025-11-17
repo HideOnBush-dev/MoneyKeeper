@@ -20,6 +20,8 @@ import Recurring from './pages/Recurring';
 import AddRecurring from './pages/AddRecurring';
 import Debts from './pages/Debts';
 import AddDebt from './pages/AddDebt';
+import Bills from './pages/Bills';
+import AddBill from './pages/AddBill';
 import Landing from './pages/Landing';
 
 // Loading Screen Component (simplified animations)
@@ -241,6 +243,36 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <AddDebt />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/bills"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Bills />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/bills/new"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AddBill />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/bills/:id/edit"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AddBill />
                 </Layout>
               </ProtectedRoute>
             }

@@ -400,3 +400,63 @@ class DebtPayment(db.Model):
     payment_date = db.Column(db.Date, nullable=False, default=date.today)
     notes = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Bill(db.Model):
+    """Bill reminders with optional auto links to recurring transactions"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    name = db.Column(db.String(120), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    category = db.Column(db.String(50), nullable=True)
+    due_date = db.Column(db.Date, nullable=False)
+    reminder_days = db.Column(db.Integer, default=3)  # days before due date
+    is_paid = db.Column(db.Boolean, default=False)
+    paid_date = db.Column(db.Date, nullable=True)
+    wallet_id = db.Column(db.Integer, db.ForeignKey("wallet.id"), nullable=True)
+    description = db.Column(db.String(500))
+    recurring_id = db.Column(db.Integer, db.ForeignKey("recurring_transaction.id"), nullable=True)
+    last_reminded_at = db.Column(db.DateTime, nullable=True)
+    color = db.Column(db.String(30), default="indigo")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship("User", backref=db.backref("bills", lazy="dynamic"))
+    wallet = db.relationship("Wallet", backref=db.backref("bills", lazy="dynamic"))
+    recurring = db.relationship("RecurringTransaction", backref=db.backref("linked_bills", lazy="dynamic"))
+    payments = db.relationship("BillPayment", backref="bill", lazy="dynamic", cascade="all, delete-orphan")
+
+    def mark_paid(self, paid=True, paid_date=None):
+        self.is_paid = paid
+        self.paid_date = paid_date or (date.today() if paid else None)
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+
+    def next_reminder_date(self):
+        if self.reminder_days is None:
+            return None
+        reminder_date = self.due_date - timedelta(days=self.reminder_days)
+        return reminder_date
+
+    def needs_reminder(self):
+        if self.is_paid:
+            return False
+        reminder_date = self.next_reminder_date()
+        if not reminder_date:
+            return False
+        today = date.today()
+        if today < reminder_date:
+            return False
+        if self.last_reminded_at and self.last_reminded_at.date() == today:
+            return False
+        return True
+
+
+class BillPayment(db.Model):
+    """Track manual payments for bills"""
+    id = db.Column(db.Integer, primary_key=True)
+    bill_id = db.Column(db.Integer, db.ForeignKey("bill.id"), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    payment_date = db.Column(db.Date, nullable=False, default=date.today)
+    notes = db.Column(db.String(300))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

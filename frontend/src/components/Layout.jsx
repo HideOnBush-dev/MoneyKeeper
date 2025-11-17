@@ -92,6 +92,7 @@ const Layout = ({ children }) => {
               <NavLink to="/budgets" icon={PieChart} label="Ngân sách" isActive={isActive('/budgets')} />
               <NavLink to="/goals" icon={Target} label="Mục tiêu" isActive={isActive('/goals')} />
               <NavLink to="/recurring" icon={Repeat} label="Định kỳ" isActive={isActive('/recurring')} />
+              <NavLink to="/bills" icon={Bell} label="Hóa đơn" isActive={isActive('/bills')} />
               <NavLink to="/debts" icon={CreditCard} label="Quản lý nợ" isActive={isActive('/debts')} />
               <NavLink to="/chat" icon={MessageSquare} label="AI Chat" isActive={isActive('/chat')} />
 
@@ -374,6 +375,17 @@ const Layout = ({ children }) => {
                   <Repeat className="h-4 w-4 text-purple-600" />
                 </div>
                 <span className="font-medium">Định kỳ</span>
+              </Link>
+              
+              <Link
+                to="/bills"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-violet-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all mx-2 rounded-2xl group"
+              >
+                <div className="p-2 bg-indigo-100 rounded-xl group-hover:bg-indigo-200 transition-colors">
+                  <Bell className="h-4 w-4 text-indigo-600" />
+                </div>
+                <span className="font-medium">Hóa đơn</span>
               </Link>
               
               <Link
