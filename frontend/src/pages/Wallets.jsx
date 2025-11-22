@@ -378,7 +378,7 @@ const Wallets = () => {
                     >
                       <option value="">Chọn ví nguồn</option>
                       {wallets.map((w) => (
-                        <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance || 0)})</option>
+                        <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance || 0, w.currency || settings.currency, settings.numberFormat)})</option>
                       ))}
                     </select>
                   </div>
@@ -402,7 +402,7 @@ const Wallets = () => {
                     >
                       <option value="">Chọn ví đích</option>
                       {wallets.filter(w => w.id !== parseInt(transferData.from_wallet_id)).map((w) => (
-                        <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance || 0)})</option>
+                        <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance || 0, w.currency || settings.currency, settings.numberFormat)})</option>
                       ))}
                     </select>
                   </div>

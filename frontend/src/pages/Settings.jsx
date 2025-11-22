@@ -123,44 +123,44 @@ const Settings = () => {
           )}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
-        <h2 className="text-lg font-semibold mb-3">Định dạng số tiền</h2>
-        <p className="text-sm text-gray-600 mb-3">Chọn cách nhập dấu chấm, dấu phẩy khi gõ số tiền.</p>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 border border-gray-100 dark:border-gray-700">
+        <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">Định dạng số tiền</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Chọn cách nhập dấu chấm, dấu phẩy khi gõ số tiền.</p>
 
         <div className="space-y-2">
-          <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+          <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
             <input
               type="radio"
               name="numberFormat"
-              className="h-4 w-4"
+              className="h-4 w-4 text-blue-600 dark:text-blue-500"
               checked={settings.numberFormat === 'vi-VN'}
               onChange={() => updateSettings({ numberFormat: 'vi-VN' })}
             />
             <div>
-              <p className="font-medium text-sm">Tiếng Việt (vi-VN)</p>
-              <p className="text-xs text-gray-500">Thí dụ: 1.234.567,89</p>
+              <p className="font-medium text-sm text-gray-900 dark:text-gray-100">Tiếng Việt (vi-VN)</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Thí dụ: 1.234.567,89</p>
             </div>
           </label>
 
-          <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+          <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
             <input
               type="radio"
               name="numberFormat"
-              className="h-4 w-4"
+              className="h-4 w-4 text-blue-600 dark:text-blue-500"
               checked={settings.numberFormat === 'en-US'}
               onChange={() => updateSettings({ numberFormat: 'en-US' })}
             />
             <div>
-              <p className="font-medium text-sm">English (en-US)</p>
-              <p className="text-xs text-gray-500">Example: 1,234,567.89</p>
+              <p className="font-medium text-sm text-gray-900 dark:text-gray-100">English (en-US)</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Example: 1,234,567.89</p>
             </div>
           </label>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
-        <h2 className="text-lg font-semibold mb-3">Tiền tệ mặc định</h2>
-        <p className="text-sm text-gray-600 mb-3">Tiền tệ dùng để hiển thị số tiền.</p>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 border border-gray-100 dark:border-gray-700">
+        <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">Tiền tệ mặc định</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Tiền tệ dùng để hiển thị số tiền.</p>
         <Select
           value={settings.currency}
           onChange={(value) => updateSettings({ currency: value })}
@@ -175,29 +175,29 @@ const Settings = () => {
         />
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
-        <h2 className="text-lg font-semibold mb-3">Giao diện</h2>
-        <p className="text-sm text-gray-600 mb-3">Chủ đề màu sắc cho ứng dụng.</p>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 border border-gray-100 dark:border-gray-700">
+        <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">Giao diện</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Chủ đề màu sắc cho ứng dụng.</p>
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
             <input
               type="radio"
               name="theme"
-              className="h-4 w-4"
+              className="h-4 w-4 text-blue-600 dark:text-blue-500"
               checked={settings.theme === 'light'}
               onChange={() => updateSettings({ theme: 'light' })}
             />
-            <span className="text-sm font-medium">Sáng</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Sáng</span>
           </label>
-          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
             <input
               type="radio"
               name="theme"
-              className="h-4 w-4"
+              className="h-4 w-4 text-blue-600 dark:text-blue-500"
               checked={settings.theme === 'dark'}
               onChange={() => updateSettings({ theme: 'dark' })}
             />
-            <span className="text-sm font-medium">Tối</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Tối</span>
           </label>
         </div>
       </div>
