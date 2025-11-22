@@ -489,17 +489,17 @@ const Chat = () => {
   // Sidebar content reused for desktop and mobile
   const SidebarContent = () => (
     <>
-      <div className="p-4 border-b border-gray-200/50 bg-gradient-to-br from-white to-blue-50/30">
+      <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-white dark:from-gray-800 to-blue-50/30 dark:to-gray-700/30">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-blue-600" />
+            <MessageSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             Lịch sử chat
           </h2>
           <button
             onClick={() => setShowSidebar(false)}
             className="p-2 rounded-xl hover:bg-gray-100 transition-colors lg:hidden"
           >
-            <X className="h-5 w-5 text-gray-600" />
+            <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
         <button
@@ -512,8 +512,8 @@ const Chat = () => {
       </div>
 
       {/* Personality Selector */}
-      <div className="p-4 border-b border-gray-200/50 bg-white">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+      <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50 bg-white dark:bg-gray-800">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-purple-600" />
           Tính cách AI
         </h3>
@@ -533,12 +533,12 @@ const Chat = () => {
                 className={`p-2.5 rounded-lg border-2 transition-all text-left ${
                   isSelected
                     ? `border-transparent bg-gradient-to-br ${p.color} text-white shadow-md`
-                    : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                    : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-sm'
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <Icon className={`h-4 w-4 ${isSelected ? 'text-white' : `text-gray-600`}`} />
-                  <span className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-gray-700'}`}>
+                  <span className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                     {p.name}
                   </span>
                 </div>
@@ -556,7 +556,7 @@ const Chat = () => {
             <p className="text-xs mt-1">Bắt đầu chat để lưu lịch sử</p>
           </div>
         ) : (
-          conversations.map((conv, idx) => (
+          conversations.map((conv) => (
             <div
               key={conv.id}
               className={`group relative p-3 rounded-xl cursor-pointer transition-all ${
@@ -607,7 +607,7 @@ const Chat = () => {
   );
 
   return (
-    <div className="relative -mx-4 sm:-mx-6 lg:-mx-8 -my-10 h-[calc(100vh-4rem)] flex overflow-hidden bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
+    <div className="relative -mx-4 sm:-mx-6 lg:-mx-8 -my-10 h-[calc(100vh-4rem)] flex overflow-hidden bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Animated Background */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none hidden md:block">
         <motion.div 
@@ -670,7 +670,7 @@ const Chat = () => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 h-full w-80 bg-white/95 backdrop-blur-xl border-r border-gray-200/50 shadow-2xl z-50 flex flex-col lg:hidden"
+              className="fixed top-0 left-0 h-full w-80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-700/50 shadow-2xl z-50 flex flex-col lg:hidden"
             >
               <SidebarContent />
             </motion.div>
@@ -679,21 +679,21 @@ const Chat = () => {
       </AnimatePresence>
 
       {/* Persistent Desktop Sidebar */}
-      <div className="hidden lg:flex lg:flex-col lg:w-80 bg-white/90 backdrop-blur-xl border-r border-gray-200/50 shadow-2xl z-20">
+      <div className="hidden lg:flex lg:flex-col lg:w-80 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-700/50 shadow-2xl z-20">
         <SidebarContent />
       </div>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Header with Menu Button (Mobile) and Personality Indicator */}
-        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowSidebar(true)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               aria-label="Mở menu"
             >
-              <MessageSquare className="h-5 w-5 text-gray-600" />
+              <MessageSquare className="h-5 w-5 text-gray-600 dark:text-gray-400" />
             </button>
             <div className="flex items-center gap-2">
               {selectedPersonality && (
@@ -710,13 +710,13 @@ const Chat = () => {
           </div>
           <div className="flex items-center gap-2">
             {connected ? (
-              <div className="flex items-center gap-1.5 text-xs text-green-600">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
+                <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full animate-pulse" />
                 <span className="hidden sm:inline">Đã kết nối</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 text-xs text-amber-600">
-                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+              <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                <div className="w-2 h-2 bg-amber-500 dark:bg-amber-400 rounded-full animate-pulse" />
                 <span className="hidden sm:inline">Đang kết nối...</span>
               </div>
             )}
@@ -753,11 +753,11 @@ const Chat = () => {
                 </motion.div>
                 
                 <div className="space-y-3">
-                  <h2 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  <h2 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400">
                     Chào mừng! 👋
                   </h2>
-                  <p className="text-gray-600 text-lg max-w-2xl px-4 leading-relaxed">
-                    Tôi là <span className="font-bold text-blue-600">MoneyKeeper AI</span>, trợ lý tài chính thông minh của bạn. 
+                  <p className="text-gray-600 dark:text-gray-300 text-lg max-w-2xl px-4 leading-relaxed">
+                    Tôi là <span className="font-bold text-blue-600 dark:text-blue-400">MoneyKeeper AI</span>, trợ lý tài chính thông minh của bạn. 
                     Hãy để tôi giúp bạn quản lý tài chính hiệu quả hơn!
                   </p>
                 </div>
@@ -765,12 +765,12 @@ const Chat = () => {
 
               <div className="w-full space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
-                  <p className="text-sm font-bold text-gray-600 uppercase tracking-wider flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-md">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
+                  <p className="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-gray-800 shadow-md">
                     <Sparkles className="h-4 w-4 text-amber-500" />
                     Gợi ý cho bạn
                   </p>
-                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -790,7 +790,7 @@ const Chat = () => {
                         whileTap={{ scale: 0.97 }}
                         onClick={() => handleQuickAction(action.text)}
                         disabled={!connected || loading}
-                        className="group relative overflow-hidden flex items-center gap-3 p-4 rounded-2xl bg-white shadow-md hover:shadow-xl border-2 border-gray-100 hover:border-transparent transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="group relative overflow-hidden flex items-center gap-3 p-4 rounded-2xl bg-white dark:bg-gray-800 shadow-md hover:shadow-xl border-2 border-gray-100 dark:border-gray-700 hover:border-transparent transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <motion.div
                           className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-100 transition-opacity`}
@@ -807,7 +807,7 @@ const Chat = () => {
                         <div className="flex-1 relative z-10">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-2xl">{action.emoji}</span>
-                            <span className="text-sm font-bold text-gray-800 group-hover:text-white transition-colors">
+                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200 group-hover:text-white transition-colors">
                               {action.text}
                             </span>
                           </div>
@@ -818,7 +818,7 @@ const Chat = () => {
                           animate={{ x: [0, 4, 0] }}
                           transition={{ duration: 1.5, repeat: Infinity }}
                         >
-                          <Send className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
+                          <Send className="h-5 w-5 text-gray-400 dark:text-gray-500 group-hover:text-white transition-colors" />
                         </motion.div>
                       </motion.button>
                     );
@@ -905,9 +905,9 @@ const Chat = () => {
                         whileHover={{ scale: 1.01 }}
                         className={`relative px-4 py-3 rounded-2xl shadow-lg ${
                           msg.isError
-                            ? "bg-gradient-to-br from-red-50 to-rose-50 text-red-800 border-2 border-red-200"
+                            ? "bg-gradient-to-br from-red-50 dark:from-red-900/20 to-rose-50 dark:to-rose-900/20 text-red-800 dark:text-red-200 border-2 border-red-200 dark:border-red-700"
                             : msg.role === "ai"
-                            ? "bg-white text-gray-800 border-2 border-gray-100"
+                            ? "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-2 border-gray-100 dark:border-gray-700"
                             : "bg-gradient-to-br from-blue-600 to-indigo-600 text-white"
                         }`}
                         style={{
@@ -963,7 +963,7 @@ const Chat = () => {
                       </motion.div>
                       
                       {msg.timestamp && isLastInGroup && (
-                        <span className={`text-xs text-gray-400 px-2 flex items-center gap-1 ${msg.role === "user" ? "justify-end" : ""}`}>
+                        <span className={`text-xs text-gray-400 dark:text-gray-500 px-2 flex items-center gap-1 ${msg.role === "user" ? "justify-end" : ""}`}>
                           <Clock className="h-3 w-3" />
                           {new Date(msg.timestamp).toLocaleTimeString('vi-VN', { 
                             hour: '2-digit', 
@@ -1000,7 +1000,7 @@ const Chat = () => {
                   <Bot className="h-5 w-5 text-white" />
                 </motion.div>
                 
-                <div className="px-5 py-3 rounded-2xl shadow-lg bg-white border-2 border-gray-100 flex items-center gap-3">
+                <div className="px-5 py-3 rounded-2xl shadow-lg bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 flex items-center gap-3">
                   <div className="flex gap-1.5">
                     <motion.span
                       animate={{ y: [0, -8, 0] }}
@@ -1018,7 +1018,7 @@ const Chat = () => {
                       className="w-2.5 h-2.5 bg-purple-500 rounded-full"
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-600">Đang suy nghĩ...</span>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Đang suy nghĩ...</span>
                 </div>
               </div>
             </motion.div>
@@ -1028,7 +1028,7 @@ const Chat = () => {
         </div>
 
         {/* Input Bar - Clean & Simple */}
-        <div className="border-t border-gray-200 bg-white">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <div className="max-w-4xl mx-auto w-full p-3 md:p-4">
             <form
               className="relative"
@@ -1038,7 +1038,7 @@ const Chat = () => {
               }}
             >
               {/* Simple input container */}
-              <div className="flex items-end gap-2 md:gap-3 p-2 md:p-3 bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-blue-500 focus-within:bg-white transition-all">
+              <div className="flex items-end gap-2 md:gap-3 p-2 md:p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:bg-white dark:focus-within:bg-gray-800 transition-all">
                 {/* Left actions */}
                 <div className="hidden md:flex items-center gap-1.5 pl-1">
                   <button
@@ -1080,7 +1080,7 @@ const Chat = () => {
                   <textarea
                     ref={textareaRef}
                     rows={1}
-                    className="w-full bg-transparent outline-none text-sm md:text-base px-2 py-2 resize-none max-h-32 overflow-y-auto text-gray-900 placeholder:text-gray-400"
+                    className="w-full bg-transparent outline-none text-sm md:text-base px-2 py-2 resize-none max-h-32 overflow-y-auto text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                     placeholder="Nhập tin nhắn của bạn..."
                     value={input}
                     onChange={e => {
@@ -1134,7 +1134,7 @@ const Chat = () => {
                       setRecording(false);
                     }
                   }}
-                  className={`flex-shrink-0 flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-xl transition-all ${recording ? 'bg-red-100 text-red-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                  className={`flex-shrink-0 flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-xl transition-all ${recording ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
                   title="Thu âm (chuyển giọng nói thành văn bản)"
                 >
                   {recording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
@@ -1146,8 +1146,8 @@ const Chat = () => {
                   disabled={loading || !input.trim() || !connected}
                   className={`flex-shrink-0 flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-xl transition-all ${
                     loading || !input.trim() || !connected
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
+                      ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 dark:bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-700 active:scale-95'
                   }`}
                 >
                   {loading ? (
@@ -1163,7 +1163,7 @@ const Chat = () => {
                 </button>
               </div>
 
-              <div className="mt-1 text-[11px] text-gray-400 text-center">
+              <div className="mt-1 text-[11px] text-gray-400 dark:text-gray-500 text-center">
                 Nhấn Enter để gửi • Shift+Enter để xuống dòng
               </div>
 

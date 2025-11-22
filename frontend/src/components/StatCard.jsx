@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+//import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -25,7 +25,7 @@ const StatCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
       whileHover={{ y: -4, shadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}
-      className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 p-6 overflow-hidden"
+      className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 overflow-hidden"
     >
       {/* Background gradient */}
       <div className={cn(
@@ -45,7 +45,7 @@ const StatCard = ({
           {trend && (
             <div className={cn(
               'flex items-center space-x-1 text-sm font-medium',
-              trend === 'up' ? 'text-green-600' : 'text-red-600'
+              trend === 'up' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
             )}>
               {trend === 'up' ? (
                 <TrendingUp className="h-4 w-4" />
@@ -58,8 +58,8 @@ const StatCard = ({
         </div>
 
         <div>
-          <p className="text-sm text-gray-600 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
         </div>
       </div>
     </motion.div>

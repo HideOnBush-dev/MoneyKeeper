@@ -1,4 +1,4 @@
- import { motion, AnimatePresence } from 'framer-motion';
+// import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useEffect } from 'react';
@@ -44,7 +44,7 @@ const Modal = ({ isOpen, onClose, children, title, size = 'md', className }) => 
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', duration: 0.5 }}
               className={cn(
-                'relative bg-white rounded-3xl shadow-2xl w-full',
+                'relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full',
                 sizes[size],
                 className
               )}
@@ -52,15 +52,15 @@ const Modal = ({ isOpen, onClose, children, title, size = 'md', className }) => 
             >
               {/* Header */}
               {title && (
-                <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                  <h2 className="text-2xl font-bold text-gradient">{title}</h2>
+                <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
+                  <h2 className="text-2xl font-bold text-gradient dark:text-white">{title}</h2>
                   <motion.button
                     whileHover={{ scale: 1.1, rotate: 90 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={onClose}
-                    className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <X className="h-5 w-5 text-gray-500" />
+                    <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                   </motion.button>
                 </div>
               )}

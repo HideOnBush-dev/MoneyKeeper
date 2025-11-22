@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+//import { motion } from 'framer-motion';
 
 const Skeleton = ({ className = '', width, height, circle = false }) => {
   return (
@@ -6,7 +6,7 @@ const Skeleton = ({ className = '', width, height, circle = false }) => {
       initial={{ opacity: 0.5 }}
       animate={{ opacity: [0.5, 1, 0.5] }}
       transition={{ duration: 1.5, repeat: Infinity }}
-      className={`bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] ${
+      className={`bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%] ${
         circle ? 'rounded-full' : 'rounded-lg'
       } ${className}`}
       style={{ width, height }}
@@ -15,7 +15,7 @@ const Skeleton = ({ className = '', width, height, circle = false }) => {
 };
 
 export const SkeletonCard = () => (
-  <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
+  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 space-y-4">
     <div className="flex items-center justify-between">
       <Skeleton width="120px" height="24px" />
       <Skeleton circle width="48px" height="48px" />

@@ -383,6 +383,7 @@ class AIChat:
             wants_balance = any(k in msg for k in ["số dư", "ví", "balance", "tổng quan", "tiền còn lại"])
             wants_spending = any(k in msg for k in ["chi tiêu", "thống kê", "phân tích", "report"])
             wants_budgets = any(k in msg for k in ["ngân sách", "hạn mức", "budget", "vượt"])
+            wants_trend = any(k in msg for k in ["xu hướng", "trend", "6 tháng", "6 months", "phân bổ", "allocation", "hiệu quả", "efficiency"])
 
             parts: list[str] = []
 
@@ -425,6 +426,44 @@ class AIChat:
                         pct = (float(spent) / float(b.amount) * 100) if b.amount else 0
                         summaries.append(f"{b.category}: {format_currency(spent)}/{format_currency(b.amount)} ({round(pct)}%)")
                     parts.append(f"Ngân sách tháng hiện tại: " + "; ".join(summaries) + ".")
+
+            if wants_trend:
+                # Get 6-month income and expense trend
+                today = date.today()
+                months_data = []
+                for i in range(6):
+                    # Calculate the date for i months ago
+                    month_date = date(today.year, today.month, 1) - timedelta(days=32*i)
+                    month_date = month_date.replace(day=1)
+                    
+                    # Get the last day of that month
+                    if month_date.month == 12:
+                        next_month = date(month_date.year + 1, 1, 1)
+                    else:
+                        next_month = date(month_date.year, month_date.month + 1, 1)
+                    
+                    # Calculate expenses and income for the month
+                    expenses = db.session.query(func.sum(Expense.amount)).filter(
+                        Expense.user_id == current_user.id,
+                        Expense.is_expense == True,
+                        Expense.date >= month_date,
+                        Expense.date < next_month
+                    ).scalar() or 0
+                    
+                    income = db.session.query(func.sum(Expense.amount)).filter(
+                        Expense.user_id == current_user.id,
+                        Expense.is_expense == False,
+                        Expense.date >= month_date,
+                        Expense.date < next_month
+                    ).scalar() or 0
+                    
+                    month_name = month_date.strftime("%m/%Y")
+                    months_data.append(f"{month_name}: Thu {format_currency(income)}, Chi {format_currency(expenses)}")
+                
+                if months_data:
+                    # Reverse to show oldest to newest
+                    months_data.reverse()
+                    parts.append(f"Xu hướng thu-chi 6 tháng gần đây: " + "; ".join(months_data) + ".")
 
             return " ".join(parts)
         except Exception as e:

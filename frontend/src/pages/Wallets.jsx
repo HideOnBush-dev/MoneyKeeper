@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Plus,
   X,
@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { walletAPI } from '../services/api';
 import { formatCurrency } from '../lib/utils';
+import { convertCurrency } from '../lib/currency';
+import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/numberFormat';
 import PageHeader from '../components/PageHeader';
 import { useSettings } from '../contexts/SettingsContext';
 
@@ -30,16 +32,47 @@ const Wallets = () => {
     currency: 'VND',
     is_default: false,
   });
+  const [previousCurrency, setPreviousCurrency] = useState(settings?.currency || 'VND');
   const [transferData, setTransferData] = useState({
     from_wallet_id: '',
     to_wallet_id: '',
     amount: 0,
     description: '',
   });
+  // State for formatted amount inputs
+  const [balanceInput, setBalanceInput] = useState('');
+  const [transferAmountInput, setTransferAmountInput] = useState('');
+  const balanceInputRef = useRef(null);
+  const transferAmountInputRef = useRef(null);
 
   useEffect(() => {
     fetchWallets();
   }, []);
+
+  // Handle currency change - convert wallet balance
+  useEffect(() => {
+    if (settings?.currency && previousCurrency && previousCurrency !== settings.currency && formData.balance > 0) {
+      const convertedBalance = convertCurrency(formData.balance, previousCurrency, settings.currency);
+      setFormData(prev => ({ ...prev, balance: convertedBalance }));
+    }
+    if (settings?.currency && settings.currency !== previousCurrency) {
+      setPreviousCurrency(settings.currency);
+    }
+  }, [settings?.currency, previousCurrency, formData.balance]);
+
+  // Sync balance input when formData changes
+  useEffect(() => {
+    if (formData.balance !== undefined) {
+      setBalanceInput(formatAmountInput(formData.balance, { numberFormat: settings?.numberFormat || 'vi-VN' }));
+    }
+  }, [formData.balance, settings?.numberFormat]);
+
+  // Sync transfer amount input when transferData changes  
+  useEffect(() => {
+    if (transferData.amount !== undefined) {
+      setTransferAmountInput(formatAmountInput(transferData.amount, { numberFormat: settings?.numberFormat || 'vi-VN' }));
+    }
+  }, [transferData.amount, settings?.numberFormat]);
 
   const fetchWallets = async () => {
     try {
@@ -123,7 +156,7 @@ const Wallets = () => {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
         <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-gray-600 font-medium">Đang tải...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">Đang tải...</p>
       </div>
     );
   }
@@ -164,14 +197,14 @@ const Wallets = () => {
 
       {/* Wallets Grid */}
       {wallets.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="inline-block mb-4">
-            <div className="p-6 bg-gray-100 rounded-2xl">
-              <WalletIcon className="h-12 w-12 text-gray-400" />
+            <div className="p-6 bg-gray-100 dark:bg-gray-700 rounded-2xl">
+              <WalletIcon className="h-12 w-12 text-gray-400 dark:text-gray-500" />
             </div>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-1">Chưa có ví nào</h3>
-          <p className="text-sm text-gray-600 mb-4">Hãy tạo ví đầu tiên của bạn</p>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Chưa có ví nào</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Hãy tạo ví đầu tiên của bạn</p>
           <button
             onClick={() => setShowModal(true)}
             className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
@@ -185,7 +218,7 @@ const Wallets = () => {
           {wallets.map((wallet) => (
             <div
               key={wallet.id}
-              className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-md transition-all"
+              className="group bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all"
             >
               {/* Card Header */}
               <div className="bg-gradient-to-br from-blue-500 to-cyan-600 p-4">
@@ -215,17 +248,17 @@ const Wallets = () => {
               </div>
 
               {/* Card Actions */}
-              <div className="p-3 flex items-center justify-end gap-2 bg-gray-50">
+              <div className="p-3 flex items-center justify-end gap-2 bg-gray-50 dark:bg-gray-700">
                 <button
                   onClick={() => openEditModal(wallet)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium border border-blue-200"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors text-sm font-medium border border-blue-200 dark:border-blue-600"
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                   <span>Sửa</span>
                 </button>
                 <button
                   onClick={() => handleDelete(wallet.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium border border-red-200"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-gray-600 transition-colors text-sm font-medium border border-red-200 dark:border-red-600"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   <span>Xóa</span>
@@ -244,7 +277,7 @@ const Wallets = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200"
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-700"
           >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
@@ -252,21 +285,21 @@ const Wallets = () => {
                 </h2>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
                 >
-                  <X className="h-6 w-6 text-gray-500" />
+                  <X className="h-6 w-6 text-gray-500 dark:text-gray-400" />
                 </button>
               </div>
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Tên ví *</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tên ví *</label>
                   <div className="relative">
                     <WalletIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-semibold"
+                      className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-semibold text-gray-900 dark:text-white"
                       placeholder="Ví của tôi"
                       required
                     />
@@ -274,33 +307,56 @@ const Wallets = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Số dư ban đầu</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Số dư ban đầu</label>
                   <div className="relative">
-                    {/* // chang to VND sign  */}
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 ">đ</span>
-                      {/* <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" /> */}
+                    {/* Currency code based on user settings */}
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 dark:text-blue-400 font-bold text-sm z-10">
+                      {settings?.currency || 'VND'}
+                    </span>
                     <input
-                      type="number"
-                      value={formData.balance}
-                      onChange={(e) => setFormData({ ...formData, balance: parseFloat(e.target.value) })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-lg font-semibold"
-                      placeholder="0"
+                      type="text"
+                      value={balanceInput}
+                      onChange={(e) => {
+                        const caret = e.target.selectionStart || 0;
+                        const { text, caret: nextCaret } = formatAmountLive(e.target.value, caret, { numberFormat: settings?.numberFormat || 'vi-VN' });
+                        setBalanceInput(text);
+                        const parsed = parseAmountInput(text, { numberFormat: settings?.numberFormat || 'vi-VN' });
+                        setFormData({ ...formData, balance: parsed });
+                        requestAnimationFrame(() => {
+                          if (balanceInputRef.current) {
+                            balanceInputRef.current.setSelectionRange(nextCaret, nextCaret);
+                          }
+                        });
+                      }}
+                      onBlur={() => {
+                        setBalanceInput(formatAmountInput(formData.balance, { numberFormat: settings?.numberFormat || 'vi-VN' }));
+                      }}
+                      onFocus={(e) => {
+                        e.target.select(); // Select all text on focus for easy editing
+                      }}
+                      ref={balanceInputRef}
+                      className="w-full pl-14 pr-20 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg font-semibold text-gray-900 dark:text-white shadow-sm hover:shadow-md"
+                      placeholder="Nhập số dư..."
                     />
+                    {/* Amount preview on the right */}
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400 font-medium pointer-events-none">
+                      {formData.balance > 0 ? formatCurrency(formData.balance, settings?.currency || 'VND', settings?.numberFormat || 'vi-VN') : ''}
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Mô tả</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Mô tả</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-4 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+                    className="w-full px-4 py-4 bg-white/60 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none text-gray-900 dark:text-white"
                     rows="3"
                     placeholder="Mô tả về ví..."
                   />
                 </div>
 
-                <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-2xl">
+                <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl">
                   <input
                     type="checkbox"
                     id="default-wallet"
@@ -308,8 +364,8 @@ const Wallets = () => {
                     onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
                     className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                   />
-                  <label htmlFor="default-wallet" className="flex items-center space-x-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                    <Check className="h-4 w-4 text-blue-600" />
+                  <label htmlFor="default-wallet" className="flex items-center space-x-2 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
+                    <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <span>Đặt làm ví mặc định</span>
                   </label>
                 </div>
@@ -321,7 +377,7 @@ const Wallets = () => {
                       setShowModal(false);
                       setEditingWallet(null);
                     }}
-                    className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                    className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                   >
                     Hủy
                   </button>
@@ -345,7 +401,7 @@ const Wallets = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200"
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-700"
           >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
@@ -353,27 +409,27 @@ const Wallets = () => {
                 </h2>
                 <button
                   onClick={() => setShowTransferModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
                 >
-                  <X className="h-6 w-6 text-gray-500" />
+                  <X className="h-6 w-6 text-gray-500 dark:text-gray-400" />
                 </button>
               </div>
               <form onSubmit={handleTransfer} className="space-y-5">
-                <div className="p-4 bg-blue-50 rounded-2xl flex items-start space-x-3">
-                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <p className="text-sm text-blue-800">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-start space-x-3">
+                  <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
                     Chuyển tiền giữa các ví của bạn
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Từ ví *</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Từ ví *</label>
                   <div className="relative">
                     <WalletIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
                     <select
                       value={transferData.from_wallet_id}
                       onChange={(e) => setTransferData({ ...transferData, from_wallet_id: e.target.value })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all font-semibold appearance-none"
+                      className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all font-semibold appearance-none text-gray-900 dark:text-white"
                       required
                     >
                       <option value="">Chọn ví nguồn</option>
@@ -385,19 +441,19 @@ const Wallets = () => {
                 </div>
 
                 <div className="flex justify-center">
-                  <div className="p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full">
-                    <ArrowRightLeft className="h-6 w-6 text-green-600" />
+                  <div className="p-3 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-full">
+                    <ArrowRightLeft className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Đến ví *</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Đến ví *</label>
                   <div className="relative">
                     <WalletIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
                     <select
                       value={transferData.to_wallet_id}
                       onChange={(e) => setTransferData({ ...transferData, to_wallet_id: e.target.value })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all font-semibold appearance-none"
+                      className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all font-semibold appearance-none text-gray-900 dark:text-white"
                       required
                     >
                       <option value="">Chọn ví đích</option>
@@ -409,27 +465,51 @@ const Wallets = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Số tiền *</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Số tiền *</label>
                   <div className="relative">
-                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400 font-bold text-sm z-10">
+                      {settings?.currency || 'VND'}
+                    </span>
                     <input
-                      type="number"
-                      value={transferData.amount}
-                      onChange={(e) => setTransferData({ ...transferData, amount: parseFloat(e.target.value) })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all text-lg font-semibold"
-                      placeholder="0"
+                      type="text"
+                      value={transferAmountInput}
+                      onChange={(e) => {
+                        const caret = e.target.selectionStart || 0;
+                        const { text, caret: nextCaret } = formatAmountLive(e.target.value, caret, { numberFormat: settings?.numberFormat || 'vi-VN' });
+                        setTransferAmountInput(text);
+                        const parsed = parseAmountInput(text, { numberFormat: settings?.numberFormat || 'vi-VN' });
+                        setTransferData({ ...transferData, amount: parsed });
+                        requestAnimationFrame(() => {
+                          if (transferAmountInputRef.current) {
+                            transferAmountInputRef.current.setSelectionRange(nextCaret, nextCaret);
+                          }
+                        });
+                      }}
+                      onBlur={() => {
+                        setTransferAmountInput(formatAmountInput(transferData.amount, { numberFormat: settings?.numberFormat || 'vi-VN' }));
+                      }}
+                      onFocus={(e) => {
+                        e.target.select(); // Select all text on focus for easy editing
+                      }}
+                      ref={transferAmountInputRef}
+                      className="w-full pl-14 pr-20 py-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all text-lg font-semibold text-gray-900 dark:text-white shadow-sm hover:shadow-md"
+                      placeholder="Nhập số tiền..."
                       required
                     />
+                    {/* Amount preview on the right */}
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400 font-medium pointer-events-none">
+                      {transferData.amount > 0 ? formatCurrency(transferData.amount, settings?.currency || 'VND', settings?.numberFormat || 'vi-VN') : ''}
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Ghi chú</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ghi chú</label>
                   <input
                     type="text"
                     value={transferData.description}
                     onChange={(e) => setTransferData({ ...transferData, description: e.target.value })}
-                    className="w-full px-4 py-4 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                    className="w-full px-4 py-4 bg-white/60 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all text-gray-900 dark:text-white"
                     placeholder="Mô tả giao dịch..."
                   />
                 </div>
@@ -438,7 +518,7 @@ const Wallets = () => {
                   <button
                     type="button"
                     onClick={() => setShowTransferModal(false)}
-                    className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                    className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                   >
                     Hủy
                   </button>

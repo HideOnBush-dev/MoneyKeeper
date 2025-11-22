@@ -7,15 +7,11 @@ from app.security import (
     validate_amount, validate_category, sanitize_string,
     validate_positive_integer, validate_date
 )
-from app.utils.ocr import ReceiptOCR
 from app.utils.ai_invoice_extractor import ai_invoice_extractor
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 
 logger = logging.getLogger(__name__)
-
-# Initialize processors
-receipt_ocr = ReceiptOCR()
 
 
 @bp.route('/auth/me')
@@ -235,47 +231,84 @@ def process_receipt():
                 'error': f'Error reading file: {str(e)}'
             }), 400
 
-        # Try AI extraction first (more accurate)
+        # Use Gemini AI extraction (only method)
         result = None
-        use_ai = True
         
         try:
             result = ai_invoice_extractor.extract_from_image(file_content)
             logger.info("AI extraction successful")
-        except Exception as ai_error:
-            logger.warning(f"AI extraction failed, falling back to OCR: {ai_error}")
-            use_ai = False
-        
-        # Fallback to OCR if AI fails or returns no data
-        if not use_ai or (result and not result.get('amount')):
-            logger.info("Using OCR as fallback")
-            result = receipt_ocr.process_image(file_content)
             
-            # Check for OCR failures
+            # Check if extraction returned an error
             if result.get('error'):
-                logger.warning(f"OCR processing failed: {result['error']}")
+                logger.warning(f"AI extraction returned error: {result['error']}")
                 return jsonify({
                     'success': False,
                     'error': result['error']
                 }), 400
-        
-        # Format date if it's a datetime object (from OCR) or string (from AI)
-        date_value = None
-        if result.get('date'):
-            if isinstance(result['date'], str):
-                date_value = result['date']
+            
+            # Check if we got valid data
+            if not result.get('amount'):
+                logger.warning("AI extraction did not find amount in image")
+                return jsonify({
+                    'success': False,
+                    'error': 'Không thể trích xuất thông tin từ ảnh. Vui lòng thử lại với ảnh rõ hơn.'
+                }), 400
+                
+        except ValueError as ve:
+            # API key or configuration errors
+            logger.error(f"Configuration error: {ve}")
+            error_msg = str(ve)
+            if 'GOOGLE_API_KEY' in error_msg or 'API key' in error_msg.lower():
+                return jsonify({
+                    'success': False,
+                    'error': 'Lỗi cấu hình API. Vui lòng kiểm tra GOOGLE_API_KEY trong môi trường.'
+                }), 500
+            return jsonify({
+                'success': False,
+                'error': f'Lỗi cấu hình: {error_msg}'
+            }), 500
+        except Exception as ai_error:
+            logger.exception(f"AI extraction failed: {ai_error}")
+            error_msg = str(ai_error)
+            
+            # Provide user-friendly error messages
+            if '403' in error_msg or 'permission' in error_msg.lower() or 'forbidden' in error_msg.lower():
+                return jsonify({
+                    'success': False,
+                    'error': 'Lỗi xác thực API. Vui lòng kiểm tra GOOGLE_API_KEY và quyền truy cập Gemini API.'
+                }), 400
+            elif '429' in error_msg or 'quota' in error_msg.lower() or 'rate limit' in error_msg.lower():
+                return jsonify({
+                    'success': False,
+                    'error': 'Đã vượt quá giới hạn API. Vui lòng thử lại sau.'
+                }), 429
+            elif 'timeout' in error_msg.lower():
+                return jsonify({
+                    'success': False,
+                    'error': 'Yêu cầu quá thời gian chờ. Vui lòng thử lại.'
+                }), 408
             else:
-                # It's a datetime object from OCR
-                date_value = result['date'].isoformat() if hasattr(result['date'], 'isoformat') else None
+                return jsonify({
+                    'success': False,
+                    'error': f'Không thể xử lý ảnh: {error_msg}'
+                }), 400
+        
+        # Format date (AI returns string in YYYY-MM-DD format)
+        date_value = result.get('date')
+        if date_value and not isinstance(date_value, str):
+            # If it's a datetime object, convert to string
+            date_value = date_value.isoformat() if hasattr(date_value, 'isoformat') else str(date_value)
 
-        # If OCR was used and we have text, try to suggest category
+        # Get suggested category (already set by AI extractor)
         suggested_category = result.get('suggested_category')
-        if not suggested_category and result.get('text'):
+        
+        # If no category was suggested, try to suggest one based on extracted data
+        if not suggested_category:
             try:
                 from app.ai_engine.features.categorizer import ExpenseCategorizer
                 categorizer = ExpenseCategorizer()
-                # Use note or text for categorization
-                description = result.get('note') or result.get('text', '')[:200]  # Limit text length
+                # Use note or merchant for categorization
+                description = result.get('note') or result.get('merchant') or ''
                 if description:
                     vi_category = categorizer.predict_category(description)
                     # Map Vietnamese category to English slug
@@ -292,7 +325,7 @@ def process_receipt():
                     }
                     suggested_category = category_mapping.get(vi_category, "other")
             except Exception as e:
-                logger.warning(f"Failed to suggest category from OCR: {e}")
+                logger.warning(f"Failed to suggest category: {e}")
 
         return jsonify({
             'success': True,
@@ -304,7 +337,7 @@ def process_receipt():
             'invoice_number': result.get('invoice_number'),
             'suggested_category': suggested_category,
             'text': result.get('text', ''),
-            'method': 'ai' if use_ai else 'ocr'  # Indicate which method was used
+            'method': 'ai'  # Always using AI (Gemini)
         }), 200
 
     except Exception as e:

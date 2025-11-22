@@ -214,7 +214,7 @@ const Dashboard = () => {
     <div className="max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="relative">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center space-x-4">
               <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-sm">
@@ -224,7 +224,7 @@ const Dashboard = () => {
                 <h1 className="text-4xl md:text-5xl font-bold font-display text-gradient">
                   Dashboard
                 </h1>
-                <p className="text-gray-600 mt-1 flex items-center space-x-2">
+                <p className="text-gray-600 dark:text-gray-300 mt-1 flex items-center space-x-2">
                   <Zap className="h-4 w-4 text-yellow-500" />
                   <span>Chào mừng trở lại! Hôm nay bạn thế nào?</span>
                 </p>
@@ -232,9 +232,9 @@ const Dashboard = () => {
             </div>
 
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl px-4 py-3 border border-blue-200">
-                <Calendar className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-semibold text-blue-900">
+              <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl px-4 py-3 border border-blue-200 dark:border-blue-700">
+                <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-semibold text-blue-900 dark:text-blue-200">
                   {new Date().toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
               </div>
@@ -283,12 +283,12 @@ const Dashboard = () => {
         ].map((stat, idx) => (
           <div
             key={idx}
-            className={`relative overflow-hidden rounded-2xl bg-white p-4 shadow-sm border border-gray-100`}
+            className={`relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-100 dark:border-gray-700`}
           >
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-10">
-              <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-gradient-to-br from-white to-transparent"></div>
-              <div className="absolute -left-8 -bottom-8 w-40 h-40 rounded-full bg-gradient-to-br from-white to-transparent"></div>
+              <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-gradient-to-br from-white dark:from-gray-600 to-transparent"></div>
+              <div className="absolute -left-8 -bottom-8 w-40 h-40 rounded-full bg-gradient-to-br from-white dark:from-gray-600 to-transparent"></div>
             </div>
 
             <div className="relative">
@@ -297,7 +297,7 @@ const Dashboard = () => {
                   <stat.icon className="h-6 w-6 text-white" />
                 </div>
                 <div className={`flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold ${
-                  stat.trendUp ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  stat.trendUp ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300'
                 }`}>
                   {stat.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   <span>{stat.trend}</span>
@@ -305,7 +305,7 @@ const Dashboard = () => {
               </div>
 
               <div>
-                <p className="text-sm text-gray-600 font-medium mb-1">{stat.title}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium mb-1">{stat.title}</p>
                 <p className={`text-3xl font-bold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}>
                   {stat.value}
                 </p>
@@ -318,14 +318,14 @@ const Dashboard = () => {
       {/* Enhanced Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Trend Chart với Modern Design */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-bold text-gray-900">Xu hướng thu chi</h3>
-              <p className="text-sm text-gray-600 mt-1">7 ngày gần nhất</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Xu hướng thu chi</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">7 ngày gần nhất</p>
             </div>
-            <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
+            <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl">
+              <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
           <ResponsiveContainer width="100%" height={300}>
@@ -359,14 +359,14 @@ const Dashboard = () => {
         </div>
 
         {/* Category Pie Chart */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-bold text-gray-900">Phân bổ chi tiêu</h3>
-              <p className="text-sm text-gray-600 mt-1">Theo danh mục</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Phân bổ chi tiêu</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Theo danh mục</p>
             </div>
-            <div className="p-3 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl">
-              <PieChartIcon className="h-5 w-5 text-purple-600" />
+            <div className="p-3 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl">
+              <PieChartIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
           </div>
           <ResponsiveContainer width="100%" height={300}>
@@ -402,15 +402,15 @@ const Dashboard = () => {
       </div>
 
       {/* Enhanced Recent Transactions */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-gradient-to-br from-orange-100 to-red-100 rounded-2xl">
-              <DollarSign className="h-6 w-6 text-orange-600" />
+            <div className="p-3 bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/20 dark:to-red-900/20 rounded-2xl">
+              <DollarSign className="h-6 w-6 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-900">Giao dịch gần đây</h3>
-              <p className="text-sm text-gray-600">5 giao dịch mới nhất</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Giao dịch gần đây</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">5 giao dịch mới nhất</p>
             </div>
           </div>
           <a
@@ -425,19 +425,19 @@ const Dashboard = () => {
         {recentExpenses.length === 0 ? (
           <div className="text-center py-12">
             <div className="inline-block mb-4">
-              <div className="p-4 bg-gray-100 rounded-2xl">
-                <DollarSign className="h-12 w-12 text-gray-400" />
+              <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-2xl">
+                <DollarSign className="h-12 w-12 text-gray-400 dark:text-gray-500" />
               </div>
             </div>
-            <p className="text-gray-500 text-sm font-medium">Chưa có giao dịch nào</p>
-            <p className="text-xs text-gray-400 mt-1">Thêm giao dịch đầu tiên của bạn</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Chưa có giao dịch nào</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Thêm giao dịch đầu tiên của bạn</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {recentExpenses.map((expense, index) => (
+            {recentExpenses.map((expense) => (
               <div
                 key={expense.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-blue-50 transition-colors border border-gray-100 hover:border-blue-200 cursor-pointer group"
+                className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors border border-gray-100 dark:border-gray-600 hover:border-blue-200 dark:hover:border-blue-700 cursor-pointer group"
               >
                 <div className="flex items-center space-x-4">
                   <div className={`p-3 rounded-2xl shadow-lg ${
@@ -452,10 +452,10 @@ const Dashboard = () => {
                     )}
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    <p className="font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {expense.description || 'Không có mô tả'}
                     </p>
-                    <p className="text-sm text-gray-500 flex items-center space-x-2 mt-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center space-x-2 mt-1">
                       <Calendar className="h-3 w-3" />
                       <span>{new Date(expense.date).toLocaleDateString('vi-VN')}</span>
                     </p>
@@ -463,7 +463,7 @@ const Dashboard = () => {
                 </div>
                 <div className="text-right">
                   <p className={`text-xl font-bold ${
-                    expense.is_expense ? 'text-red-600' : 'text-green-600'
+                    expense.is_expense ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                   }`}>
                     {expense.is_expense ? '-' : '+'}{formatCurrency(expense.amount || 0, settings.currency, settings.numberFormat)}
                   </p>
@@ -478,8 +478,8 @@ const Dashboard = () => {
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => !saving && setShowAddModal(false)}></div>
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-            <h3 className="text-xl font-bold mb-4">Thêm giao dịch</h3>
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Thêm giao dịch</h3>
             <QuickTransactionForm
               wallets={wallets}
               onSuccess={async () => {
