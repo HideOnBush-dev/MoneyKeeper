@@ -4,6 +4,8 @@ import { expenseAPI, walletAPI } from '../services/api';
 import { useToast } from './Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/numberFormat';
+import { formatCurrency } from '../lib/utils';
+import { convertCurrency } from '../lib/currency';
 import Select from './Select';
 import CategoryGrid from './CategoryGrid';
   
@@ -44,6 +46,7 @@ const QuickTransactionForm = ({
   const { settings } = useSettings();
   const [wallets, setWallets] = useState(walletsProp || []);
   const [saving, setSaving] = useState(false);
+  const [previousCurrency, setPreviousCurrency] = useState(settings.currency);
   
   // Safely handle initialData amount
   const initialAmount = initialData?.amount && !isNaN(initialData.amount) ? initialData.amount : 0;
@@ -141,6 +144,16 @@ const QuickTransactionForm = ({
     }
   }, [formData.is_expense, formData.category, currentCategories, suggestedCategory]);
 
+  // Handle currency change - convert amount
+  useEffect(() => {
+    if (previousCurrency && previousCurrency !== settings.currency && formData.amount > 0) {
+      const convertedAmount = convertCurrency(formData.amount, previousCurrency, settings.currency);
+      setFormData(prev => ({ ...prev, amount: convertedAmount }));
+      setAmountInput(formatAmountInput(convertedAmount, { numberFormat: settings.numberFormat }));
+    }
+    setPreviousCurrency(settings.currency);
+  }, [settings.currency, previousCurrency, formData.amount, settings.numberFormat]);
+
   useEffect(() => {
     const fetchIfNeeded = async () => {
       if (!walletsProp || walletsProp.length === 0) {
@@ -211,24 +224,16 @@ const QuickTransactionForm = ({
 
   const isInline = variant === 'inline';
   const isPage = variant === 'page';
-  const currencySymbol = useMemo(() => {
-    const code = settings.currency || 'VND';
-    try {
-      // Try to infer symbol using Intl
-      const parts = new Intl.NumberFormat(settings.numberFormat || 'vi-VN', { style: 'currency', currency: code, currencyDisplay: 'narrowSymbol', minimumFractionDigits: 0 }).formatToParts(0);
-      const sym = parts.find(p => p.type === 'currency')?.value;
-      return sym || (code === 'VND' ? '₫' : '$');
-    } catch {
-      return code === 'VND' ? '₫' : '$';
-    }
-  }, [settings.currency, settings.numberFormat]);
+  const currencyCode = useMemo(() => {
+    return settings?.currency || 'VND';
+  }, [settings?.currency]);
 
   return (
     <div className={isInline ? 'w-full' : 'w-full space-y-4'}>
       {/* Type Selector - Segmented control */}
       <div>
-        <label className="block text-xs font-semibold text-gray-600 mb-1">Loại giao dịch</label>
-        <div className="relative w-full bg-gray-100 rounded-xl p-1 flex gap-1">
+        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Loại giao dịch</label>
+        <div className="relative w-full bg-gray-100 dark:bg-gray-800 rounded-xl p-1 flex gap-1">
           <button
             type="button"
             onClick={() => {
@@ -237,8 +242,8 @@ const QuickTransactionForm = ({
             }}
             className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
               formData.is_expense 
-                ? 'bg-white text-red-600 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white dark:bg-gray-700 text-red-600 dark:text-red-400 shadow-sm' 
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
             <TrendingDown className="h-4 w-4" />
@@ -252,8 +257,8 @@ const QuickTransactionForm = ({
             }}
             className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
               !formData.is_expense 
-                ? 'bg-white text-green-600 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white dark:bg-gray-700 text-green-600 dark:text-green-400 shadow-sm' 
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
             <TrendingUp className="h-4 w-4" />
@@ -264,10 +269,12 @@ const QuickTransactionForm = ({
 
       {/* Amount Field */}
       <div>
-        <label className="block text-xs font-semibold text-gray-600 mb-1">Số tiền</label>
+        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Số tiền</label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-gray-400">
-            {currencySymbol}
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold z-10" style={{
+            color: formData.is_expense ? '#dc2626' : '#059669'
+          }}>
+            {currencyCode}
           </span>
           <input
             type="text"
@@ -282,19 +289,28 @@ const QuickTransactionForm = ({
                 setFormData((prev) => ({ ...prev, amount: parsed }));
               }
             }}
+            onFocus={(e) => {
+              e.target.select(); // Select all text on focus for easy editing
+            }}
             ref={amountRef}
-            className={`w-full py-3 pl-10 pr-4 border-2 rounded-xl focus:outline-none focus:ring-2 transition-all text-lg font-semibold ${
+            className={`w-full py-3 pl-12 pr-20 border-2 rounded-xl focus:outline-none focus:ring-2 transition-all text-lg font-semibold shadow-sm hover:shadow-md ${
               formData.is_expense 
-                ? 'border-red-200 focus:border-red-500 focus:ring-red-200' 
-                : 'border-green-200 focus:border-green-500 focus:ring-green-200'
+                ? 'bg-gradient-to-r from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 border-red-200 dark:border-red-600/60 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-200 dark:focus:ring-red-400/20 text-red-900 dark:text-red-50 placeholder:text-red-400 dark:placeholder:text-red-400/70' 
+                : 'bg-gradient-to-r from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40 border-green-200 dark:border-green-600/60 focus:border-green-500 dark:focus:border-green-400 focus:ring-green-200 dark:focus:ring-green-400/20 text-green-900 dark:text-green-50 placeholder:text-green-400 dark:placeholder:text-green-400/70'
             }`}
-            placeholder="0"
+            placeholder="Nhập số tiền..."
             required
           />
+          {/* Amount preview on the right */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium pointer-events-none" style={{
+            color: formData.is_expense ? '#dc2626' : '#059669'
+          }}>
+            {formData.amount > 0 ? formatCurrency(formData.amount, settings.currency, settings.numberFormat) : ''}
+          </div>
         </div>
         {initialFee && initialFee > 0 && (
-          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-700">
+          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-lg">
+            <p className="text-xs text-blue-700 dark:text-blue-300">
               <span className="font-semibold">Phí/VAT đã phát hiện:</span>{' '}
               {formatAmountInput(initialFee, { numberFormat: settings.numberFormat })} đ
             </p>
@@ -306,9 +322,9 @@ const QuickTransactionForm = ({
       {!isInline && (
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-xs font-semibold text-gray-600">Danh mục</label>
+            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300">Danh mục</label>
             {suggestedCategory && formData.category === suggestedCategory && (
-              <span className="text-xs text-blue-600 font-medium flex items-center gap-1">
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1">
                 <span>🤖</span>
                 <span>Tự động chọn</span>
               </span>
@@ -340,7 +356,7 @@ const QuickTransactionForm = ({
       {/* Wallet + Date */}
       <div className={isInline ? 'grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2' : 'grid grid-cols-1 sm:grid-cols-2 gap-3'}>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">Ví</label>
+          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Ví</label>
           <Select
             value={formData.wallet_id}
             onChange={(value) => setFormData((prev) => ({ ...prev, wallet_id: value }))}
@@ -353,15 +369,15 @@ const QuickTransactionForm = ({
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">Ngày</label>
+          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Ngày</label>
           <div className="relative">
-            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
+            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none z-10" />
             <input
               type="date"
               name="date"
               value={formData.date}
               onChange={handleChange}
-              className="w-full py-3 pl-9 pr-3 border border-gray-200 rounded-xl hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[44px]"
+              className="w-full py-3 pl-9 pr-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-xl hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all min-h-[44px]"
               required
             />
           </div>
@@ -371,13 +387,13 @@ const QuickTransactionForm = ({
       {/* Description (modal only) */}
       {!isInline && (
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">Mô tả</label>
+          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Mô tả</label>
           <input
             type="text"
             name="description"
             value={formData.description}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 rounded-xl hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
             placeholder="Ghi chú (tuỳ chọn)"
           />
         </div>
@@ -388,7 +404,7 @@ const QuickTransactionForm = ({
         {(isPage || (!isInline && onCancel)) && (
           <button
             type="button"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-sm transition-colors whitespace-nowrap"
+            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-sm transition-colors whitespace-nowrap"
             onClick={onCancel}
             disabled={saving}
           >

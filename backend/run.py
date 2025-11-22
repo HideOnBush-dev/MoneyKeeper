@@ -1,5 +1,9 @@
 import os
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 # Ensure backend dir is on PYTHONPATH so that 'app' package under backend/ is importable
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))

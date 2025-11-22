@@ -29,13 +29,13 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4 dark:bg-gray-900">
       {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-0 -left-4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-          <div className="absolute top-0 -right-4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-20 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+          <div className="absolute top-0 -left-4 w-96 h-96 bg-purple-500 dark:bg-gray-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+          <div className="absolute top-0 -right-4 w-96 h-96 bg-blue-500 dark:bg-gray-700 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-96 h-96 bg-indigo-500 dark:bg-gray-800 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
         </div>
       </div>
 
@@ -50,7 +50,7 @@ const Login = () => {
           repeat: Infinity,
           ease: "easeInOut",
         }}
-        className="absolute top-20 left-10 text-white/20"
+        className="absolute top-20 left-10 text-white/20 dark:text-gray-400/20"
       >
         <Sparkles size={60} />
       </motion.div>
@@ -64,7 +64,7 @@ const Login = () => {
           repeat: Infinity,
           ease: "easeInOut",
         }}
-        className="absolute bottom-20 right-10 text-white/20"
+        className="absolute bottom-20 right-10 text-white/20 dark:text-gray-400/20"
       >
         <Wallet size={80} />
       </motion.div>
@@ -77,7 +77,7 @@ const Login = () => {
         className="relative max-w-md w-full"
       >
         {/* Glass Card */}
-        <div className="glass backdrop-blur-2xl bg-white/10 border border-white/20 rounded-3xl shadow-2xl p-8 md:p-10">
+        <div className="glass backdrop-blur-2xl bg-white/10 dark:bg-gray-800/30 border border-white/20 dark:border-gray-600/30 rounded-3xl shadow-2xl p-8 md:p-10">
           {/* Logo & Title */}
           <motion.div
             initial={{ scale: 0 }}
@@ -85,13 +85,13 @@ const Login = () => {
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             className="text-center mb-8"
           >
-            <div className="inline-flex p-4 bg-gradient-to-br from-white/20 to-white/10 rounded-3xl backdrop-blur-xl mb-4 shadow-xl">
-              <Wallet className="h-12 w-12 text-white" />
+            <div className="inline-flex p-4 bg-gradient-to-br from-white/20 to-white/10 dark:from-gray-700/50 dark:to-gray-800/50 rounded-3xl backdrop-blur-xl mb-4 shadow-xl">
+              <Wallet className="h-12 w-12 text-white dark:text-gray-200" />
             </div>
-            <h1 className="text-4xl font-bold text-white mb-2 font-display">
+            <h1 className="text-4xl font-bold text-white dark:text-gray-100 mb-2 font-display">
               Money Keeper
             </h1>
-            <p className="text-white/80 text-sm">Quản lý tài chính thông minh với AI</p>
+            <p className="text-white/80 dark:text-gray-300 text-sm">Quản lý tài chính thông minh với AI</p>
           </motion.div>
 
           {/* Error Message */}

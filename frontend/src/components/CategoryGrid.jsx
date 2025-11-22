@@ -15,8 +15,8 @@ const CategoryGrid = ({
             onClick={() => onChange(cat.value)}
             className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all ${
               active
-                ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm'
-                : 'bg-white border-gray-200 hover:border-gray-300 text-gray-700'
+                ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500 dark:border-blue-400 text-blue-700 dark:text-blue-300 shadow-sm'
+                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
             }`}
           >
             <span className="text-2xl">{cat.emoji}</span>

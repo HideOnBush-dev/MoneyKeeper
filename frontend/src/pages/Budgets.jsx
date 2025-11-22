@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Plus,
   X,
@@ -13,6 +13,7 @@ import {
   CheckCircle,
   PieChart
 } from 'lucide-react';
+import { convertCurrency } from '../lib/currency';
 import { budgetAPI } from '../services/api';
 import { formatCurrency } from '../lib/utils';
 import { useToast } from '../components/Toast';
@@ -32,6 +33,9 @@ const CATEGORIES = [
 ];
 
 const Budgets = () => {
+  const { toast } = useToast();
+  const { settings } = useSettings();
+  
   const [budgets, setBudgets] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,16 +49,38 @@ const Budgets = () => {
     year: new Date().getFullYear(),
   });
   const [amountInput, setAmountInput] = useState('');
-  const { toast } = useToast();
-  const { settings } = useSettings();
+  const [previousCurrency, setPreviousCurrency] = useState(settings?.currency || 'VND');
   const amountInputRef = useRef(null);
 
+  // Initialize previousCurrency when settings loads
   useEffect(() => {
-    fetchBudgets();
-    fetchAlerts();
-  }, [selectedMonth, selectedYear]);
+    if (settings?.currency && !previousCurrency) {
+      setPreviousCurrency(settings.currency);
+    }
+  }, [settings?.currency, previousCurrency]);
 
-  const fetchBudgets = async () => {
+  // Sync amountInput with formData when month/year changes
+  useEffect(() => {
+    if (!amountInput && formData.amount > 0 && settings?.numberFormat) {
+      setAmountInput(formatAmountInput(formData.amount, { numberFormat: settings.numberFormat }));
+    }
+  }, [formData.month, formData.year, formData.amount, amountInput, settings?.numberFormat]);
+
+  // Handle currency change - convert amount
+  useEffect(() => {
+    if (settings?.currency && previousCurrency && previousCurrency !== settings.currency && formData.amount > 0) {
+      const convertedAmount = convertCurrency(formData.amount, previousCurrency, settings.currency);
+      setFormData(prev => ({ ...prev, amount: convertedAmount }));
+      if (settings?.numberFormat) {
+        setAmountInput(formatAmountInput(convertedAmount, { numberFormat: settings.numberFormat }));
+      }
+    }
+    if (settings?.currency && settings.currency !== previousCurrency) {
+      setPreviousCurrency(settings.currency);
+    }
+  }, [settings?.currency, previousCurrency, formData.amount, settings?.numberFormat]);
+
+  const fetchBudgets = useCallback(async () => {
     try {
       const response = await budgetAPI.getCurrent({ month: selectedMonth, year: selectedYear });
       setBudgets(response.data.budgets || []);
@@ -63,7 +89,12 @@ const Budgets = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    fetchBudgets();
+    fetchAlerts();
+  }, [fetchBudgets]);
 
   const fetchAlerts = async () => {
     try {
@@ -77,7 +108,7 @@ const Budgets = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = { ...formData, amount: parseAmountInput(amountInput || String(formData.amount), { numberFormat: settings.numberFormat }) };
+      const payload = { ...formData, amount: parseAmountInput(amountInput || String(formData.amount), { numberFormat: settings?.numberFormat || 'vi-VN' }) };
       await budgetAPI.create(payload);
       toast({ type: 'success', message: 'Lưu ngân sách thành công!' });
       setShowModal(false);
@@ -108,17 +139,11 @@ const Budgets = () => {
     return CATEGORIES.find(c => c.value === categoryValue) || CATEGORIES[CATEGORIES.length - 1];
   };
 
-  const getProgressColor = (percentage) => {
-    if (percentage >= 100) return 'bg-red-600';
-    if (percentage >= 80) return 'bg-yellow-600';
-    return 'bg-green-600';
-  };
-
   if (loading) {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
         <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-gray-600 font-medium">Đang tải...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">Đang tải...</p>
       </div>
     );
   }
@@ -157,11 +182,11 @@ const Budgets = () => {
           {alerts.map((alert) => (
             <div
               key={alert.id}
-              className="bg-yellow-50 rounded-lg p-3 border-l-4 border-yellow-500"
+              className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 border-l-4 border-yellow-500"
             >
               <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-yellow-900">{alert.message}</p>
+                <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-yellow-900 dark:text-yellow-200">{alert.message}</p>
               </div>
             </div>
           ))}
@@ -169,17 +194,17 @@ const Budgets = () => {
       )}
 
       {/* Month Selector */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
         <div className="flex items-center space-x-4">
           <div className="flex-1">
-            <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center space-x-2">
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-2">
               <Calendar className="h-4 w-4" />
               <span>Tháng</span>
             </label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="w-full px-4 py-3 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all font-semibold appearance-none"
+              className="w-full px-4 py-3 bg-white/60 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all font-semibold appearance-none text-gray-900 dark:text-white"
             >
               {[...Array(12)].map((_, i) => (
                 <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
@@ -187,14 +212,14 @@ const Budgets = () => {
             </select>
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center space-x-2">
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-2">
               <Calendar className="h-4 w-4" />
               <span>Năm</span>
             </label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="w-full px-4 py-3 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all font-semibold appearance-none"
+              className="w-full px-4 py-3 bg-white/60 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all font-semibold appearance-none text-gray-900 dark:text-white"
             >
               {[2024, 2025, 2026].map((year) => (
                 <option key={year} value={year}>{year}</option>
@@ -232,10 +257,10 @@ const Budgets = () => {
         ].map((stat, idx) => (
           <div
             key={idx}
-            className={`relative overflow-hidden rounded-2xl bg-white p-4 shadow-sm border border-gray-100`}
+            className={`relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-100 dark:border-gray-700`}
           >
             <div className="absolute inset-0 opacity-10">
-              <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-gradient-to-br from-white to-transparent"></div>
+              <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-gradient-to-br from-white dark:from-gray-600 to-transparent"></div>
             </div>
 
             <div className="relative">
@@ -244,14 +269,14 @@ const Budgets = () => {
                   <stat.icon className="h-6 w-6 text-white" />
                 </div>
                 {stat.percentage && (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/50 text-gray-700">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300">
                     {stat.percentage}%
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-600 font-medium mb-1">{stat.title}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium mb-1">{stat.title}</p>
               <p className={`text-3xl font-bold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}>
-                {formatCurrency(stat.value, settings.currency, settings.numberFormat)}
+                {formatCurrency(stat.value, settings?.currency || 'VND', settings?.numberFormat || 'vi-VN')}
               </p>
             </div>
           </div>
@@ -260,14 +285,14 @@ const Budgets = () => {
 
       {/* Budget List */}
       {budgets.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="inline-block mb-4">
-            <div className="p-6 bg-gray-100 rounded-2xl">
-              <Target className="h-12 w-12 text-gray-400" />
+            <div className="p-6 bg-gray-100 dark:bg-gray-700 rounded-2xl">
+              <Target className="h-12 w-12 text-gray-400 dark:text-gray-500" />
             </div>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-1">Chưa có ngân sách</h3>
-          <p className="text-sm text-gray-600 mb-4">Tạo ngân sách đầu tiên cho tháng này</p>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Chưa có ngân sách</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Tạo ngân sách đầu tiên cho tháng này</p>
           <button
             onClick={() => setShowModal(true)}
             className="px-6 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors inline-flex items-center gap-2"
@@ -278,7 +303,7 @@ const Budgets = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {budgets.map((budget, index) => {
+          {budgets.map((budget) => {
             const categoryInfo = getCategoryInfo(budget.category);
             const percentage = Math.min(budget.percentage, 100);
             const circumference = 2 * Math.PI * 40;
@@ -287,7 +312,7 @@ const Budgets = () => {
             return (
               <div
                 key={budget.id}
-                className={`bg-white rounded-2xl p-4 shadow-sm border border-gray-100 group`}
+                className={`bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 group`}
               >
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center space-x-3">
@@ -295,8 +320,8 @@ const Budgets = () => {
                       <span className="text-2xl">{categoryInfo.emoji}</span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900">{categoryInfo.label}</h3>
-                      <p className="text-sm text-gray-600">Tháng {budget.month}/{budget.year}</p>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">{categoryInfo.label}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Tháng {budget.month}/{budget.year}</p>
                     </div>
                   </div>
                   
@@ -310,7 +335,7 @@ const Budgets = () => {
                         stroke="currentColor"
                         strokeWidth="6"
                         fill="none"
-                        className="text-gray-200"
+                        className="text-gray-200 dark:text-gray-600"
                       />
                       <circle
                         cx="40"
@@ -326,30 +351,30 @@ const Budgets = () => {
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-sm font-bold text-gray-900">{percentage.toFixed(0)}%</span>
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">{percentage.toFixed(0)}%</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="text-center p-3 bg-white/50 rounded-2xl">
-                    <p className="text-xs text-gray-600 mb-1">Ngân sách</p>
-                    <p className="text-lg font-bold text-gray-900">{formatCurrency(budget.amount, settings.currency, settings.numberFormat)}</p>
+                  <div className="text-center p-3 bg-white/50 dark:bg-gray-700/50 rounded-2xl">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Ngân sách</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(budget.amount, settings?.currency || 'VND', settings?.numberFormat || 'vi-VN')}</p>
                   </div>
-                  <div className="text-center p-3 bg-white/50 rounded-2xl">
-                    <p className="text-xs text-gray-600 mb-1">Đã chi</p>
-                    <p className="text-lg font-bold text-red-600">{formatCurrency(budget.spent, settings.currency, settings.numberFormat)}</p>
+                  <div className="text-center p-3 bg-white/50 dark:bg-gray-700/50 rounded-2xl">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Đã chi</p>
+                    <p className="text-lg font-bold text-red-600">{formatCurrency(budget.spent, settings?.currency || 'VND', settings?.numberFormat || 'vi-VN')}</p>
                   </div>
-                  <div className="text-center p-3 bg-white/50 rounded-2xl">
-                    <p className="text-xs text-gray-600 mb-1">Còn lại</p>
-                    <p className="text-lg font-bold text-green-600">{formatCurrency(budget.remaining, settings.currency, settings.numberFormat)}</p>
+                  <div className="text-center p-3 bg-white/50 dark:bg-gray-700/50 rounded-2xl">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Còn lại</p>
+                    <p className="text-lg font-bold text-green-600">{formatCurrency(budget.remaining, settings?.currency || 'VND', settings?.numberFormat || 'vi-VN')}</p>
                   </div>
                 </div>
 
                 {/* Delete Button */}
                 <button
                   onClick={() => handleDelete(budget.id)}
-                  className="w-full px-4 py-2.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2"
+                  className="w-full px-4 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   <span>Xóa ngân sách</span>
@@ -368,7 +393,7 @@ const Budgets = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200"
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-700"
           >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
@@ -376,20 +401,20 @@ const Budgets = () => {
                 </h2>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
                 >
-                  <X className="h-6 w-6 text-gray-500" />
+                  <X className="h-6 w-6 text-gray-500 dark:text-gray-400" />
                 </button>
               </div>
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Danh mục *</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Danh mục *</label>
                   <div className="relative">
                     <Tag className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
                     <select
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all font-semibold appearance-none"
+                      className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all font-semibold appearance-none text-gray-900 dark:text-white"
                       required
                     >
                       <option value="">Chọn danh mục</option>
@@ -401,18 +426,20 @@ const Budgets = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Số tiền ngân sách *</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Số tiền ngân sách *</label>
                   <div className="relative">
-                    {/* <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" /> */}
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 ">đ</span>
+                    {/* Currency code based on user settings */}
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 dark:text-blue-400 font-bold text-sm z-10">
+                      {settings?.currency || 'VND'}
+                    </span>
                     <input
                       type="text"
                       value={amountInput}
                       onChange={(e) => {
                         const caret = e.target.selectionStart || 0;
-                        const { text, caret: nextCaret } = formatAmountLive(e.target.value, caret, { numberFormat: settings.numberFormat });
+                        const { text, caret: nextCaret } = formatAmountLive(e.target.value, caret, { numberFormat: settings?.numberFormat || 'vi-VN' });
                         setAmountInput(text);
-                        const parsed = parseAmountInput(text, { numberFormat: settings.numberFormat });
+                        const parsed = parseAmountInput(text, { numberFormat: settings?.numberFormat || 'vi-VN' });
                         setFormData({ ...formData, amount: parsed });
                         requestAnimationFrame(() => {
                           if (amountInputRef.current) {
@@ -421,25 +448,32 @@ const Budgets = () => {
                         });
                       }}
                       onBlur={() => {
-                        setAmountInput(formatAmountInput(amountInput || formData.amount, { numberFormat: settings.numberFormat }));
+                        setAmountInput(formatAmountInput(formData.amount, { numberFormat: settings?.numberFormat || 'vi-VN' }));
+                      }}
+                      onFocus={(e) => {
+                        e.target.select(); // Select all text on focus for easy editing
                       }}
                       ref={amountInputRef}
-                      className="w-full pl-12 pr-4 py-4 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all text-lg font-semibold"
-                      placeholder="0"
+                      className="w-full pl-14 pr-20 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg font-semibold text-gray-900 dark:text-white shadow-sm hover:shadow-md"
+                      placeholder="Nhập số tiền..."
                       required
                     />
+                    {/* Amount preview on the right */}
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400 font-medium pointer-events-none">
+                      {formData.amount > 0 ? formatCurrency(formData.amount, settings?.currency || 'VND', settings?.numberFormat || 'vi-VN') : ''}
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Tháng</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tháng</label>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
                       <select
                         value={formData.month}
                         onChange={(e) => setFormData({ ...formData, month: parseInt(e.target.value) })}
-                        className="w-full pl-12 pr-4 py-4 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all font-semibold appearance-none"
+                        className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all font-semibold appearance-none text-gray-900 dark:text-white"
                       >
                         {[...Array(12)].map((_, i) => (
                           <option key={i + 1} value={i + 1}>{i + 1}</option>
@@ -448,13 +482,13 @@ const Budgets = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Năm</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Năm</label>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
                       <select
                         value={formData.year}
                         onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
-                        className="w-full pl-12 pr-4 py-4 bg-white/60 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all font-semibold appearance-none"
+                        className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all font-semibold appearance-none text-gray-900 dark:text-white"
                       >
                         {[2024, 2025, 2026].map((year) => (
                           <option key={year} value={year}>{year}</option>
@@ -468,7 +502,7 @@ const Budgets = () => {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                    className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                   >
                     Hủy
                   </button>

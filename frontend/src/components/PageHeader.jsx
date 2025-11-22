@@ -16,8 +16,8 @@ const PageHeader = ({
             </div>
           )}
           <div>
-            <h1 className="text-lg font-bold text-gray-900">{title}</h1>
-            {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
+            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h1>
+            {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>}
           </div>
         </div>
         {actions}

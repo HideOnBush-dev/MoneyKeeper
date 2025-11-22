@@ -30,7 +30,7 @@ from app.utils.static_analysis import (
 from app.utils import format_currency, get_date_range, calculate_statistics
 from app.utils.export import export_expenses_to_excel
 from app.utils.notifications import NotificationManager
-from app.utils.ocr import ReceiptOCR
+from app.utils.ai_invoice_extractor import ai_invoice_extractor
 import json
 from datetime import datetime, timedelta
 import pandas as pd
@@ -45,7 +45,6 @@ from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
 
-receipt_ocr = ReceiptOCR()
 
 
 @bp.context_processor
@@ -260,30 +259,67 @@ def expenses():
 @bp.route("/process_receipt", methods=["POST"])
 @login_required
 def process_receipt():
+    """Process receipt image using Gemini AI"""
     if "receipt" not in request.files:
-        return jsonify({"error": "Không tìm thấy ảnh"}), 400
+        return jsonify({"success": False, "error": "Không tìm thấy ảnh"}), 400
 
     file = request.files["receipt"]
-    if not file.filename.endswith((".jpg", ".jpeg", ".png")):
-        return jsonify({"error": "Chỉ hỗ trợ file ảnh (.jpg, .png)"}), 400
+    if not file.filename or not file.filename.endswith((".jpg", ".jpeg", ".png")):
+        return jsonify({"success": False, "error": "Chỉ hỗ trợ file ảnh (.jpg, .png)"}), 400
 
     try:
-        result = receipt_ocr.process_image(file.read())
-        # Check for OCR failures
+        file_content = file.read()
+        if not file_content or len(file_content) == 0:
+            return jsonify({"success": False, "error": "File is empty or could not be read"}), 400
+
+        # Use Gemini AI extraction
+        result = ai_invoice_extractor.extract_from_image(file_content)
+        
+        # Check for errors
         if result.get("error"):
             return jsonify({"success": False, "error": result["error"]}), 400
+        
+        # Check if we got valid data
+        if not result.get("amount"):
+            return jsonify({
+                "success": False,
+                "error": "Không thể trích xuất thông tin từ ảnh. Vui lòng thử lại với ảnh rõ hơn."
+            }), 400
 
-        return jsonify(
-            {
-                "success": True,
-                "amount": result.get("amount"),
-                "date": result.get("date").isoformat() if result.get("date") else None,
-                "text": result.get("text"),
-            }
-        )
+        # Format date
+        date_value = result.get("date")
+        if date_value and not isinstance(date_value, str):
+            date_value = date_value.isoformat() if hasattr(date_value, "isoformat") else str(date_value)
+
+        return jsonify({
+            "success": True,
+            "amount": result.get("amount"),
+            "date": date_value,
+            "fee": result.get("fee"),
+            "note": result.get("note"),
+            "merchant": result.get("merchant"),
+            "invoice_number": result.get("invoice_number"),
+            "suggested_category": result.get("suggested_category"),
+            "text": result.get("text", ""),
+            "method": "ai"
+        }), 200
+    except ValueError as ve:
+        error_msg = str(ve)
+        if "GOOGLE_API_KEY" in error_msg or "API key" in error_msg.lower():
+            return jsonify({
+                "success": False,
+                "error": "Lỗi cấu hình API. Vui lòng kiểm tra GOOGLE_API_KEY trong môi trường."
+            }), 500
+        return jsonify({"success": False, "error": f"Lỗi cấu hình: {error_msg}"}), 500
     except Exception as e:
-        logger.exception(f"Error processing receipt: {e}")  # Log the full traceback
-        return jsonify({"error": str(e)}), 500
+        logger.exception(f"Error processing receipt: {e}")
+        error_msg = str(e)
+        if "403" in error_msg or "permission" in error_msg.lower() or "forbidden" in error_msg.lower():
+            return jsonify({
+                "success": False,
+                "error": "Lỗi xác thực API. Vui lòng kiểm tra GOOGLE_API_KEY và quyền truy cập Gemini API."
+            }), 400
+        return jsonify({"success": False, "error": f"Không thể xử lý ảnh: {error_msg}"}), 500
 
 
 @bp.route("/edit_expense/<int:id>", methods=["GET", "POST"])

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Wallet } from 'lucide-react';
 import { AuthProvider } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './components/Toast';
 import Layout from './components/Layout';
@@ -19,15 +20,15 @@ import Landing from './pages/Landing';
 
 // Loading Screen Component (simplified animations)
 const LoadingScreen = () => (
-  <div className="flex items-center justify-center min-h-screen gradient-bg">
+  <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
     <div className="text-center">
       <div className="inline-flex p-6 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl shadow-2xl mb-4">
         <Wallet className="h-12 w-12 text-white" />
       </div>
-      <h2 className="text-2xl font-bold text-gradient">
+      <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
         Money Keeper
       </h2>
-      <p className="text-gray-600 mt-2">
+      <p className="text-gray-600 dark:text-gray-400 mt-2">
         Đang tải...
       </p>
     </div>
@@ -58,10 +59,11 @@ const PublicRoute = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <SettingsProvider>
-        <ToastProvider>
-          <Router>
+    <ThemeProvider>
+      <AuthProvider>
+        <SettingsProvider>
+          <ToastProvider>
+            <Router>
             <Routes>
           {/* Public Routes */}
             <Route
@@ -175,6 +177,7 @@ function App() {
         </ToastProvider>
       </SettingsProvider>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 

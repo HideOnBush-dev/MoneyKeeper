@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+//import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 
 const Button = ({ 
@@ -11,11 +11,11 @@ const Button = ({
   ...props 
 }) => {
   const variants = {
-    primary: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-xl',
-    secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
-    danger: 'bg-gradient-to-r from-red-600 to-pink-600 text-white hover:shadow-xl',
-    success: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:shadow-xl',
-    outline: 'border-2 border-gray-300 text-gray-700 hover:bg-gray-50',
+    primary: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-xl dark:from-blue-500 dark:to-indigo-500',
+    secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600',
+    danger: 'bg-gradient-to-r from-red-600 to-pink-600 text-white hover:shadow-xl dark:from-red-500 dark:to-pink-500',
+    success: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:shadow-xl dark:from-green-500 dark:to-emerald-500',
+    outline: 'border-2 border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700',
   };
 
   const sizes = {

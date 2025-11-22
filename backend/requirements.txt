@@ -26,5 +26,6 @@ Flask-Babel
 google-generativeai
 email_validator
 bleach
+requests
 
 

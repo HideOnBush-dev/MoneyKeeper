@@ -34,7 +34,7 @@ const Settings = () => {
           premiumInfo.premium
             ? 'bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500'
             : 'bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600'
-        } p-6 text-white`}
+        } p-6 text-white dark:shadow-gray-900/20`}
       >
         <div className="flex items-center gap-2.5 mb-3">
           <Crown className="h-6 w-6" />
