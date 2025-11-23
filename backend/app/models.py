@@ -84,6 +84,7 @@ class Expense(db.Model):
     is_expense = db.Column(
         db.Boolean, default=True
     )  # True for expense, False for income
+    image_path = db.Column(db.String(255), nullable=True)  # Path to uploaded invoice image
 
 
 class Budget(db.Model):
@@ -460,3 +461,66 @@ class BillPayment(db.Model):
     payment_date = db.Column(db.Date, nullable=False, default=date.today)
     notes = db.Column(db.String(300))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class SplitGroup(db.Model):
+    """Group for splitting expenses"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(500))
+    created_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    creator = db.relationship("User", backref="created_groups")
+    members = db.relationship("SplitMember", backref="group", lazy="dynamic", cascade="all, delete-orphan")
+
+
+class SplitMember(db.Model):
+    """Member of a split group (can be a registered user or just a name)"""
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey("split_group.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)  # Null if not a registered user
+    name = db.Column(db.String(100), nullable=False)  # Display name
+    email = db.Column(db.String(120), nullable=True)
+    is_user = db.Column(db.Boolean, default=False)  # True if linked to a registered user
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship("User", backref="split_memberships")
+
+
+class ExpenseSplit(db.Model):
+    """Record of who owes whom for a specific expense"""
+    id = db.Column(db.Integer, primary_key=True)
+    expense_id = db.Column(db.Integer, db.ForeignKey("expense.id"), nullable=False)
+    member_id = db.Column(db.Integer, db.ForeignKey("split_member.id"), nullable=False)  # The person who owes money
+    amount = db.Column(db.Float, nullable=False)
+    is_paid = db.Column(db.Boolean, default=False)
+    paid_date = db.Column(db.Date, nullable=True)
+    notes = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    expense = db.relationship("Expense", backref=db.backref("splits", lazy="dynamic", cascade="all, delete-orphan"))
+    member = db.relationship("SplitMember", backref="expense_splits")
+
+
+class SharedWallet(db.Model):
+    """Shared wallets - allows multiple users to access and use the same wallet"""
+    id = db.Column(db.Integer, primary_key=True)
+    wallet_id = db.Column(db.Integer, db.ForeignKey("wallet.id"), nullable=False)
+    shared_with_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    shared_by_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    can_edit = db.Column(db.Boolean, default=True)  # Permission to edit (add/update/delete expenses)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    wallet = db.relationship("Wallet", backref=db.backref("shared_with", lazy="dynamic"))
+    shared_with_user = db.relationship("User", foreign_keys=[shared_with_user_id], backref=db.backref("shared_wallets_received", lazy="dynamic"))
+    shared_by_user = db.relationship("User", foreign_keys=[shared_by_user_id], backref=db.backref("shared_wallets_sent", lazy="dynamic"))
+    
+    # Unique constraint: a wallet can only be shared with a user once
+    __table_args__ = (
+        db.UniqueConstraint('wallet_id', 'shared_with_user_id', name='_wallet_shared_user_uc'),
+    )

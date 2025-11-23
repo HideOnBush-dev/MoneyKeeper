@@ -3,10 +3,10 @@
 API endpoints for expense management
 """
 
-from flask import jsonify, request, abort, Response
+from flask import jsonify, request, abort, Response, current_app, send_from_directory
 from flask_login import login_required, current_user
 from app.api import bp
-from app.models import Expense, Wallet
+from app.models import Expense, Wallet, Notification, SharedWallet, User
 from app import db
 from app.security import (
     validate_amount, validate_category, sanitize_string,
@@ -21,18 +21,47 @@ from io import StringIO
 from io import BytesIO
 import logging
 import pandas as pd
+import os
+from werkzeug.utils import secure_filename
 
 logger = logging.getLogger(__name__)
 
 
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
+
+
+@bp.route('/expenses/images/<path:filepath>', methods=['GET'])
+@login_required
+def serve_expense_image(filepath):
+    """Serve uploaded invoice images"""
+    try:
+        # Extract user_id from filepath (format: user_id/filename)
+        user_id_str = filepath.split('/')[0] if '/' in filepath else None
+        
+        # Security check: users can only access their own images
+        if not user_id_str or int(user_id_str) != current_user.id:
+            abort(403, description="Access denied")
+        
+        return send_from_directory(current_app.config['EXPENSE_IMAGES_FOLDER'], filepath)
+    except Exception as e:
+        logger.exception(f"Error serving image {filepath}: {e}")
+        abort(404, description="Image not found")
+
+
 @bp.route('/expenses', methods=['POST'])
 @login_required
-@validate_json
 @log_slow_requests(threshold=2.0)
 def create_expense():
-    """Create a new expense"""
+    """Create a new expense with optional image upload"""
     try:
-        data = request.get_json()
+        # Handle both JSON and form data
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            data = request.form.to_dict()
+        else:
+            data = request.get_json()
         
         # Validate required fields
         if not data.get('amount'):
@@ -55,17 +84,34 @@ def create_expense():
         if data.get('date'):
             expense_date = validate_date(data['date'])
         
-        # Check wallet ownership
-        wallet = Wallet.query.filter_by(
-            id=wallet_id,
-            user_id=current_user.id
-        ).first()
+        # Check wallet ownership or shared access
+        wallet = Wallet.query.filter_by(id=wallet_id).first()
         
         if not wallet:
             abort(404, description="Wallet not found")
         
+        # Check if user owns the wallet or has shared access
+        is_owner = wallet.user_id == current_user.id
+        is_shared = False
+        can_edit_shared = False
+        
+        if not is_owner:
+            shared_record = SharedWallet.query.filter_by(
+                wallet_id=wallet_id,
+                shared_with_user_id=current_user.id
+            ).first()
+            if shared_record:
+                is_shared = True
+                can_edit_shared = shared_record.can_edit
+        
+        if not is_owner and not is_shared:
+            abort(403, description="You don't have access to this wallet")
+        
+        if not is_owner and not can_edit_shared:
+            abort(403, description="You don't have permission to edit this wallet")
+        
         # Allow negative balance - no balance check for expenses
-        is_expense = data.get('is_expense', True)
+        is_expense = data.get('is_expense', 'true').lower() == 'true' if isinstance(data.get('is_expense'), str) else data.get('is_expense', True)
         
         # Create expense
         expense = Expense(
@@ -79,9 +125,83 @@ def create_expense():
         )
         
         db.session.add(expense)
+        db.session.flush()  # Get expense ID before handling file
         
+        # Handle image upload
+        image_url = None
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename and allowed_file(file.filename):
+                # Create user-specific directory
+                user_dir = os.path.join(current_app.config['EXPENSE_IMAGES_FOLDER'], str(current_user.id))
+                os.makedirs(user_dir, exist_ok=True)
+                
+                # Generate unique filename
+                filename = secure_filename(file.filename)
+                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                name, ext = os.path.splitext(filename)
+                unique_filename = f"{expense.id}_{timestamp}{ext}"
+                
+                # Save file
+                filepath = os.path.join(user_dir, unique_filename)
+                file.save(filepath)
+                
+                # Store relative path in database
+                expense.image_path = os.path.join(str(current_user.id), unique_filename)
+                image_url = f"/api/expenses/images/{expense.image_path}"
+                
+                logger.info(f"Saved invoice image for expense {expense.id}: {expense.image_path}")
+        
+        # Calculate old balance before update
+        old_balance = float(wallet.balance)
         # Update wallet balance
         wallet.update_balance(float(amount), is_expense=is_expense)
+        # Refresh to get updated balance
+        db.session.refresh(wallet)
+        new_balance = float(wallet.balance)
+        balance_change = float(amount) if not is_expense else -float(amount)
+        
+        # Create in-app notification for balance change - notify owner and all shared users
+        try:
+            change_sign = '+' if balance_change > 0 else ''
+            change_formatted = f"{abs(balance_change):,.0f}₫"
+            new_balance_formatted = f"{new_balance:,.0f}₫"
+            transaction_type = "Thu nhập" if not is_expense else "Chi tiêu"
+            
+            # Get all users who should be notified (owner + shared users)
+            users_to_notify = [wallet.user_id]  # Owner
+            
+            # Get all shared users
+            shared_records = SharedWallet.query.filter_by(wallet_id=wallet_id).all()
+            for shared in shared_records:
+                if shared.shared_with_user_id not in users_to_notify:
+                    users_to_notify.append(shared.shared_with_user_id)
+            
+            # Create notification for each user
+            for user_id in users_to_notify:
+                if user_id == current_user.id:
+                    # For the user who made the transaction
+                    notification_message = (
+                        f"{transaction_type}: {change_sign}{change_formatted} → "
+                        f"Số dư {wallet.name}: {new_balance_formatted}"
+                    )
+                else:
+                    # For other users (owner or shared users)
+                    actor_user = User.query.get(current_user.id)
+                    actor_name = actor_user.username if actor_user else "Người dùng"
+                    notification_message = (
+                        f"{actor_name} đã {transaction_type.lower()}: {change_sign}{change_formatted} → "
+                        f"Số dư {wallet.name}: {new_balance_formatted}"
+                    )
+                
+                notification = Notification(
+                    user_id=user_id,
+                    type='balance_change',
+                    message=notification_message
+                )
+                db.session.add(notification)
+        except Exception as e:
+            logger.warning(f"Failed to create balance change notification: {e}")
         
         db.session.commit()
         
@@ -96,11 +216,20 @@ def create_expense():
                 'description': expense.description,
                 'date': expense.date.isoformat(),
                 'wallet_id': expense.wallet_id,
-                'is_expense': expense.is_expense
+                'is_expense': expense.is_expense,
+                'image_url': image_url
+            },
+            'wallet': {
+                'id': wallet.id,
+                'name': wallet.name,
+                'old_balance': old_balance,
+                'new_balance': new_balance,
+                'balance_change': balance_change
             }
         }), 201
         
     except ValueError as e:
+        db.session.rollback()
         abort(400, description=str(e))
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -287,6 +416,11 @@ def get_expense(expense_id):
         if not expense:
             abort(404, description="Expense not found")
         
+        # Build image URL if image exists
+        image_url = None
+        if expense.image_path:
+            image_url = f"/api/expenses/images/{expense.image_path}"
+        
         return jsonify({
             'expense': {
                 'id': expense.id,
@@ -296,7 +430,8 @@ def get_expense(expense_id):
                 'date': expense.date.isoformat() if expense.date else None,
                 'wallet_id': expense.wallet_id,
                 'is_expense': expense.is_expense,
-                'created_at': expense.date.isoformat() if expense.date else None
+                'created_at': expense.date.isoformat() if expense.date else None,
+                'image_url': image_url
             }
         }), 200
         
@@ -418,6 +553,16 @@ def delete_expense(expense_id):
         
         if not expense:
             abort(404, description="Expense not found")
+        
+        # Delete associated image file if exists
+        if expense.image_path:
+            try:
+                image_full_path = os.path.join(current_app.config['EXPENSE_IMAGES_FOLDER'], expense.image_path)
+                if os.path.exists(image_full_path):
+                    os.remove(image_full_path)
+                    logger.info(f"Deleted image file: {expense.image_path}")
+            except Exception as e:
+                logger.warning(f"Failed to delete image file {expense.image_path}: {e}")
         
         # Revert wallet balance
         wallet = Wallet.query.get(expense.wallet_id)
@@ -572,16 +717,27 @@ def search_expenses():
         
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
         
-        return jsonify({
-            'expenses': [{
+        # Build expenses list with image URLs
+        expenses_list = []
+        for e in pagination.items:
+            image_url = None
+            if e.image_path:
+                image_url = f"/api/expenses/images/{e.image_path}"
+            
+            expenses_list.append({
                 'id': e.id,
                 'amount': float(e.amount),
                 'category': e.category,
                 'description': sanitize_string(e.description, max_length=500),
                 'date': e.date.isoformat() if e.date else None,
                 'wallet_id': e.wallet_id,
-                'is_expense': e.is_expense
-            } for e in pagination.items],
+                'is_expense': e.is_expense,
+                'image_url': image_url,
+                'image_path': e.image_path
+            })
+        
+        return jsonify({
+            'expenses': expenses_list,
             'pagination': {
                 'page': page,
                 'per_page': per_page,

@@ -181,7 +181,7 @@ def create_app(config_class=Config):
 
     with app.app_context():
         # Import all models to ensure they are registered with SQLAlchemy
-        from app.models import User, Expense, Budget, Notification, ChatSession, ChatMessage, Category, Wallet, SavingsGoal, RecurringTransaction
+        from app.models import User, Expense, Budget, Notification, ChatSession, ChatMessage, Category, Wallet, SavingsGoal, RecurringTransaction, SplitGroup, SplitMember, ExpenseSplit
         
         from app.auth import bp as auth_bp
         from app.main import bp as main_bp
@@ -192,6 +192,15 @@ def create_app(config_class=Config):
         app.register_blueprint(main_bp)
         app.register_blueprint(settings_bp, url_prefix='/settings')
         app.register_blueprint(api_bp, url_prefix='/api')
+        
+        from app.api.splits import bp as splits_bp
+        app.register_blueprint(splits_bp)
+
+        # Ensure all tables (including split tables) are created after all models are imported
+        try:
+            db.create_all()
+        except Exception as e:
+            logger.warning(f"Could not create all tables after model imports: {e}")
 
         from app.admin import configure_admin
 

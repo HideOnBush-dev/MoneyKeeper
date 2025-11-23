@@ -15,9 +15,10 @@ export const useToast = () => {
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
+  const counterRef = useState({ current: 0 })[0];
 
   const toast = ({ message, type = 'info', duration = 3000 }) => {
-    const id = Date.now();
+    const id = `${Date.now()}-${counterRef.current++}`;
     setToasts((prev) => [...prev, { id, message, type }]);
 
     setTimeout(() => {

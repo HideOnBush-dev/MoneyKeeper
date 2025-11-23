@@ -22,7 +22,12 @@ import Debts from './pages/Debts';
 import AddDebt from './pages/AddDebt';
 import Bills from './pages/Bills';
 import AddBill from './pages/AddBill';
+import Splits from './pages/Splits';
+import Transfer from './pages/Transfer';
+import Scan from './pages/Scan';
 import Landing from './pages/Landing';
+import ErrorPage from './pages/ErrorPage';
+import WalletShareAccept from './pages/WalletShareAccept';
 
 // Loading Screen Component (simplified animations)
 const LoadingScreen = () => (
@@ -70,213 +75,259 @@ function App() {
         <ToastProvider>
           <Router>
             <Routes>
-          {/* Public Routes */}
-            <Route
-            path="/"
-            element={
-              <PublicRoute>
-                <Landing />
-              </PublicRoute>
-            }
-          />
-            <Route
-            path="/login"
-            element={
-              <PublicRoute>
-                <Login />
-              </PublicRoute>
-            }
-          />
-            <Route
-            path="/register"
-            element={
-              <PublicRoute>
-                <Register />
-              </PublicRoute>
-            }
-          />
+              {/* Public Routes */}
+              <Route
+                path="/"
+                element={
+                  <PublicRoute>
+                    <Landing />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/login"
+                element={
+                  <PublicRoute>
+                    <Login />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <PublicRoute>
+                    <Register />
+                  </PublicRoute>
+                }
+              />
 
-          {/* Protected Routes */}
-            <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/expenses"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Expenses />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/expenses/new"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <AddExpense />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/wallets"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Wallets />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/budgets"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Budgets />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/chat"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Chat />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Settings />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Notifications />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/goals"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Goals />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/recurring"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Recurring />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/recurring/new"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <AddRecurring />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/recurring/:id/edit"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <AddRecurring />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/debts"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Debts />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/debts/new"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <AddDebt />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/debts/:id/edit"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <AddDebt />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/bills"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Bills />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/bills/new"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <AddBill />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-            <Route
-            path="/bills/:id/edit"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <AddBill />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+              {/* Error Page */}
+              <Route path="/error" element={<ErrorPage />} />
+
+              {/* Wallet Share Accept (Public, handles redirect to login if needed) */}
+              <Route path="/wallets/share" element={<WalletShareAccept />} />
+
+              {/* Protected Routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Dashboard />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/expenses"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Expenses />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/expenses/new"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <AddExpense />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/expenses/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <AddExpense />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/wallets"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Wallets />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/budgets"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Budgets />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Chat />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Settings />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Notifications />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/goals"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Goals />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/recurring"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Recurring />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/recurring/new"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <AddRecurring />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/recurring/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <AddRecurring />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/debts"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Debts />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/debts/new"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <AddDebt />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/debts/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <AddDebt />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bills"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Bills />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bills/new"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <AddBill />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bills/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <AddBill />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/splits"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Splits />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/transfer"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Transfer />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/scan"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <Scan />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </Router>
         </ToastProvider>

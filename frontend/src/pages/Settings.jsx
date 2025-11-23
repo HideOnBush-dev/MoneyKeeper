@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Crown, Sparkles, Zap, Check, MessageSquare, Globe, Settings as SettingsIcon, Bell, Smartphone } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,6 +14,15 @@ const Settings = () => {
   const [premiumInfo, setPremiumInfo] = useState({ premium: false, chatMessageCount: 0, limit: 200 });
   const [notificationStatus, setNotificationStatus] = useState(null);
   const [isTestingNotification, setIsTestingNotification] = useState(false);
+  const [isDebugMode, setIsDebugMode] = useState(() => {
+    try {
+      return localStorage.getItem('mk_debug_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const debugModeToggleRef = useRef(false);
+  const prevDebugModeRef = useRef(isDebugMode);
 
   useEffect(() => {
     // Load premium status from user context
@@ -58,6 +67,63 @@ const Settings = () => {
 
     return () => clearInterval(interval);
   }, [user]);
+
+  // Show toast when debug mode changes (but not on initial load)
+  useEffect(() => {
+    // Skip on initial mount
+    if (prevDebugModeRef.current === isDebugMode) {
+      return;
+    }
+    
+    // Only show toast if it's a user-initiated change (not initial load)
+    if (prevDebugModeRef.current !== undefined) {
+      notify({
+        type: 'info',
+        message: isDebugMode ? 'Debug mode đã bật' : 'Debug mode đã tắt'
+      });
+    }
+    
+    prevDebugModeRef.current = isDebugMode;
+  }, [isDebugMode]);
+
+  // Keyboard shortcut for debug mode: Ctrl+Shift+D
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl+Shift+D (or Cmd+Shift+D on Mac)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Prevent duplicate calls with debounce
+        if (debugModeToggleRef.current) {
+          return;
+        }
+        
+        debugModeToggleRef.current = true;
+        
+        setIsDebugMode((prev) => {
+          const newValue = !prev;
+          try {
+            localStorage.setItem('mk_debug_mode', String(newValue));
+          } catch {
+            // ignore storage errors
+          }
+          return newValue;
+        });
+        
+        // Reset debounce after 300ms
+        setTimeout(() => {
+          debugModeToggleRef.current = false;
+        }, 300);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      debugModeToggleRef.current = false;
+    };
+  }, []);
 
   const handleUpgrade = () => {
     alert('Tính năng thanh toán sẽ sớm được ra mắt! 🎉');
@@ -336,7 +402,8 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Test Notification Section - Especially for iOS PWA */}
+      {/* Test Notification Section - Debug Mode Only */}
+      {isDebugMode && (
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 border border-gray-100 dark:border-slate-700">
         <div className="flex items-center gap-2 mb-3">
           <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -741,6 +808,33 @@ const Settings = () => {
           </div>
         )}
       </div>
+      )}
+
+      {/* Debug Mode Indicator */}
+      {isDebugMode && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-yellow-600 dark:text-yellow-400 font-semibold text-sm">🐛 Debug Mode</span>
+            <span className="text-xs text-yellow-600 dark:text-yellow-400">
+              (Nhấn Ctrl+Shift+D để tắt)
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              setIsDebugMode(false);
+              try {
+                localStorage.setItem('mk_debug_mode', 'false');
+              } catch {
+                // ignore
+              }
+              // Toast will be shown by useEffect when isDebugMode changes
+            }}
+            className="text-xs text-yellow-700 dark:text-yellow-300 hover:underline"
+          >
+            Tắt
+          </button>
+        </div>
+      )}
     </div>
   );
 };

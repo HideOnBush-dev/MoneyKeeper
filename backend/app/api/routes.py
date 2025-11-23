@@ -147,19 +147,54 @@ def get_expenses():
 @bp.route('/wallets')
 @login_required
 def get_wallets():
-    """Get all wallets for current user"""
+    """Get all wallets for current user (owned + shared)"""
     try:
-        wallets = Wallet.query.filter_by(user_id=current_user.id).all()
+        from app.models import SharedWallet, User
         
-        return jsonify({
-            'wallets': [{
+        # Get owned wallets
+        owned_wallets = Wallet.query.filter_by(user_id=current_user.id).all()
+        
+        # Get shared wallets
+        shared_wallets = SharedWallet.query.filter_by(shared_with_user_id=current_user.id).all()
+        
+        wallets_data = []
+        
+        # Add owned wallets
+        for w in owned_wallets:
+            wallets_data.append({
                 'id': w.id,
                 'name': sanitize_string(w.name, max_length=100),
                 'balance': float(w.balance),
                 'currency': getattr(w, 'currency', 'VND'),
                 'description': getattr(w, 'description', '') or '',
-                'is_default': getattr(w, 'is_default', False)
-            } for w in wallets]
+                'is_default': getattr(w, 'is_default', False),
+                'is_shared': False,
+                'is_owner': True
+            })
+        
+        # Add shared wallets
+        for shared in shared_wallets:
+            wallet = Wallet.query.get(shared.wallet_id)
+            if wallet:
+                owner = User.query.get(shared.shared_by_user_id)
+                wallets_data.append({
+                    'id': wallet.id,
+                    'name': sanitize_string(wallet.name, max_length=100),
+                    'balance': float(wallet.balance),
+                    'currency': getattr(wallet, 'currency', 'VND'),
+                    'description': getattr(wallet, 'description', '') or '',
+                    'is_default': False,  # Shared wallets cannot be default
+                    'is_shared': True,
+                    'is_owner': False,
+                    'can_edit': shared.can_edit,
+                    'owner': {
+                        'id': owner.id if owner else None,
+                        'username': owner.username if owner else None
+                    }
+                })
+        
+        return jsonify({
+            'wallets': wallets_data
         }), 200
         
     except SQLAlchemyError as e:

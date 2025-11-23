@@ -110,5 +110,9 @@ export default defineConfig({
   build: {
     outDir: '../backend/app/static/dist',
     emptyOutDir: true,
+  },
+  optimizeDeps: {
+    include: ['react-qr-code', 'html5-qrcode', 'react-is'],
+    force: true
   }
 })

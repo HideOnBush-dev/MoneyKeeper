@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   X,
@@ -9,32 +10,40 @@ import {
   DollarSign,
   TrendingUp,
   Check,
-  AlertCircle
+  AlertCircle,
+  Share2,
+  Users,
+  QrCode
 } from 'lucide-react';
 import { walletAPI } from '../services/api';
 import { formatCurrency } from '../lib/utils';
 import PageHeader from '../components/PageHeader';
 import { useSettings } from '../contexts/SettingsContext';
+import QRCodeGenerator from '../components/QRCodeGenerator';
 
 const Wallets = () => {
   const { settings } = useSettings();
+  const navigate = useNavigate();
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showSharedUsersModal, setShowSharedUsersModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrData, setQrData] = useState(null);
   const [editingWallet, setEditingWallet] = useState(null);
+  const [sharingWallet, setSharingWallet] = useState(null);
+  const [sharedUsers, setSharedUsers] = useState([]);
+  const [shareFormData, setShareFormData] = useState({
+    username: '',
+    can_edit: true
+  });
   const [formData, setFormData] = useState({
     name: '',
     balance: 0,
     description: '',
     currency: 'VND',
     is_default: false,
-  });
-  const [transferData, setTransferData] = useState({
-    from_wallet_id: '',
-    to_wallet_id: '',
-    amount: 0,
-    description: '',
   });
 
   useEffect(() => {
@@ -101,6 +110,56 @@ const Wallets = () => {
     }
   };
 
+  const handleShare = async (e) => {
+    e.preventDefault();
+    if (!shareFormData.username) {
+      alert('Vui lòng nhập username hoặc email');
+      return;
+    }
+    try {
+      await walletAPI.share(sharingWallet.id, shareFormData);
+      alert('Chia sẻ ví thành công!');
+      setShowShareModal(false);
+      setShareFormData({ username: '', can_edit: true });
+      setSharingWallet(null);
+      fetchWallets();
+    } catch (error) {
+      console.error('Error sharing wallet:', error);
+      alert(error.response?.data?.error || 'Lỗi khi chia sẻ ví');
+    }
+  };
+
+  const handleUnshare = async (userId) => {
+    if (!confirm('Bạn có chắc muốn ngừng chia sẻ ví với người dùng này?')) return;
+    try {
+      await walletAPI.unshare(sharingWallet.id, userId);
+      alert('Đã ngừng chia sẻ ví!');
+      const res = await walletAPI.getSharedUsers(sharingWallet.id);
+      setSharedUsers(res.data.shared_users || []);
+      fetchWallets();
+    } catch (error) {
+      console.error('Error unsharing wallet:', error);
+      alert(error.response?.data?.error || 'Lỗi khi ngừng chia sẻ ví');
+    }
+  };
+
+  const handleGenerateQR = async (wallet) => {
+    try {
+      const res = await walletAPI.getShareQR(wallet.id);
+      // Use share_url for QR code display, but keep qr_data for API
+      setQrData({
+        url: res.data.share_url,
+        encoded: res.data.qr_data,
+        expires_at: res.data.expires_at
+      });
+      setSharingWallet(wallet);
+      setShowQRModal(true);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      alert(error.response?.data?.error || 'Lỗi khi tạo QR code');
+    }
+  };
+
   const openEditModal = (wallet) => {
     setEditingWallet(wallet);
     setFormData({
@@ -128,15 +187,15 @@ const Wallets = () => {
     <div className="max-w-7xl mx-auto space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <PageHeader 
-          icon={WalletIcon} 
+        <PageHeader
+          icon={WalletIcon}
           title="Ví của tôi"
           subtitle={`Tổng: ${formatCurrency(totalBalance, settings.currency, settings.numberFormat)}`}
           iconColor="from-blue-500 to-cyan-600"
         />
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowTransferModal(true)}
+            onClick={() => navigate('/transfer')}
             className="px-3 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center gap-1.5"
           >
             <ArrowRightLeft className="h-4 w-4" />
@@ -175,55 +234,107 @@ const Wallets = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {wallets.map((wallet) => (
             <div
               key={wallet.id}
-              className="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-700 hover:shadow-md transition-all"
+              className="group bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-gray-200 dark:border-slate-700 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 transition-all duration-300"
             >
               {/* Card Header */}
-              <div className="bg-gradient-to-br from-blue-500 to-cyan-600 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-white/20 backdrop-blur rounded-lg">
-                      <WalletIcon className="h-4 w-4 text-white" />
+              <div className="bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 p-6 relative overflow-hidden">
+                {/* Decorative background elements */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-cyan-400/20 rounded-full blur-2xl" />
+
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-white/20 backdrop-blur-md rounded-xl shadow-lg">
+                        <WalletIcon className="h-5 w-5 text-white" />
+                      </div>
+                      <p className="text-white font-bold text-base">{wallet.name}</p>
                     </div>
-                    <p className="text-white font-semibold text-sm">{wallet.name}</p>
+                    {wallet.is_default && (
+                      <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-400/30 backdrop-blur-md rounded-full shadow-md">
+                        <Check className="h-3.5 w-3.5 text-white" />
+                        <span className="text-xs font-bold text-white">Mặc định</span>
+                      </div>
+                    )}
                   </div>
-                  {wallet.is_default && (
-                    <div className="flex items-center gap-1 px-2 py-0.5 bg-yellow-500/30 backdrop-blur rounded-full">
-                      <Check className="h-3 w-3 text-white" />
-                      <span className="text-[10px] font-bold text-white">Mặc định</span>
-                    </div>
+                  <div>
+                    <p className="text-xs text-white/80 mb-2 font-medium">Số dư</p>
+                    <p className="text-3xl font-bold text-white tracking-tight">
+                      {formatCurrency(wallet.balance || 0, wallet.currency, settings.numberFormat)}
+                    </p>
+                  </div>
+                  {wallet.description && (
+                    <p className="text-xs text-white/75 mt-3 line-clamp-2 leading-relaxed">{wallet.description}</p>
                   )}
                 </div>
-                <div>
-                  <p className="text-xs text-white/70 mb-1">Số dư</p>
-                  <p className="text-2xl font-bold text-white">
-                    {formatCurrency(wallet.balance || 0, wallet.currency, settings.numberFormat)}
-                  </p>
-                </div>
-                {wallet.description && (
-                  <p className="text-xs text-white/70 mt-2 line-clamp-1">{wallet.description}</p>
-                )}
               </div>
 
               {/* Card Actions */}
-              <div className="p-3 flex items-center justify-end gap-2 bg-gray-50 dark:bg-slate-700/50">
-                <button
-                  onClick={() => openEditModal(wallet)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm font-medium border border-blue-200 dark:border-blue-800"
-                >
-                  <Edit2 className="h-3.5 w-3.5" />
-                  <span>Sửa</span>
-                </button>
-                <button
-                  onClick={() => handleDelete(wallet.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium border border-red-200 dark:border-red-800"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span>Xóa</span>
-                </button>
+              <div className="p-4 bg-gradient-to-b from-gray-50 to-white dark:from-slate-700/50 dark:to-slate-800">
+                {!wallet.is_shared ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <button
+                      onClick={() => handleGenerateQR(wallet)}
+                      className="flex flex-col items-center gap-1.5 px-3 py-3 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:scale-105 transition-all duration-200 text-sm font-semibold border border-indigo-100 dark:border-indigo-800/50 shadow-sm hover:shadow-md"
+                      title="Tạo QR code để chia sẻ"
+                    >
+                      <QrCode className="h-5 w-5" />
+                      <span className="text-xs">QR Code</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSharingWallet(wallet);
+                        setShowShareModal(true);
+                      }}
+                      className="flex flex-col items-center gap-1.5 px-3 py-3 bg-white dark:bg-slate-800 text-green-600 dark:text-green-400 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 hover:scale-105 transition-all duration-200 text-sm font-semibold border border-green-100 dark:border-green-800/50 shadow-sm hover:shadow-md"
+                    >
+                      <Share2 className="h-5 w-5" />
+                      <span className="text-xs">Chia sẻ</span>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await walletAPI.getSharedUsers(wallet.id);
+                          setSharedUsers(res.data.shared_users || []);
+                          setSharingWallet(wallet);
+                          setShowSharedUsersModal(true);
+                        } catch (error) {
+                          console.error('Error fetching shared users:', error);
+                          alert('Lỗi khi tải danh sách người dùng đã chia sẻ');
+                        }
+                      }}
+                      className="flex flex-col items-center gap-1.5 px-3 py-3 bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:scale-105 transition-all duration-200 text-sm font-semibold border border-purple-100 dark:border-purple-800/50 shadow-sm hover:shadow-md"
+                    >
+                      <Users className="h-5 w-5" />
+                      <span className="text-xs">Đã chia sẻ</span>
+                    </button>
+                    <button
+                      onClick={() => openEditModal(wallet)}
+                      className="flex flex-col items-center gap-1.5 px-3 py-3 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:scale-105 transition-all duration-200 text-sm font-semibold border border-blue-100 dark:border-blue-800/50 shadow-sm hover:shadow-md"
+                    >
+                      <Edit2 className="h-5 w-5" />
+                      <span className="text-xs">Sửa</span>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(wallet.id)}
+                      className="flex flex-col items-center gap-1.5 px-3 py-3 bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105 transition-all duration-200 text-sm font-semibold border border-red-100 dark:border-red-800/50 shadow-sm hover:shadow-md col-span-2 sm:col-span-1"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                      <span className="text-xs">Xóa</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                    <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm text-blue-700 dark:text-blue-300 font-semibold">
+                      Được chia sẻ bởi {wallet.owner?.username || 'Người dùng'}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -240,212 +351,250 @@ const Wallets = () => {
             onClick={(e) => e.stopPropagation()}
             className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-slate-700"
           >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                  {editingWallet ? 'Sửa ví' : 'Thêm ví mới'}
-                </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                {editingWallet ? 'Sửa ví' : 'Thêm ví mới'}
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
+              >
+                <X className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tên ví *</label>
+                <div className="relative">
+                  <WalletIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all font-semibold"
+                    placeholder="Ví của tôi"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Số dư ban đầu</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
+                  <input
+                    type="number"
+                    value={formData.balance}
+                    onChange={(e) => setFormData({ ...formData, balance: parseFloat(e.target.value) })}
+                    className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all text-lg font-semibold"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Mô tả</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all resize-none"
+                  rows="3"
+                  placeholder="Mô tả về ví..."
+                />
+              </div>
+
+              <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl">
+                <input
+                  type="checkbox"
+                  id="default-wallet"
+                  checked={formData.is_default}
+                  onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
+                  className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                />
+                <label htmlFor="default-wallet" className="flex items-center space-x-2 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
+                  <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <span>Đặt làm ví mặc định</span>
+                </label>
+              </div>
+
+              <div className="flex space-x-3 pt-4">
                 <button
-                  onClick={() => setShowModal(false)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    setEditingWallet(null);
+                  }}
+                  className="flex-1 px-6 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
-                  <X className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-semibold hover:shadow-md transition-all"
+                >
+                  {editingWallet ? 'Cập nhật' : 'Tạo mới'}
                 </button>
               </div>
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tên ví *</label>
-                  <div className="relative">
-                    <WalletIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all font-semibold"
-                      placeholder="Ví của tôi"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Số dư ban đầu</label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
-                    <input
-                      type="number"
-                      value={formData.balance}
-                      onChange={(e) => setFormData({ ...formData, balance: parseFloat(e.target.value) })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all text-lg font-semibold"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Mô tả</label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all resize-none"
-                    rows="3"
-                    placeholder="Mô tả về ví..."
-                  />
-                </div>
-
-                <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl">
-                  <input
-                    type="checkbox"
-                    id="default-wallet"
-                    checked={formData.is_default}
-                    onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
-                    className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                  <label htmlFor="default-wallet" className="flex items-center space-x-2 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
-                    <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <span>Đặt làm ví mặc định</span>
-                  </label>
-                </div>
-
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowModal(false);
-                      setEditingWallet(null);
-                    }}
-                    className="flex-1 px-6 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-semibold hover:shadow-md transition-all"
-                  >
-                    {editingWallet ? 'Cập nhật' : 'Tạo mới'}
-                  </button>
-                </div>
-              </form>
-            </div>
+            </form>
           </div>
-        )}
+        </div>
+      )}
 
       {/* Modal chuyển tiền */}
-      {showTransferModal && (
+      {/* Share Wallet Modal */}
+      {showShareModal && sharingWallet && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={() => setShowTransferModal(false)}
+          onClick={() => {
+            setShowShareModal(false);
+            setShareFormData({ username: '', can_edit: true });
+            setSharingWallet(null);
+          }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-slate-700"
           >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                  Chuyển tiền
-                </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                Chia sẻ ví "{sharingWallet.name}"
+              </h2>
+              <button
+                onClick={() => {
+                  setShowShareModal(false);
+                  setShareFormData({ username: '', can_edit: true });
+                  setSharingWallet(null);
+                }}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
+              >
+                <X className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            <form onSubmit={handleShare} className="space-y-5">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  Username hoặc Email *
+                </label>
+                <input
+                  type="text"
+                  value={shareFormData.username}
+                  onChange={(e) => setShareFormData({ ...shareFormData, username: e.target.value })}
+                  placeholder="Nhập username hoặc email"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 text-gray-900 dark:text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={shareFormData.can_edit}
+                    onChange={(e) => setShareFormData({ ...shareFormData, can_edit: e.target.checked })}
+                    className="h-4 w-4 text-green-600 rounded focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    Cho phép chỉnh sửa (thêm/sửa/xóa giao dịch)
+                  </span>
+                </label>
+              </div>
+              <div className="flex gap-3">
                 <button
-                  onClick={() => setShowTransferModal(false)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
+                  type="button"
+                  onClick={() => {
+                    setShowShareModal(false);
+                    setShareFormData({ username: '', can_edit: true });
+                    setSharingWallet(null);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
-                  <X className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                >
+                  Chia sẻ
                 </button>
               </div>
-              <form onSubmit={handleTransfer} className="space-y-5">
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-start space-x-3">
-                  <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
-                    Chuyển tiền giữa các ví của bạn
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Từ ví *</label>
-                  <div className="relative">
-                    <WalletIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500 z-10" />
-                    <select
-                      value={transferData.from_wallet_id}
-                      onChange={(e) => setTransferData({ ...transferData, from_wallet_id: e.target.value })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-gray-100 transition-all font-semibold appearance-none"
-                      required
-                    >
-                      <option value="">Chọn ví nguồn</option>
-                      {wallets.map((w) => (
-                        <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance || 0)})</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex justify-center">
-                  <div className="p-3 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-full">
-                    <ArrowRightLeft className="h-6 w-6 text-green-600 dark:text-green-400" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Đến ví *</label>
-                  <div className="relative">
-                    <WalletIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500 z-10" />
-                    <select
-                      value={transferData.to_wallet_id}
-                      onChange={(e) => setTransferData({ ...transferData, to_wallet_id: e.target.value })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-gray-100 transition-all font-semibold appearance-none"
-                      required
-                    >
-                      <option value="">Chọn ví đích</option>
-                      {wallets.filter(w => w.id !== parseInt(transferData.from_wallet_id)).map((w) => (
-                        <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance || 0)})</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Số tiền *</label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
-                    <input
-                      type="number"
-                      value={transferData.amount}
-                      onChange={(e) => setTransferData({ ...transferData, amount: parseFloat(e.target.value) })}
-                      className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-gray-100 transition-all text-lg font-semibold"
-                      placeholder="0"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ghi chú</label>
-                  <input
-                    type="text"
-                    value={transferData.description}
-                    onChange={(e) => setTransferData({ ...transferData, description: e.target.value })}
-                    className="w-full px-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-gray-100 transition-all"
-                    placeholder="Mô tả giao dịch..."
-                  />
-                </div>
-
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowTransferModal(false)}
-                    className="flex-1 px-6 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2"
-                  >
-                    <TrendingUp className="h-4 w-4" />
-                    <span>Chuyển tiền</span>
-                  </button>
-                </div>
-              </form>
-            </div>
+            </form>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Shared Users Modal */}
+      {showSharedUsersModal && sharingWallet && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setShowSharedUsersModal(false);
+            setSharedUsers([]);
+            setSharingWallet(null);
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-slate-700 max-h-[80vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Người dùng đã chia sẻ "{sharingWallet.name}"
+              </h2>
+              <button
+                onClick={() => {
+                  setShowSharedUsersModal(false);
+                  setSharedUsers([]);
+                  setSharingWallet(null);
+                }}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
+              >
+                <X className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            {sharedUsers.length === 0 ? (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                Chưa có người dùng nào được chia sẻ
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {sharedUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">{user.username}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        {user.can_edit ? 'Có quyền chỉnh sửa' : 'Chỉ xem'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleUnshare(user.id)}
+                      className="px-3 py-1.5 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors text-sm font-medium"
+                    >
+                      Gỡ
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Generator Modal */}
+      {showQRModal && sharingWallet && qrData && (
+        <QRCodeGenerator
+          qrData={qrData}
+          walletName={sharingWallet.name}
+          onClose={() => {
+            setShowQRModal(false);
+            setQrData(null);
+            setSharingWallet(null);
+          }}
+        />
+      )}
+
     </div>
   );
 };

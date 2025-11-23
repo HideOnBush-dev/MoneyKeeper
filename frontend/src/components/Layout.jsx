@@ -18,6 +18,10 @@ import {
   Target,
   Repeat,
   CreditCard,
+  Users,
+  ChevronDown,
+  Plus,
+  Scan,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { notificationsAPI } from '../services/api';
@@ -90,10 +94,42 @@ const Layout = ({ children }) => {
               <NavLink to="/expenses" icon={DollarSign} label="Chi tiêu" isActive={isActive('/expenses')} />
               <NavLink to="/wallets" icon={Wallet} label="Ví" isActive={isActive('/wallets')} />
               <NavLink to="/budgets" icon={PieChart} label="Ngân sách" isActive={isActive('/budgets')} />
-              <NavLink to="/goals" icon={Target} label="Mục tiêu" isActive={isActive('/goals')} />
-              <NavLink to="/recurring" icon={Repeat} label="Định kỳ" isActive={isActive('/recurring')} />
-              <NavLink to="/bills" icon={Bell} label="Hóa đơn" isActive={isActive('/bills')} />
-              <NavLink to="/debts" icon={CreditCard} label="Quản lý nợ" isActive={isActive('/debts')} />
+
+              {/* Utilities Dropdown */}
+              <div className="relative group">
+                <button className="flex items-center space-x-1 px-4 py-2 rounded-xl font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all">
+                  <span className="text-sm">Tiện ích</span>
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+
+                <div className="absolute left-0 mt-2 w-48 rounded-2xl shadow-xl py-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg ring-1 ring-black dark:ring-slate-700 ring-opacity-5 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all transform origin-top-left z-50">
+                  <Link to="/goals" className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2">
+                    <Target className="h-4 w-4 text-blue-600" />
+                    <span>Mục tiêu</span>
+                  </Link>
+                  <Link to="/recurring" className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2">
+                    <Repeat className="h-4 w-4 text-purple-600" />
+                    <span>Định kỳ</span>
+                  </Link>
+                  <Link to="/bills" className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2">
+                    <Bell className="h-4 w-4 text-indigo-600" />
+                    <span>Hóa đơn</span>
+                  </Link>
+                  <Link to="/debts" className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2">
+                    <CreditCard className="h-4 w-4 text-red-600" />
+                    <span>Quản lý nợ</span>
+                  </Link>
+                  <Link to="/splits" className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2">
+                    <Users className="h-4 w-4 text-green-600" />
+                    <span>Chia tiền</span>
+                  </Link>
+                  <Link to="/scan" className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2">
+                    <Scan className="h-4 w-4 text-purple-600" />
+                    <span>Quét QR</span>
+                  </Link>
+                </div>
+              </div>
+
               <NavLink to="/chat" icon={MessageSquare} label="AI Chat" isActive={isActive('/chat')} />
 
               {/* User Menu */}
@@ -112,50 +148,50 @@ const Layout = ({ children }) => {
 
                 <AnimatePresence>
                   {showUserMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="origin-top-right absolute right-0 mt-2 w-56 rounded-2xl shadow-xl py-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg ring-1 ring-black dark:ring-slate-700 ring-opacity-5 z-50"
-                  >
-                    <div className="px-4 py-2 border-b border-gray-100 dark:border-slate-700">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.username}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
-                    </div>
-
-                    <Link
-                      to="/notifications"
-                      className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2"
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="origin-top-right absolute right-0 mt-2 w-56 rounded-2xl shadow-xl py-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg ring-1 ring-black dark:ring-slate-700 ring-opacity-5 z-50"
                     >
-                      <Bell className="h-4 w-4" />
-                      <span>Thông báo</span>
-                      {unreadNotifications > 0 && (
-                        <span className="ml-auto bg-red-500 text-white py-0.5 px-2 rounded-full text-xs font-medium">
-                          {unreadNotifications}
-                        </span>
-                      )}
-                    </Link>
+                      <div className="px-4 py-2 border-b border-gray-100 dark:border-slate-700">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.username}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+                      </div>
 
-                    <Link
-                      to="/settings"
-                      className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2"
-                    >
-                      <Settings className="h-4 w-4" />
-                      <span>Cài đặt</span>
-                    </Link>
+                      <Link
+                        to="/notifications"
+                        className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2"
+                      >
+                        <Bell className="h-4 w-4" />
+                        <span>Thông báo</span>
+                        {unreadNotifications > 0 && (
+                          <span className="ml-auto bg-red-500 text-white py-0.5 px-2 rounded-full text-xs font-medium">
+                            {unreadNotifications}
+                          </span>
+                        )}
+                      </Link>
 
-                    <div className="border-t border-gray-200 dark:border-slate-700 my-2"></div>
+                      <Link
+                        to="/settings"
+                        className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2"
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span>Cài đặt</span>
+                      </Link>
 
-                    <button
-                      onClick={logout}
-                      className="flex items-center space-x-3 w-full px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-lg mx-2"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      <span>Đăng xuất</span>
-                    </button>
-                  </motion.div>
-                )}
+                      <div className="border-t border-gray-200 dark:border-slate-700 my-2"></div>
+
+                      <button
+                        onClick={logout}
+                        className="flex items-center space-x-3 w-full px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-lg mx-2"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Đăng xuất</span>
+                      </button>
+                    </motion.div>
+                  )}
                 </AnimatePresence>
               </div>
             </div>
@@ -177,150 +213,111 @@ const Layout = ({ children }) => {
       <motion.div
         initial={{ y: 100 }}
         animate={{ y: 0 }}
-        className="fixed bottom-0 left-0 w-full z-50 md:hidden px-2 pb-2"
+        className="fixed bottom-4 left-4 right-4 z-50 md:hidden"
       >
-        <nav className="glass backdrop-blur-2xl bg-white/90 dark:bg-slate-900/90 rounded-[1.5rem] shadow-2xl border border-white/30 dark:border-slate-700/30 overflow-hidden">
-          <div className="grid grid-cols-5 h-16">
+        <nav className="glass backdrop-blur-2xl bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-2xl border border-white/30 dark:border-slate-700/30 px-2">
+          <div className="grid grid-cols-5 h-16 items-center">
             {/* Dashboard */}
             <Link
               to="/dashboard"
-              className="flex flex-col items-center justify-center transition-all relative"
+              className="flex flex-col items-center justify-center transition-all relative h-full group"
             >
-              {isActive('/dashboard') ? (
-                <motion.div
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  className="flex flex-col items-center gap-0.5"
-                >
-                  <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
-                    <Home className="h-5 w-5 text-white" strokeWidth={2.5} />
-                  </div>
-                  <span className="text-[10px] font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Trang chủ</span>
-                </motion.div>
-              ) : (
-                <motion.div
-                  whileTap={{ scale: 0.9 }}
-                  className="flex flex-col items-center gap-0.5"
-                >
-                  <Home className="h-5 w-5 text-gray-400 dark:text-gray-500" strokeWidth={2} />
-                  <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Trang chủ</span>
-                </motion.div>
-              )}
+              <div className="relative flex flex-col items-center justify-center">
+                <Home
+                  className={cn(
+                    "h-6 w-6 transition-all duration-300",
+                    isActive('/dashboard')
+                      ? "text-blue-600 dark:text-blue-400 scale-110"
+                      : "text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                  )}
+                  strokeWidth={isActive('/dashboard') ? 2.5 : 2}
+                />
+                {isActive('/dashboard') && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    className="absolute -bottom-3 w-1.5 h-1.5 bg-blue-600 dark:bg-blue-400 rounded-full shadow-lg shadow-blue-600/50"
+                  />
+                )}
+              </div>
             </Link>
 
             {/* Expenses */}
             <Link
               to="/expenses"
-              className="flex flex-col items-center justify-center transition-all relative"
+              className="flex flex-col items-center justify-center transition-all relative h-full group"
             >
-              {isActive('/expenses') ? (
-                <motion.div
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  className="flex flex-col items-center gap-0.5"
-                >
-                  <div className="p-2 bg-gradient-to-br from-pink-600 to-rose-600 rounded-xl shadow-lg">
-                    <DollarSign className="h-5 w-5 text-white" strokeWidth={2.5} />
-                  </div>
-                  <span className="text-[10px] font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">Chi tiêu</span>
-                </motion.div>
-              ) : (
-                <motion.div
-                  whileTap={{ scale: 0.9 }}
-                  className="flex flex-col items-center gap-0.5"
-                >
-                  <DollarSign className="h-5 w-5 text-gray-400 dark:text-gray-500" strokeWidth={2} />
-                  <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Chi tiêu</span>
-                </motion.div>
-              )}
+              <div className="relative flex flex-col items-center justify-center">
+                <DollarSign
+                  className={cn(
+                    "h-6 w-6 transition-all duration-300",
+                    isActive('/expenses')
+                      ? "text-pink-600 dark:text-pink-400 scale-110"
+                      : "text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                  )}
+                  strokeWidth={isActive('/expenses') ? 2.5 : 2}
+                />
+                {isActive('/expenses') && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    className="absolute -bottom-3 w-1.5 h-1.5 bg-pink-600 dark:bg-pink-400 rounded-full shadow-lg shadow-pink-600/50"
+                  />
+                )}
+              </div>
             </Link>
 
-            {/* Wallets - Center FAB */}
+            {/* Add Transaction - Center FAB */}
+            <Link
+              to="/expenses/new"
+              className="flex flex-col items-center justify-center transition-all relative -mt-8"
+            >
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                className="flex flex-col items-center justify-center h-16 w-16 rounded-full shadow-2xl border-[6px] border-slate-50 dark:border-slate-900 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600"
+              >
+                <Plus
+                  className="h-8 w-8 text-white"
+                  strokeWidth={3}
+                />
+              </motion.div>
+            </Link>
+
+            {/* Wallets */}
             <Link
               to="/wallets"
-              className="flex flex-col items-center justify-center transition-all relative -mt-2"
+              className="flex flex-col items-center justify-center transition-all relative h-full group"
             >
-              {isActive('/wallets') ? (
-                <motion.div
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  className="flex flex-col items-center"
-                >
-                  <div className="p-3 bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600 rounded-[1.25rem] shadow-2xl border-2 border-white">
-                    <Wallet className="h-6 w-6 text-white" strokeWidth={2.5} />
-                  </div>
-                  <span className="text-[10px] mt-1 font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">Ví</span>
-                </motion.div>
-              ) : (
-                <motion.div
-                  whileTap={{ scale: 0.9 }}
-                  className="flex flex-col items-center"
-                >
-                  <div className="p-3 bg-white dark:bg-slate-800 rounded-[1.25rem] shadow-xl border-2 border-gray-100 dark:border-slate-700 text-gray-400 dark:text-gray-500">
-                    <Wallet className="h-6 w-6" strokeWidth={2} />
-                  </div>
-                  <span className="text-[10px] mt-1 font-medium text-gray-500 dark:text-gray-400">Ví</span>
-                </motion.div>
-              )}
-            </Link>
-
-            {/* Budgets */}
-            <Link
-              to="/budgets"
-              className="flex flex-col items-center justify-center transition-all relative"
-            >
-              {isActive('/budgets') ? (
-                <motion.div
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  className="flex flex-col items-center gap-0.5"
-                >
-                  <div className="p-2 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-lg">
-                    <PieChart className="h-5 w-5 text-white" strokeWidth={2.5} />
-                  </div>
-                  <span className="text-[10px] font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Ngân sách</span>
-                </motion.div>
-              ) : (
-                <motion.div
-                  whileTap={{ scale: 0.9 }}
-                  className="flex flex-col items-center gap-0.5"
-                >
-                  <PieChart className="h-5 w-5 text-gray-400 dark:text-gray-500" strokeWidth={2} />
-                  <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Ngân sách</span>
-                </motion.div>
-              )}
+              <div className="relative flex flex-col items-center justify-center">
+                <Wallet
+                  className={cn(
+                    "h-6 w-6 transition-all duration-300",
+                    isActive('/wallets')
+                      ? "text-cyan-600 dark:text-cyan-400 scale-110"
+                      : "text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                  )}
+                  strokeWidth={isActive('/wallets') ? 2.5 : 2}
+                />
+                {isActive('/wallets') && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    className="absolute -bottom-3 w-1.5 h-1.5 bg-cyan-600 dark:bg-cyan-400 rounded-full shadow-lg shadow-cyan-600/50"
+                  />
+                )}
+              </div>
             </Link>
 
             {/* Menu */}
-            <div className="flex flex-col items-center justify-center relative">
+            <div className="flex flex-col items-center justify-center relative h-full">
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="flex flex-col items-center justify-center relative w-full h-full"
+                className="flex flex-col items-center justify-center relative w-full h-full group"
               >
-                {showMobileMenu ? (
-                  <motion.div
-                    initial={{ scale: 0.8, rotate: -90 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className="flex flex-col items-center gap-0.5"
-                  >
-                    <div className="p-2 bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl shadow-lg">
-                      <X className="h-5 w-5 text-white" strokeWidth={2.5} />
-                    </div>
-                    <span className="text-[10px] font-bold text-gray-700 dark:text-gray-300">Đóng</span>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="flex flex-col items-center gap-0.5"
-                  >
-                    <div className="p-2 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-700 dark:to-slate-800 rounded-xl border border-gray-300 dark:border-slate-600 shadow-sm hover:shadow-md transition-all">
-                      <Menu className="h-5 w-5 text-gray-600 dark:text-gray-400" strokeWidth={2.5} />
-                    </div>
-                    <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">Menu</span>
-                  </motion.div>
-                )}
+                <div className="relative flex flex-col items-center justify-center">
+                  {showMobileMenu ? (
+                    <X className="h-6 w-6 text-gray-800 dark:text-gray-200" strokeWidth={2.5} />
+                  ) : (
+                    <Menu className="h-6 w-6 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300" strokeWidth={2} />
+                  )}
+                </div>
               </button>
             </div>
           </div>
@@ -328,134 +325,172 @@ const Layout = ({ children }) => {
       </motion.div>
 
       {/* Overlay & Menu Popup */}
-      {showMobileMenu && (
-        <>
-          <div
-            className="fixed left-0 right-0 top-0 bottom-16 bg-black/40 z-[99]"
-            onClick={() => setShowMobileMenu(false)}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed left-0 right-0 bottom-20 mx-auto w-[90vw] max-w-xs z-[101] rounded-3xl glass backdrop-blur-2xl bg-white/95 dark:bg-slate-900/95 shadow-2xl border border-white/20 dark:border-slate-700/20 overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* User Info */}
-            <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 border-b border-gray-200 dark:border-slate-700">
-              <div className="flex items-center space-x-3">
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+      <AnimatePresence>
+        {showMobileMenu && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 z-[99]"
+              onClick={() => setShowMobileMenu(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed left-4 right-4 bottom-24 mx-auto max-w-sm z-[101] rounded-3xl glass backdrop-blur-2xl bg-white/95 dark:bg-slate-900/95 shadow-2xl border border-white/20 dark:border-slate-700/20 overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Drag Handle */}
+              <div className="w-full flex justify-center pt-3 pb-1">
+                <div className="w-12 h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full"></div>
+              </div>
+
+              {/* User Info */}
+              <div className="p-4 flex flex-col items-center text-center border-b border-gray-100 dark:border-slate-800">
+                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg mb-3">
                   {user?.username?.[0]?.toUpperCase()}
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{user?.username}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">{user?.email}</p>
-                </div>
+                <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">{user?.username}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
               </div>
-            </div>
 
-            <div className="py-2">
-              <Link
-                to="/goals"
-                onClick={() => setShowMobileMenu(false)}
-                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all mx-2 rounded-2xl group"
-              >
-                <div className="p-2 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors">
-                  <Target className="h-4 w-4 text-blue-600" />
-                </div>
-                <span className="font-medium">Mục tiêu</span>
-              </Link>
-              
-              <Link
-                to="/recurring"
-                onClick={() => setShowMobileMenu(false)}
-                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all mx-2 rounded-2xl group"
-              >
-                <div className="p-2 bg-purple-100 rounded-xl group-hover:bg-purple-200 transition-colors">
-                  <Repeat className="h-4 w-4 text-purple-600" />
-                </div>
-                <span className="font-medium">Định kỳ</span>
-              </Link>
-              
-              <Link
-                to="/bills"
-                onClick={() => setShowMobileMenu(false)}
-                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-violet-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all mx-2 rounded-2xl group"
-              >
-                <div className="p-2 bg-indigo-100 rounded-xl group-hover:bg-indigo-200 transition-colors">
-                  <Bell className="h-4 w-4 text-indigo-600" />
-                </div>
-                <span className="font-medium">Hóa đơn</span>
-              </Link>
-              
-              <Link
-                to="/debts"
-                onClick={() => setShowMobileMenu(false)}
-                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-red-50 hover:to-rose-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all mx-2 rounded-2xl group"
-              >
-                <div className="p-2 bg-red-100 rounded-xl group-hover:bg-red-200 transition-colors">
-                  <CreditCard className="h-4 w-4 text-red-600" />
-                </div>
-                <span className="font-medium">Quản lý nợ</span>
-              </Link>
-              
-              <Link
-                to="/chat"
-                onClick={() => setShowMobileMenu(false)}
-                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all mx-2 rounded-2xl group"
-              >
-                <div className="p-2 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors">
-                  <MessageSquare className="h-4 w-4 text-blue-600" />
-                </div>
-                <span className="font-medium">Trò chuyện AI</span>
-              </Link>
-              
-              <Link
-                to="/notifications"
-                onClick={() => setShowMobileMenu(false)}
-                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-yellow-50 hover:to-orange-50 dark:hover:from-yellow-900/20 dark:hover:to-orange-900/20 transition-all mx-2 rounded-2xl group"
-              >
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl group-hover:bg-yellow-200 dark:group-hover:bg-yellow-900/40 transition-colors relative">
-                  <Bell className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                  {unreadNotifications > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">
-                      {unreadNotifications}
-                    </span>
-                  )}
-                </div>
-                <span className="font-medium">Thông báo</span>
-              </Link>
-              
-              <Link
-                to="/settings"
-                onClick={() => setShowMobileMenu(false)}
-                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-slate-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all mx-2 rounded-2xl group"
-              >
-                <div className="p-2 bg-gray-100 dark:bg-slate-700 rounded-xl group-hover:bg-gray-200 dark:group-hover:bg-slate-600 transition-colors">
-                  <Settings className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                </div>
-                <span className="font-medium">Cài đặt</span>
-              </Link>
-              
-              <div className="border-t border-gray-200 dark:border-slate-700 my-2 mx-4"></div>
-              
-              <button
-                onClick={() => {
-                  logout();
-                  setShowMobileMenu(false);
-                }}
-                className="flex items-center space-x-3 w-full px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 transition-all mx-2 rounded-2xl group"
-              >
-                <div className="p-2 bg-red-100 rounded-xl group-hover:bg-red-200 transition-colors">
-                  <LogOut className="h-4 w-4 text-red-600" />
-                </div>
-                <span className="font-medium">Đăng xuất</span>
-              </button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </div>
+              {/* Grid Menu */}
+              <div className="p-4 grid grid-cols-3 gap-4">
+                <Link
+                  to="/budgets"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-2xl group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 transition-colors">
+                    <PieChart className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Ngân sách</span>
+                </Link>
+
+                <Link
+                  to="/goals"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
+                    <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Mục tiêu</span>
+                </Link>
+
+                <Link
+                  to="/recurring"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-2xl group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 transition-colors">
+                    <Repeat className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Định kỳ</span>
+                </Link>
+
+                <Link
+                  to="/bills"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
+                    <Bell className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Hóa đơn</span>
+                </Link>
+
+                <Link
+                  to="/debts"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl group-hover:bg-red-100 dark:group-hover:bg-red-900/30 transition-colors">
+                    <CreditCard className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Quản lý nợ</span>
+                </Link>
+
+                <Link
+                  to="/splits"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-2xl group-hover:bg-green-100 dark:group-hover:bg-green-900/30 transition-colors">
+                    <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Chia tiền</span>
+                </Link>
+
+                <Link
+                  to="/scan"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-2xl group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 transition-colors">
+                    <Scan className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Quét QR</span>
+                </Link>
+
+                <Link
+                  to="/chat"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
+                    <MessageSquare className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">AI Chat</span>
+                </Link>
+
+                <Link
+                  to="/notifications"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl group-hover:bg-yellow-100 dark:group-hover:bg-yellow-900/30 transition-colors relative">
+                    <Bell className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                    {unreadNotifications > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center border-2 border-white dark:border-slate-900">
+                        {unreadNotifications}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Thông báo</span>
+                </Link>
+
+                <Link
+                  to="/settings"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-2xl group-hover:bg-gray-100 dark:group-hover:bg-slate-700 transition-colors">
+                    <Settings className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Cài đặt</span>
+                </Link>
+
+                <button
+                  onClick={() => {
+                    logout();
+                    setShowMobileMenu(false);
+                  }}
+                  className="flex flex-col items-center gap-2 group"
+                >
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl group-hover:bg-red-100 dark:group-hover:bg-red-900/30 transition-colors">
+                    <LogOut className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <span className="text-xs font-medium text-red-600 dark:text-red-400">Đăng xuất</span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div >
   );
 };
 

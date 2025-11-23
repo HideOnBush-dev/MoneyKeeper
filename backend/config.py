@@ -41,8 +41,10 @@ class Config:
     LANGUAGES = ["en", "vi"]
     
     # File upload
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
-    ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "pdf"}
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+    EXPENSE_IMAGES_FOLDER = os.path.join(UPLOAD_FOLDER, 'expense_images')
+    MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB max file size for invoice images
+    ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
     
     # Frontend configuration
     USE_REACT_FRONTEND = os.environ.get("USE_REACT_FRONTEND", "true").lower() == "true"

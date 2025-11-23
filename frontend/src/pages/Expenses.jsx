@@ -25,6 +25,7 @@ import { formatCurrency } from '../lib/utils';
 import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import PageHeader from '../components/PageHeader';
+import ExpenseDetailModal from '../components/ExpenseDetailModal';
 
 const CATEGORIES = [
   { value: '', label: 'Tất cả', emoji: '📋', gradient: 'from-gray-400 to-gray-500' },
@@ -45,6 +46,8 @@ const Expenses = () => {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [filters, setFilters] = useState({
     category: '',
     wallet_id: '',
@@ -61,6 +64,29 @@ const Expenses = () => {
   useEffect(() => {
     fetchWallets();
     fetchExpenses();
+    
+    // Check if there's a view parameter in URL
+    const params = new URLSearchParams(window.location.search);
+    const viewId = params.get('view');
+    if (viewId) {
+      // Find expense in current list or fetch it
+      const expense = expenses.find(e => e.id === parseInt(viewId));
+      if (expense) {
+        setSelectedExpense(expense);
+        setShowDetailModal(true);
+      } else {
+        // Fetch if not in list
+        expenseAPI.getById(viewId).then(res => {
+          const expense = res.data.expense || res.data;
+          if (expense) {
+            setSelectedExpense(expense);
+            setShowDetailModal(true);
+          }
+        }).catch(err => {
+          console.error('Error fetching expense:', err);
+        });
+      }
+    }
   }, []);
 
   const fetchWallets = async () => {
@@ -253,10 +279,21 @@ const Expenses = () => {
       await expenseAPI.delete(id);
       toast({ type: 'success', message: 'Xóa giao dịch thành công!' });
       fetchExpenses();
+      setShowDetailModal(false);
+      setSelectedExpense(null);
     } catch (error) {
       console.error('Error deleting expense:', error);
       toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi xóa giao dịch' });
     }
+  };
+
+  const handleEdit = (expense) => {
+    navigate(`/expenses/${expense.id}/edit`);
+  };
+
+  const handleViewDetail = (expense) => {
+    setSelectedExpense(expense);
+    setShowDetailModal(true);
   };
 
 
@@ -507,7 +544,8 @@ const Expenses = () => {
               return (
                 <div
                   key={expense.id}
-                  className="group relative bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 hover:shadow-md transition-all overflow-hidden"
+                  onClick={() => handleViewDetail(expense)}
+                  className="group relative bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 hover:shadow-md transition-all overflow-hidden cursor-pointer"
                 >
                   <div className="p-4">
                     <div className="flex items-start gap-3 sm:gap-4">
@@ -585,7 +623,10 @@ const Expenses = () => {
                           {/* Actions */}
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
-                              onClick={() => handleDelete(expense.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(expense.id);
+                              }}
                               className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
                               title="Xóa giao dịch"
                             >
@@ -605,6 +646,21 @@ const Expenses = () => {
               );
             })}
           </div>
+        )}
+
+        {/* Expense Detail Modal */}
+        {showDetailModal && selectedExpense && (
+          <ExpenseDetailModal
+            expense={selectedExpense}
+            wallet={wallets.find(w => w.id === selectedExpense.wallet_id)}
+            categoryData={getCategoryData(selectedExpense.category)}
+            onClose={() => {
+              setShowDetailModal(false);
+              setSelectedExpense(null);
+            }}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         )}
       </div>
     </div>

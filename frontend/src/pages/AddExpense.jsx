@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Camera, Zap, Receipt, Plus } from 'lucide-react';
 import { expenseAPI, walletAPI } from '../services/api';
 import { useToast } from '../components/Toast';
@@ -9,15 +9,47 @@ import PageHeader from '../components/PageHeader';
 
 const AddExpense = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const { toast } = useToast();
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showOCR, setShowOCR] = useState(false);
   const [ocrData, setOcrData] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [expenseData, setExpenseData] = useState(null);
 
   useEffect(() => {
     fetchWallets();
-  }, []);
+    if (id) {
+      setIsEditMode(true);
+      fetchExpense();
+    }
+  }, [id]);
+
+  const fetchExpense = async () => {
+    try {
+      setLoading(true);
+      const response = await expenseAPI.getById(id);
+      const expense = response.data.expense || response.data; // Handle both formats
+      setExpenseData(expense);
+      // Set initial data for form
+      setOcrData({
+        amount: expense.amount,
+        description: expense.description,
+        category: expense.category,
+        date: expense.date,
+        wallet_id: expense.wallet_id,
+        is_expense: expense.is_expense,
+        image_path: expense.image_path || expense.image_url // Use image_url if image_path not available
+      });
+    } catch (error) {
+      console.error('Error fetching expense:', error);
+      toast({ type: 'error', message: 'Lỗi khi tải giao dịch' });
+      navigate('/expenses');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchWallets = async () => {
     try {
@@ -37,11 +69,12 @@ const AddExpense = () => {
   };
 
   const handleSuccess = () => {
-    toast({ type: 'success', message: 'Đã thêm giao dịch thành công!' });
+    // Toast đã được hiển thị trong QuickTransactionForm, không cần hiển thị lại
     navigate('/expenses');
   };
 
-  if (loading) {
+  // Don't render form until expense data is loaded in edit mode
+  if (loading || (isEditMode && !expenseData)) {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
         <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -61,37 +94,43 @@ const AddExpense = () => {
         <span>Quay lại</span>
       </button>
       
-      <PageHeader icon={Plus} title="Thêm giao dịch" iconColor="from-blue-600 to-indigo-600" />
+      <PageHeader 
+        icon={Plus} 
+        title={isEditMode ? "Chỉnh sửa giao dịch" : "Thêm giao dịch"} 
+        iconColor="from-blue-600 to-indigo-600" 
+      />
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        <button
-          onClick={() => setShowOCR(!showOCR)}
-          className={`p-3 rounded-xl border-2 transition-all ${
-            showOCR
-              ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-400 text-blue-700 dark:text-blue-300'
-              : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 text-gray-700 dark:text-gray-300'
-          }`}
-        >
-          <Camera className="h-5 w-5 mx-auto mb-1.5" />
-          <p className="text-xs font-semibold">Quét hóa đơn</p>
-        </button>
-        
-        <button
-          onClick={() => {
-            setShowOCR(false);
-            setOcrData(null);
-          }}
-          className={`p-3 rounded-xl border-2 transition-all ${
-            !showOCR
-              ? 'bg-green-50 dark:bg-green-900/20 border-green-500 dark:border-green-400 text-green-700 dark:text-green-300'
-              : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-green-300 dark:hover:border-green-600 text-gray-700 dark:text-gray-300'
-          }`}
-        >
-          <Zap className="h-5 w-5 mx-auto mb-1.5" />
-          <p className="text-xs font-semibold">Nhập nhanh</p>
-        </button>
-      </div>
+      {/* Quick Actions - Hide when editing */}
+      {!isEditMode && (
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          <button
+            onClick={() => setShowOCR(!showOCR)}
+            className={`p-3 rounded-xl border-2 transition-all ${
+              showOCR
+                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-400 text-blue-700 dark:text-blue-300'
+                : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            <Camera className="h-5 w-5 mx-auto mb-1.5" />
+            <p className="text-xs font-semibold">Quét hóa đơn</p>
+          </button>
+          
+          <button
+            onClick={() => {
+              setShowOCR(false);
+              setOcrData(null);
+            }}
+            className={`p-3 rounded-xl border-2 transition-all ${
+              !showOCR
+                ? 'bg-green-50 dark:bg-green-900/20 border-green-500 dark:border-green-400 text-green-700 dark:text-green-300'
+                : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-green-300 dark:hover:border-green-600 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            <Zap className="h-5 w-5 mx-auto mb-1.5" />
+            <p className="text-xs font-semibold">Nhập nhanh</p>
+          </button>
+        </div>
+      )}
 
       {/* OCR Section (Collapsible) */}
       {showOCR && (
@@ -123,7 +162,8 @@ const AddExpense = () => {
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 border border-gray-100 dark:border-slate-700">
         <QuickTransactionForm
           wallets={wallets}
-          initialData={ocrData}
+          initialData={isEditMode ? expenseData : ocrData}
+          expenseId={isEditMode ? id : null}
           onSuccess={handleSuccess}
           onCancel={() => navigate('/expenses')}
           variant="page"
