@@ -6,8 +6,10 @@ import { useToast } from '../components/Toast';
 import QuickTransactionForm from '../components/QuickTransactionForm';
 import OCRScanner from '../components/OCRScanner';
 import PageHeader from '../components/PageHeader';
+import { useTranslation } from 'react-i18next';
 
 const AddExpense = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
   const { toast } = useToast();
@@ -44,7 +46,7 @@ const AddExpense = () => {
       });
     } catch (error) {
       console.error('Error fetching expense:', error);
-      toast({ type: 'error', message: 'Lỗi khi tải giao dịch' });
+      toast({ type: 'error', message: t('expense.loadError') });
       navigate('/expenses');
     } finally {
       setLoading(false);
@@ -65,7 +67,7 @@ const AddExpense = () => {
   const handleOCRSuccess = (data) => {
     setOcrData(data);
     setShowOCR(false);
-    toast({ type: 'success', message: 'Đã quét hóa đơn thành công!' });
+    toast({ type: 'success', message: t('expense.scanReceiptSuccess') });
   };
 
   const handleSuccess = () => {
@@ -78,7 +80,7 @@ const AddExpense = () => {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
         <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">Đang tải...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">{t('common.loading')}</p>
       </div>
     );
   }
@@ -91,12 +93,12 @@ const AddExpense = () => {
         className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors text-sm"
       >
         <ArrowLeft className="h-4 w-4" />
-        <span>Quay lại</span>
+        <span>{t('common.back')}</span>
       </button>
       
       <PageHeader 
         icon={Plus} 
-        title={isEditMode ? "Chỉnh sửa giao dịch" : "Thêm giao dịch"} 
+        title={isEditMode ? t('expense.editExpense') : t('expense.addExpense')} 
         iconColor="from-blue-600 to-indigo-600" 
       />
 
@@ -112,7 +114,7 @@ const AddExpense = () => {
             }`}
           >
             <Camera className="h-5 w-5 mx-auto mb-1.5" />
-            <p className="text-xs font-semibold">Quét hóa đơn</p>
+            <p className="text-xs font-semibold">{t('expense.scanReceipt')}</p>
           </button>
           
           <button
@@ -127,7 +129,7 @@ const AddExpense = () => {
             }`}
           >
             <Zap className="h-5 w-5 mx-auto mb-1.5" />
-            <p className="text-xs font-semibold">Nhập nhanh</p>
+            <p className="text-xs font-semibold">{t('expense.quickAdd')}</p>
           </button>
         </div>
       )}
@@ -144,7 +146,7 @@ const AddExpense = () => {
         <div className="mb-3 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
           <Receipt className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-xs font-semibold text-green-800 dark:text-green-300">Dữ liệu OCR</p>
+            <p className="text-xs font-semibold text-green-800 dark:text-green-300">{t('expense.scanReceipt')}</p>
             <p className="text-[11px] text-green-600 dark:text-green-400">
               {ocrData.amount?.toLocaleString('vi-VN')} đ
             </p>

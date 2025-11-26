@@ -16,17 +16,19 @@ import { billsAPI } from '../services/api';
 import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import { formatCurrency } from '../lib/utils';
-
-const BillStatusTabs = [
-  { key: 'all', label: 'Tất cả' },
-  { key: 'unpaid', label: 'Chưa thanh toán' },
-  { key: 'paid', label: 'Đã thanh toán' },
-];
+import { useTranslation } from 'react-i18next';
 
 const Bills = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { settings } = useSettings();
+  
+  const BillStatusTabs = [
+    { key: 'all', label: t('common.all') },
+    { key: 'unpaid', label: t('bill.unpaid') },
+    { key: 'paid', label: t('bill.paid') },
+  ];
 
   const [loading, setLoading] = useState(true);
   const [bills, setBills] = useState([]);
@@ -62,7 +64,7 @@ const Bills = () => {
       setBills(res.data.bills || []);
     } catch (error) {
       console.error('Error fetching bills:', error);
-      toast({ type: 'error', message: 'Lỗi khi tải danh sách hóa đơn' });
+      toast({ type: 'error', message: t('messages.errorOccurred') });
     }
   };
 
@@ -78,15 +80,15 @@ const Bills = () => {
   const handleCreateNavigate = () => navigate('/bills/new');
   const handleEditNavigate = (bill) => navigate(`/bills/${bill.id}/edit`);
   const handleDelete = async (bill) => {
-    if (!confirm('Xóa hóa đơn này?')) return;
+    if (!confirm(t('messages.confirmDelete'))) return;
     try {
       await billsAPI.delete(bill.id);
-      toast({ type: 'success', message: 'Đã xóa hóa đơn' });
+      toast({ type: 'success', message: t('messages.deleteSuccess') });
       fetchBills();
       fetchUpcoming();
     } catch (error) {
       console.error('Error deleting bill:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi xóa hóa đơn' });
+      toast({ type: 'error', message: error.response?.data?.error || t('messages.errorOccurred') });
     }
   };
 
@@ -131,7 +133,7 @@ const Bills = () => {
     return (
       <div className="flex flex-col items-center justify-center h-80">
         <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-sm text-gray-500">Đang tải hóa đơn...</p>
+        <p className="mt-4 text-sm text-gray-500">{t('common.loading')}</p>
       </div>
     );
   }
@@ -142,8 +144,8 @@ const Bills = () => {
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageHeader
         icon={Bell}
-        title="Nhắc nhở hóa đơn"
-        subtitle={`${bills.length} hóa đơn được quản lý`}
+        title={t('bill.title')}
+        subtitle={`${bills.length} ${t('bill.bills')}`}
         iconColor="from-indigo-500 to-violet-500"
         actions={
           <button
@@ -151,7 +153,7 @@ const Bills = () => {
             className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center gap-1.5"
           >
             <Plus className="h-4 w-4" />
-            Thêm hóa đơn
+            {t('bill.addBill')}
           </button>
         }
       />
@@ -161,7 +163,7 @@ const Bills = () => {
         <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white/80">Tổng hóa đơn</p>
+              <p className="text-sm text-white/80">{t('bill.totalBills')}</p>
               <p className="text-2xl font-bold mt-1">{bills.length}</p>
             </div>
             <Calendar className="h-8 w-8 text-white/80" />
@@ -170,7 +172,7 @@ const Bills = () => {
         <div className="p-5 rounded-2xl bg-gradient-to-br from-rose-500 to-red-500 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white/80">Chưa thanh toán</p>
+              <p className="text-sm text-white/80">{t('bill.unpaid')}</p>
               <p className="text-2xl font-bold mt-1">
                 {bills.filter((b) => !b.is_paid).length}
               </p>
@@ -178,13 +180,13 @@ const Bills = () => {
             <AlertCircle className="h-8 w-8 text-white/80" />
           </div>
           {overdueCount > 0 && (
-            <p className="text-xs mt-3 text-white/90">{overdueCount} hóa đơn quá hạn</p>
+            <p className="text-xs mt-3 text-white/90">{overdueCount} {t('bill.overdue')}</p>
           )}
         </div>
         <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white/80">Đã thanh toán</p>
+              <p className="text-sm text-white/80">{t('bill.paid')}</p>
               <p className="text-2xl font-bold mt-1">
                 {bills.filter((b) => b.is_paid).length}
               </p>
@@ -200,9 +202,9 @@ const Bills = () => {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Clock className="h-5 w-5 text-indigo-500" />
-              Hóa đơn sắp đến hạn (14 ngày)
+              {t('bill.upcomingBills')}
             </h2>
-            <span className="text-xs text-gray-500">{upcoming.length} hóa đơn</span>
+            <span className="text-xs text-gray-500">{upcoming.length} {t('bill.bills')}</span>
           </div>
           <div className="space-y-3">
             {upcoming.slice(0, 4).map((bill) => {

@@ -3,8 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, User, Mail, Lock, Check, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const Register = () => {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,7 +21,7 @@ const Register = () => {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp');
+      setError(t('auth.passwordMismatch'));
       return;
     }
 
@@ -29,7 +31,7 @@ const Register = () => {
       await register(username, email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+      setError(err.response?.data?.message || t('auth.registerFailed'));
     } finally {
       setLoading(false);
     }
@@ -72,8 +74,8 @@ const Register = () => {
             <div className="inline-flex p-4 bg-gradient-to-br from-white/20 to-white/10 rounded-3xl backdrop-blur-xl mb-4 shadow-xl">
               <Wallet className="h-12 w-12 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-white mb-2 font-display">Đăng ký</h1>
-            <p className="text-white/80 text-sm">Tạo tài khoản mới để bắt đầu</p>
+            <h1 className="text-4xl font-bold text-white mb-2 font-display">{t('auth.register')}</h1>
+            <p className="text-white/80 text-sm">{t('auth.newAccount')}</p>
           </motion.div>
 
           {error && (
@@ -88,7 +90,7 @@ const Register = () => {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-              <label className="block text-sm font-medium text-white/90 mb-2">Tên đăng nhập</label>
+              <label className="block text-sm font-medium text-white/90 mb-2">{t('auth.username')}</label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">
                   <User size={20} />
@@ -99,13 +101,13 @@ const Register = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   className="w-full pl-12 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent backdrop-blur-xl transition-all"
-                  placeholder="Chọn tên đăng nhập"
+                  placeholder={t('auth.chooseUsername')}
                 />
               </div>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
-              <label className="block text-sm font-medium text-white/90 mb-2">Email</label>
+              <label className="block text-sm font-medium text-white/90 mb-2">{t('auth.email')}</label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">
                   <Mail size={20} />
@@ -122,7 +124,7 @@ const Register = () => {
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
-              <label className="block text-sm font-medium text-white/90 mb-2">Mật khẩu</label>
+              <label className="block text-sm font-medium text-white/90 mb-2">{t('auth.password')}</label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">
                   <Lock size={20} />
@@ -133,13 +135,13 @@ const Register = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="w-full pl-12 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent backdrop-blur-xl transition-all"
-                  placeholder="Tạo mật khẩu mạnh"
+                  placeholder={t('auth.password')}
                 />
               </div>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }}>
-              <label className="block text-sm font-medium text-white/90 mb-2">Xác nhận mật khẩu</label>
+              <label className="block text-sm font-medium text-white/90 mb-2">{t('auth.confirmPassword')}</label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">
                   <Check size={20} />
@@ -150,7 +152,7 @@ const Register = () => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   className="w-full pl-12 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent backdrop-blur-xl transition-all"
-                  placeholder="Nhập lại mật khẩu"
+                  placeholder={t('auth.confirmPassword')}
                 />
               </div>
             </motion.div>
@@ -168,19 +170,19 @@ const Register = () => {
               {loading ? (
                 <>
                   <div className="h-5 w-5 border-3 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Đang xử lý...</span>
+                  <span>{t('auth.processing')}</span>
                 </>
               ) : (
-                <span>Tạo tài khoản</span>
+                <span>{t('auth.createAccount')}</span>
               )}
             </motion.button>
           </form>
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="mt-6 text-center">
             <p className="text-white/80 text-sm">
-              Đã có tài khoản?{' '}
+              {t('auth.hasAccount')}{' '}
               <Link to="/login" className="font-bold text-white hover:text-white/80 transition-colors underline underline-offset-4">
-                Đăng nhập
+                {t('auth.signIn')}
               </Link>
             </p>
           </motion.div>

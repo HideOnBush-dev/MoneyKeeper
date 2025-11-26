@@ -1,15 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const Select = ({ 
   value, 
   onChange, 
   options = [], 
-  placeholder = "Chọn...",
+  placeholder,
   className = "",
   disabled = false,
   icon: Icon = null,
 }) => {
+  const { t } = useTranslation();
+  const defaultPlaceholder = placeholder || t('common.select');
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -55,7 +58,7 @@ const Select = ({
               {selectedOption.label}
             </span>
           ) : (
-            <span className="text-gray-400 dark:text-gray-500">{placeholder}</span>
+            <span className="text-gray-400 dark:text-gray-500">{defaultPlaceholder}</span>
           )}
         </div>
         <ChevronDown 

@@ -7,8 +7,10 @@ import PageHeader from '../components/PageHeader';
 import { sendTestNotification, isStandalone, isNotificationSupported, getNotificationPermission, getDeviceInfo } from '../utils/notifications';
 import { initPushNotifications, getPushPermissionState, isPushManagerActive } from '../utils/pushSubscription';
 import { notify } from '../services/notify';
+import { useTranslation } from 'react-i18next';
 
 const Settings = () => {
+  const { t } = useTranslation();
   const { settings, updateSettings } = useSettings();
   const { user } = useAuth();
   const [premiumInfo, setPremiumInfo] = useState({ premium: false, chatMessageCount: 0, limit: 200 });
@@ -79,7 +81,7 @@ const Settings = () => {
     if (prevDebugModeRef.current !== undefined) {
       notify({
         type: 'info',
-        message: isDebugMode ? 'Debug mode đã bật' : 'Debug mode đã tắt'
+        message: isDebugMode ? t('settings.debugModeOn') : t('settings.debugModeOff')
       });
     }
     
@@ -126,7 +128,7 @@ const Settings = () => {
   }, []);
 
   const handleUpgrade = () => {
-    alert('Tính năng thanh toán sẽ sớm được ra mắt! 🎉');
+    alert(t('settings.paymentFeatureComingSoon'));
   };
 
   const handleTestNotification = async (e) => {
@@ -140,7 +142,7 @@ const Settings = () => {
     try {
       // Check if notifications are supported
       if (!('Notification' in window)) {
-        throw new Error('Notifications không được hỗ trợ trên trình duyệt này');
+        throw new Error(t('settings.notificationsNotSupported'));
       }
 
       // Check if running on HTTPS or localhost (required for notifications)
@@ -150,7 +152,7 @@ const Settings = () => {
                               location.hostname === '127.0.0.1';
       
       if (!isSecureContext) {
-        throw new Error('Thông báo chỉ hoạt động trên HTTPS hoặc localhost');
+        throw new Error(t('settings.notificationsRequireHTTPS'));
       }
 
       // Check permission first
@@ -170,11 +172,11 @@ const Settings = () => {
       }
 
       if (permission === 'denied') {
-        throw new Error('Quyền thông báo đã bị từ chối. Vui lòng bật lại trong cài đặt trình duyệt.');
+        throw new Error(t('settings.notificationPermissionDenied'));
       }
 
       if (permission !== 'granted') {
-        throw new Error('Quyền thông báo chưa được cấp. Vui lòng cho phép thông báo khi được hỏi.');
+        throw new Error(t('settings.notificationPermissionNotGranted'));
       }
 
       // iOS Safari only supports notifications in standalone mode
@@ -183,16 +185,13 @@ const Settings = () => {
         const isStandaloneMode = window.navigator.standalone === true || 
                                 window.matchMedia('(display-mode: standalone)').matches;
         if (!isStandaloneMode) {
-          throw new Error(
-            'Trên iOS, thông báo chỉ hoạt động khi app được cài đặt như PWA. ' +
-            'Vui lòng thêm vào màn hình chính từ Safari (Share > Add to Home Screen)'
-          );
+          throw new Error(t('settings.iosNotificationRequiresPWA'));
         }
       }
 
       // Send notification
       const options = {
-        body: 'Đây là thông báo test từ Money Keeper! 🎉',
+        body: t('settings.testNotificationBody'),
         icon: '/img/app-icon.png',
         badge: '/img/app-icon.png',
         tag: 'test-notification',
@@ -200,7 +199,7 @@ const Settings = () => {
         silent: false,
       };
 
-      const notification = new Notification('Money Keeper - Test Notification', options);
+      const notification = new Notification(t('settings.testNotificationTitle'), options);
 
       // Auto close after 5 seconds
       setTimeout(() => {
@@ -213,12 +212,12 @@ const Settings = () => {
 
       notify({ 
         type: 'success', 
-        message: 'Thông báo test đã được gửi! Kiểm tra thông báo trên thiết bị của bạn.' 
+        message: t('settings.testNotificationSent') 
       });
     } catch (error) {
       notify({ 
         type: 'error', 
-        message: error.message || 'Không thể gửi thông báo test' 
+        message: error.message || t('settings.testNotificationFailed') 
       });
     } finally {
       setIsTestingNotification(false);
@@ -227,7 +226,7 @@ const Settings = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-3">
-      <PageHeader icon={SettingsIcon} title="Cài đặt" iconColor="from-gray-600 to-slate-700" />
+      <PageHeader icon={SettingsIcon} title={t('settings.title')} iconColor="from-gray-600 to-slate-700" />
 
       {/* Premium Section */}
       <div className={`relative overflow-hidden rounded-2xl shadow-md ${
@@ -239,25 +238,25 @@ const Settings = () => {
         <div className="flex items-center gap-2.5 mb-3">
           <Crown className="h-6 w-6" />
           <h2 className="text-xl font-bold">
-            {premiumInfo.premium ? 'Premium' : 'Nâng cấp Premium'}
+            {premiumInfo.premium ? t('settings.premium') : t('settings.upgradePremium')}
           </h2>
         </div>
 
         {premiumInfo.premium ? (
             <div className="space-y-3">
               <p className="text-sm opacity-90">
-                Cảm ơn bạn đã là thành viên Premium! 🎉
+                {t('settings.thankYouPremium')} 🎉
               </p>
               <div className="flex items-center gap-3">
                 <div className="px-3 py-2 bg-white/20 backdrop-blur rounded-xl">
-                  <p className="text-xs opacity-80">Tin nhắn AI</p>
-                  <p className="text-lg font-bold">Không giới hạn</p>
+                  <p className="text-xs opacity-80">{t('settings.aiMessages')}</p>
+                  <p className="text-lg font-bold">{t('settings.unlimited')}</p>
                 </div>
                 <div className="px-3 py-2 bg-white/20 backdrop-blur rounded-xl">
-                  <p className="text-xs opacity-80">Trạng thái</p>
+                  <p className="text-xs opacity-80">{t('settings.status')}</p>
                   <p className="text-sm font-bold flex items-center gap-1">
                     <Sparkles className="h-4 w-4" />
-                    Hoạt động
+                    {t('settings.active')}
                   </p>
                 </div>
               </div>
@@ -265,7 +264,7 @@ const Settings = () => {
           ) : (
             <div className="space-y-4">
               <p className="text-sm opacity-90">
-                Mở khóa toàn bộ tính năng Premium
+                {t('settings.unlockAllPremiumFeatures')}
               </p>
 
               {/* Message usage */}
@@ -273,7 +272,7 @@ const Settings = () => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5">
                     <MessageSquare className="h-4 w-4" />
-                    <span className="font-semibold text-sm">Tin nhắn AI hôm nay</span>
+                    <span className="font-semibold text-sm">{t('settings.aiMessagesToday')}</span>
                   </div>
                   <span className="text-lg font-bold">
                     {premiumInfo.chatMessageCount}/{premiumInfo.limit}
@@ -289,20 +288,20 @@ const Settings = () => {
                 </div>
                 <p className="text-sm mt-2 opacity-75">
                   {premiumInfo.chatMessageCount >= premiumInfo.limit
-                    ? 'Bạn đã đạt giới hạn hôm nay. Nâng cấp để tiếp tục!'
-                    : `Còn ${premiumInfo.limit - premiumInfo.chatMessageCount} tin nhắn`}
+                    ? t('settings.limitReachedUpgrade')
+                    : t('settings.messagesRemaining', { count: premiumInfo.limit - premiumInfo.chatMessageCount })}
                 </p>
               </div>
 
               {/* Features list */}
               <div className="grid md:grid-cols-2 gap-2">
                 {[
-                  'Tin nhắn AI không giới hạn',
-                  'Báo cáo chi tiêu nâng cao',
-                  'Xuất dữ liệu không giới hạn',
-                  'Hỗ trợ ưu tiên',
-                  'Tính năng mới sớm nhất',
-                  'Không quảng cáo'
+                  t('settings.featureUnlimitedAI'),
+                  t('settings.featureAdvancedReports'),
+                  t('settings.featureUnlimitedExport'),
+                  t('settings.featurePrioritySupport'),
+                  t('settings.featureEarlyAccess'),
+                  t('settings.featureNoAds')
                 ].map((feature, i) => (
                   <div key={i} className="flex items-center gap-1.5">
                     <Check className="h-4 w-4 flex-shrink-0" />
@@ -317,15 +316,15 @@ const Settings = () => {
                 className="w-full py-3 bg-white text-purple-600 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
               >
                 <Zap className="h-5 w-5" />
-                Nâng cấp Premium
+                {t('settings.upgradePremium')}
               </button>
             </div>
           )}
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 border border-gray-100 dark:border-slate-700">
-        <h2 className="text-lg font-semibold mb-3 dark:text-gray-100">Định dạng số tiền</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Chọn cách nhập dấu chấm, dấu phẩy khi gõ số tiền.</p>
+        <h2 className="text-lg font-semibold mb-3 dark:text-gray-100">{t('settings.numberFormat')}</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{t('settings.numberFormatDescription')}</p>
 
         <div className="space-y-2">
           <label className="flex items-center gap-3 p-3 rounded-lg border dark:border-slate-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
@@ -337,8 +336,8 @@ const Settings = () => {
               onChange={() => updateSettings({ numberFormat: 'vi-VN' })}
             />
             <div>
-              <p className="font-medium text-sm dark:text-gray-200">Tiếng Việt (vi-VN)</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Thí dụ: 1.234.567,89</p>
+              <p className="font-medium text-sm dark:text-gray-200">{t('settings.vietnamese')}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.example')}: 1.234.567,89</p>
             </div>
           </label>
 
@@ -351,16 +350,16 @@ const Settings = () => {
               onChange={() => updateSettings({ numberFormat: 'en-US' })}
             />
             <div>
-              <p className="font-medium text-sm dark:text-gray-200">English (en-US)</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Example: 1,234,567.89</p>
+              <p className="font-medium text-sm dark:text-gray-200">{t('settings.english')}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.example')}: 1,234,567.89</p>
             </div>
           </label>
         </div>
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 border border-gray-100 dark:border-slate-700">
-        <h2 className="text-lg font-semibold mb-3 dark:text-gray-100">Tiền tệ mặc định</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Tiền tệ dùng để hiển thị số tiền.</p>
+        <h2 className="text-lg font-semibold mb-3 dark:text-gray-100">{t('settings.defaultCurrency')}</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{t('settings.defaultCurrencyDescription')}</p>
         <Select
           value={settings.currency}
           onChange={(value) => updateSettings({ currency: value })}
@@ -371,13 +370,13 @@ const Settings = () => {
             { value: 'JPY', label: 'JPY – Japanese Yen', icon: '🇯🇵' },
           ]}
           icon={Globe}
-          placeholder="Chọn tiền tệ"
+          placeholder={t('settings.selectCurrency')}
         />
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 border border-gray-100 dark:border-slate-700">
-        <h2 className="text-lg font-semibold mb-3 dark:text-gray-100">Giao diện</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Chủ đề màu sắc cho ứng dụng.</p>
+        <h2 className="text-lg font-semibold mb-3 dark:text-gray-100">{t('settings.theme')}</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{t('settings.themeDescription')}</p>
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 px-4 py-2 rounded-lg border dark:border-slate-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
             <input
@@ -387,7 +386,7 @@ const Settings = () => {
               checked={settings.theme === 'light'}
               onChange={() => updateSettings({ theme: 'light' })}
             />
-            <span className="text-sm font-medium dark:text-gray-200">Sáng</span>
+            <span className="text-sm font-medium dark:text-gray-200">{t('settings.light')}</span>
           </label>
           <label className="flex items-center gap-2 px-4 py-2 rounded-lg border dark:border-slate-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
             <input
@@ -397,7 +396,7 @@ const Settings = () => {
               checked={settings.theme === 'dark'}
               onChange={() => updateSettings({ theme: 'dark' })}
             />
-            <span className="text-sm font-medium dark:text-gray-200">Tối</span>
+            <span className="text-sm font-medium dark:text-gray-200">{t('settings.dark')}</span>
           </label>
         </div>
       </div>
@@ -407,11 +406,10 @@ const Settings = () => {
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 border border-gray-100 dark:border-slate-700">
         <div className="flex items-center gap-2 mb-3">
           <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-          <h2 className="text-lg font-semibold dark:text-gray-100">Test Thông báo</h2>
+          <h2 className="text-lg font-semibold dark:text-gray-100">{t('settings.notifications')}</h2>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Kiểm tra xem thông báo có hoạt động trên thiết bị của bạn không. 
-          Đặc biệt hữu ích cho iOS khi app được cài đặt như PWA.
+          {t('settings.testNotificationDescription')}
         </p>
 
         {notificationStatus ? (
@@ -551,7 +549,7 @@ const Settings = () => {
           </div>
         ) : (
           <div className="mb-4 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">Đang kiểm tra trạng thái thông báo...</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">{t('common.loading')}</p>
           </div>
         )}
 
@@ -599,7 +597,7 @@ const Settings = () => {
             className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Bell className="h-5 w-5" />
-            {isTestingNotification ? 'Đang gửi...' : 'Gửi thông báo test'}
+            {isTestingNotification ? t('common.loading') : t('settings.sendTestNotification')}
           </button>
           
           {/* Debug button to check service worker status */}

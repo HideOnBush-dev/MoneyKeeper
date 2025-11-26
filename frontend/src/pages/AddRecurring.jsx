@@ -6,31 +6,33 @@ import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/numberFormat';
 import PageHeader from '../components/PageHeader';
-
-const CATEGORIES = [
-  { value: 'food', label: 'Ăn uống', emoji: '🍔' },
-  { value: 'transport', label: 'Di chuyển', emoji: '🚗' },
-  { value: 'shopping', label: 'Mua sắm', emoji: '🛍️' },
-  { value: 'entertainment', label: 'Giải trí', emoji: '🎮' },
-  { value: 'health', label: 'Sức khỏe', emoji: '💊' },
-  { value: 'education', label: 'Giáo dục', emoji: '📚' },
-  { value: 'utilities', label: 'Tiện ích', emoji: '💡' },
-  { value: 'other', label: 'Khác', emoji: '📦' },
-];
-
-const FREQUENCIES = [
-  { value: 'daily', label: 'Hàng ngày', icon: '📅' },
-  { value: 'weekly', label: 'Hàng tuần', icon: '📆' },
-  { value: 'monthly', label: 'Hàng tháng', icon: '🗓️' },
-  { value: 'yearly', label: 'Hàng năm', icon: '📅' },
-];
+import { useTranslation } from 'react-i18next';
 
 const AddRecurring = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
   const { toast } = useToast();
   const { settings } = useSettings();
+
+  const CATEGORIES = [
+    { value: 'food', label: t('categories.food'), emoji: '🍔' },
+    { value: 'transport', label: t('categories.transport'), emoji: '🚗' },
+    { value: 'shopping', label: t('categories.shopping'), emoji: '🛍️' },
+    { value: 'entertainment', label: t('categories.entertainment'), emoji: '🎮' },
+    { value: 'health', label: t('categories.health'), emoji: '💊' },
+    { value: 'education', label: t('categories.education'), emoji: '📚' },
+    { value: 'utilities', label: t('categories.utilities'), emoji: '💡' },
+    { value: 'other', label: t('categories.other'), emoji: '📦' },
+  ];
+
+  const FREQUENCIES = [
+    { value: 'daily', label: t('debt.daily'), icon: '📅' },
+    { value: 'weekly', label: t('debt.weekly'), icon: '📆' },
+    { value: 'monthly', label: t('debt.monthly'), icon: '🗓️' },
+    { value: 'yearly', label: t('debt.yearly'), icon: '📅' },
+  ];
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [wallets, setWallets] = useState([]);
@@ -94,7 +96,7 @@ const AddRecurring = () => {
       setAmountInput(formatAmountInput(transaction.amount || 0, { numberFormat: settings.numberFormat }));
     } catch (error) {
       console.error('Error fetching transaction:', error);
-      toast({ type: 'error', message: 'Lỗi khi tải giao dịch' });
+      toast({ type: 'error', message: t('messages.errorOccurred') });
       navigate('/recurring');
     } finally {
       setLoading(false);
@@ -107,12 +109,12 @@ const AddRecurring = () => {
     const parsedAmount = parseAmountInput(amountInput || String(formData.amount), { numberFormat: settings.numberFormat });
     
     if (!parsedAmount || parsedAmount <= 0) {
-      toast({ type: 'error', message: 'Vui lòng nhập số tiền hợp lệ' });
+      toast({ type: 'error', message: t('transactionForm.amountMustBePositive') });
       return;
     }
 
     if (!formData.wallet_id) {
-      toast({ type: 'error', message: 'Vui lòng chọn ví' });
+      toast({ type: 'error', message: t('transactionForm.selectWalletWarning') });
       return;
     }
 
@@ -134,10 +136,10 @@ const AddRecurring = () => {
 
       if (isEdit) {
         await recurringAPI.update(id, payload);
-        toast({ type: 'success', message: 'Đã cập nhật giao dịch định kỳ thành công!' });
+        toast({ type: 'success', message: t('messages.updateSuccess') });
       } else {
         await recurringAPI.create(payload);
-        toast({ type: 'success', message: 'Đã tạo giao dịch định kỳ thành công!' });
+        toast({ type: 'success', message: t('recurring.createSuccess') });
       }
       
       navigate('/recurring');
@@ -145,7 +147,7 @@ const AddRecurring = () => {
       console.error('Error saving transaction:', error);
       toast({ 
         type: 'error', 
-        message: error.response?.data?.message || 'Lỗi khi lưu giao dịch' 
+        message: error.response?.data?.message || t('messages.errorOccurred')
       });
     } finally {
       setSaving(false);
@@ -156,7 +158,7 @@ const AddRecurring = () => {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
         <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">Đang tải...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">{t('common.loading')}</p>
       </div>
     );
   }
@@ -169,12 +171,12 @@ const AddRecurring = () => {
         className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors text-sm"
       >
         <ArrowLeft className="h-4 w-4" />
-        <span>Quay lại</span>
+        <span>{t('common.back')}</span>
       </button>
       
       <PageHeader 
         icon={Repeat} 
-        title={isEdit ? 'Chỉnh sửa giao dịch định kỳ' : 'Tạo giao dịch định kỳ'} 
+        title={isEdit ? t('recurring.editRecurring') : t('recurring.addRecurring')} 
         iconColor="from-purple-600 to-indigo-600" 
       />
 
@@ -182,19 +184,19 @@ const AddRecurring = () => {
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 border border-gray-100 dark:border-slate-700">
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tên giao dịch *</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('recurring.transactionName')} *</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-4 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all font-semibold"
-              placeholder="Ví dụ: Netflix, Điện thoại, Gym"
+              placeholder={t('recurring.transactionNamePlaceholder')}
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Số tiền *</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('transactionForm.amount')} *</label>
             <div className="relative">
               <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
               <input
@@ -225,7 +227,7 @@ const AddRecurring = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="min-w-0">
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Danh mục *</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('transactionForm.category')} *</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -239,7 +241,7 @@ const AddRecurring = () => {
             </div>
 
             <div className="min-w-0">
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tần suất *</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('recurring.frequency')} *</label>
               <select
                 value={formData.frequency}
                 onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
@@ -255,7 +257,7 @@ const AddRecurring = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="min-w-0">
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ngày bắt đầu *</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('recurring.startDate')} *</label>
               <div className="relative">
                 <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500 z-10 pointer-events-none" />
                 <input
@@ -269,7 +271,7 @@ const AddRecurring = () => {
             </div>
 
             <div className="min-w-0">
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ngày kết thúc (tùy chọn)</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('recurring.endDate')}</label>
               <div className="relative">
                 <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500 z-10 pointer-events-none" />
                 <input
@@ -284,14 +286,14 @@ const AddRecurring = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ví *</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('transactionForm.wallet')} *</label>
             <select
               value={formData.wallet_id || ''}
               onChange={(e) => setFormData({ ...formData, wallet_id: parseInt(e.target.value) })}
               className="w-full px-4 pr-10 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all font-semibold appearance-none"
               required
             >
-              <option value="">Chọn ví</option>
+              <option value="">{t('transactionForm.selectWallet')}</option>
               {wallets.map((wallet) => (
                 <option key={wallet.id} value={wallet.id}>{wallet.name}</option>
               ))}
@@ -299,13 +301,13 @@ const AddRecurring = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Mô tả (tùy chọn)</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('expense.description')}</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-4 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all font-semibold"
               rows="3"
-              placeholder="Thêm mô tả cho giao dịch..."
+              placeholder={t('transactionForm.enterDescription')}
             />
           </div>
 
@@ -318,7 +320,7 @@ const AddRecurring = () => {
                 className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 mt-0.5 flex-shrink-0"
               />
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex-1">
-                Đây là chi tiêu (bỏ chọn nếu là thu nhập)
+                {t('recurring.isExpense')}
               </span>
             </label>
 
@@ -330,7 +332,7 @@ const AddRecurring = () => {
                 className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 mt-0.5 flex-shrink-0"
               />
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex-1">
-                Tự động tạo expense khi đến hạn
+                {t('recurring.autoCreate')}
               </span>
             </label>
 
@@ -342,7 +344,7 @@ const AddRecurring = () => {
                 className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 mt-0.5 flex-shrink-0"
               />
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex-1">
-                Kích hoạt ngay
+                {t('recurring.activateNow')}
               </span>
             </label>
           </div>
@@ -353,7 +355,7 @@ const AddRecurring = () => {
               onClick={() => navigate('/recurring')}
               className="flex-1 px-6 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
             >
-              Hủy
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -363,12 +365,12 @@ const AddRecurring = () => {
               {saving ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Đang lưu...</span>
+                  <span>{t('common.saving')}</span>
                 </>
               ) : (
                 <>
                   <CheckCircle className="h-4 w-4 flex-shrink-0" />
-                  <span>{isEdit ? 'Cập nhật' : 'Tạo giao dịch'}</span>
+                  <span>{isEdit ? t('common.update') : t('recurring.addRecurring')}</span>
                 </>
               )}
             </button>

@@ -1,8 +1,10 @@
 import { X, Calendar, Wallet, Tag, DollarSign, FileImage, Edit2, Trash2 } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 import { useSettings } from '../contexts/SettingsContext';
+import { useTranslation } from 'react-i18next';
 
 const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, onDelete }) => {
+  const { t, i18n } = useTranslation();
   const { settings } = useSettings();
 
   if (!expense) return null;
@@ -13,7 +15,7 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 p-6 flex items-center justify-between z-10">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Chi tiết giao dịch
+            {t('expenseDetail.title')}
           </h2>
           <div className="flex items-center gap-2">
             {onEdit && (
@@ -23,7 +25,7 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
                   onEdit(expense);
                 }}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
-                title="Chỉnh sửa"
+                title={t('common.edit')}
               >
                 <Edit2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </button>
@@ -31,13 +33,13 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
             {onDelete && (
               <button
                 onClick={() => {
-                  if (confirm('Bạn có chắc muốn xóa giao dịch này?')) {
+                  if (confirm(t('expense.confirmDelete'))) {
                     onDelete(expense.id);
                     onClose();
                   }
                 }}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
-                title="Xóa"
+                title={t('common.delete')}
               >
                 <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
               </button>
@@ -56,7 +58,7 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
           {/* Amount - Large and prominent */}
           <div className="text-center py-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-800 rounded-2xl">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 font-medium">
-              {expense.is_expense ? 'Chi tiêu' : 'Thu nhập'}
+              {expense.is_expense ? t('expenseDetail.expense') : t('expenseDetail.income')}
             </p>
             <p className={`text-4xl font-bold ${
               expense.is_expense ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
@@ -70,7 +72,7 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
           {expense.description && (
             <div>
               <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
-                Mô tả
+                {t('expenseDetail.description')}
               </h3>
               <p className="text-lg text-gray-900 dark:text-white bg-gray-50 dark:bg-slate-700 rounded-xl p-4">
                 {expense.description}
@@ -85,7 +87,7 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
               <div className="flex items-center gap-2 mb-2">
                 <Tag className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Danh mục
+                  {t('expenseDetail.category')}
                 </h3>
               </div>
               <div className="flex items-center gap-2">
@@ -93,7 +95,7 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
                   <span className="text-xl">{categoryData?.emoji || '📦'}</span>
                 </div>
                 <p className="font-semibold text-gray-900 dark:text-white">
-                  {categoryData?.label || expense.category || 'Khác'}
+                  {categoryData?.label || expense.category || t('expenseDetail.other')}
                 </p>
               </div>
             </div>
@@ -104,14 +106,14 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
                 <div className="flex items-center gap-2 mb-2">
                   <Wallet className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                    Ví
+                    {t('expenseDetail.wallet')}
                   </h3>
                 </div>
                 <p className="font-semibold text-gray-900 dark:text-white">
                   {wallet.name}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Số dư: {formatCurrency(wallet.balance || 0, wallet.currency, settings.numberFormat)}
+                  {t('wallet.balance')}: {formatCurrency(wallet.balance || 0, wallet.currency, settings.numberFormat)}
                 </p>
               </div>
             )}
@@ -121,11 +123,11 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Ngày
+                  {t('expenseDetail.date')}
                 </h3>
               </div>
               <p className="font-semibold text-gray-900 dark:text-white">
-                {new Date(expense.date).toLocaleDateString('vi-VN', {
+                {new Date(expense.date).toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
                   weekday: 'long',
                   day: '2-digit',
                   month: 'long',
@@ -133,7 +135,7 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
                 })}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {new Date(expense.date).toLocaleTimeString('vi-VN', {
+                {new Date(expense.date).toLocaleTimeString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
                   hour: '2-digit',
                   minute: '2-digit'
                 })}
@@ -145,7 +147,7 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Loại
+                  {t('expenseDetail.type')}
                 </h3>
               </div>
               <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold ${
@@ -156,7 +158,7 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
                 <span className={`w-2 h-2 rounded-full ${
                   expense.is_expense ? 'bg-red-500' : 'bg-green-500'
                 }`}></span>
-                {expense.is_expense ? 'Chi tiêu' : 'Thu nhập'}
+                {expense.is_expense ? t('expenseDetail.expense') : t('expenseDetail.income')}
               </span>
             </div>
           </div>
@@ -166,12 +168,12 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
             <div>
               <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide flex items-center gap-2">
                 <FileImage className="h-4 w-4" />
-                Hình ảnh
+                {t('expenseDetail.image')}
               </h3>
               <div className="bg-gray-50 dark:bg-slate-700 rounded-xl p-4">
                 <img
                   src={expense.image_url || expense.image_path}
-                  alt={expense.description || 'Giao dịch'}
+                  alt={expense.description || t('expense.title')}
                   className="w-full h-auto rounded-lg max-h-96 object-contain"
                   onError={(e) => {
                     e.target.style.display = 'none';
@@ -185,11 +187,11 @@ const ExpenseDetailModal = ({ expense, wallet, categoryData, onClose, onEdit, on
           <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
             <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
               <span>
-                Tạo lúc: {expense.created_at ? new Date(expense.created_at).toLocaleString('vi-VN') : 'N/A'}
+                {t('expenseDetail.createdAt')}: {expense.created_at ? new Date(expense.created_at).toLocaleString(i18n.language === 'vi' ? 'vi-VN' : 'en-US') : 'N/A'}
               </span>
               {expense.updated_at && expense.updated_at !== expense.created_at && (
                 <span>
-                  Cập nhật: {new Date(expense.updated_at).toLocaleString('vi-VN')}
+                  {t('expenseDetail.updatedAt')}: {new Date(expense.updated_at).toLocaleString(i18n.language === 'vi' ? 'vi-VN' : 'en-US')}
                 </span>
               )}
             </div>

@@ -22,19 +22,21 @@ import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import { parseAmountInput, formatAmountLive } from '../lib/numberFormat';
 import PageHeader from '../components/PageHeader';
-
-const FREQUENCY_OPTIONS = [
-  { value: '', label: 'Không định kỳ' },
-  { value: 'daily', label: 'Hàng ngày' },
-  { value: 'weekly', label: 'Hàng tuần' },
-  { value: 'monthly', label: 'Hàng tháng' },
-  { value: 'yearly', label: 'Hàng năm' },
-];
+import { useTranslation } from 'react-i18next';
 
 const Debts = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [debts, setDebts] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  const FREQUENCY_OPTIONS = [
+    { value: '', label: t('debt.noFrequency') },
+    { value: 'daily', label: t('debt.daily') },
+    { value: 'weekly', label: t('debt.weekly') },
+    { value: 'monthly', label: t('debt.monthly') },
+    { value: 'yearly', label: t('debt.yearly') },
+  ];
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState(null);
@@ -60,7 +62,7 @@ const Debts = () => {
       setDebts(response.data.debts || []);
     } catch (error) {
       console.error('Error fetching debts:', error);
-      toast({ type: 'error', message: 'Lỗi khi tải danh sách nợ' });
+      toast({ type: 'error', message: t('messages.errorOccurred') });
     } finally {
       setLoading(false);
     }
@@ -81,7 +83,7 @@ const Debts = () => {
       setPayments(response.data.payments || []);
     } catch (error) {
       console.error('Error fetching payment history:', error);
-      toast({ type: 'error', message: 'Lỗi khi tải lịch sử thanh toán' });
+      toast({ type: 'error', message: t('messages.errorOccurred') });
     }
   };
 
@@ -90,12 +92,12 @@ const Debts = () => {
     
     const parsedAmount = parseAmountInput(paymentAmountInput || String(paymentData.amount), { numberFormat: settings.numberFormat });
     if (!parsedAmount || parsedAmount <= 0 || isNaN(parsedAmount)) {
-      toast({ type: 'warning', message: 'Vui lòng nhập số tiền thanh toán lớn hơn 0' });
+      toast({ type: 'warning', message: t('transactionForm.amountMustBePositive') });
       return;
     }
 
     if (parsedAmount > selectedDebt.remaining_amount) {
-      toast({ type: 'warning', message: 'Số tiền thanh toán không được vượt quá số nợ còn lại' });
+      toast({ type: 'warning', message: t('debt.paymentExceedsRemaining') });
       return;
     }
 
@@ -105,7 +107,7 @@ const Debts = () => {
         amount: parsedAmount,
       });
       
-      toast({ type: 'success', message: 'Ghi nhận thanh toán thành công!' });
+      toast({ type: 'success', message: t('debt.recordPaymentSuccess') });
       setShowPaymentModal(false);
       setPaymentData({
         amount: 0,
@@ -117,20 +119,20 @@ const Debts = () => {
       fetchStatistics();
     } catch (error) {
       console.error('Error recording payment:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi ghi nhận thanh toán' });
+      toast({ type: 'error', message: error.response?.data?.error || t('messages.errorOccurred') });
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Bạn có chắc muốn xóa khoản nợ này?')) return;
+    if (!confirm(t('messages.confirmDelete'))) return;
     try {
       await debtsAPI.delete(id);
-      toast({ type: 'success', message: 'Xóa khoản nợ thành công!' });
+      toast({ type: 'success', message: t('messages.deleteSuccess') });
       fetchDebts();
       fetchStatistics();
     } catch (error) {
       console.error('Error deleting debt:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi xóa khoản nợ' });
+      toast({ type: 'error', message: error.response?.data?.error || t('messages.errorOccurred') });
     }
   };
 
@@ -173,7 +175,7 @@ const Debts = () => {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
         <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">Đang tải...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">{t('common.loading')}</p>
       </div>
     );
   }
@@ -189,8 +191,8 @@ const Debts = () => {
       <div className="flex items-center justify-between">
         <PageHeader 
           icon={CreditCard} 
-          title="Quản lý nợ"
-          subtitle={`${owingDebts.length + lendingDebts.length} khoản đang hoạt động`}
+          title={t('debt.title')}
+          subtitle={`${owingDebts.length + lendingDebts.length} ${t('debt.activeDebts')}`}
           iconColor="from-red-500 to-rose-600"
         />
         <button
@@ -198,7 +200,7 @@ const Debts = () => {
           className="px-4 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center gap-1.5"
         >
           <Plus className="h-4 w-4" />
-          <span>Tạo khoản nợ</span>
+          <span>{t('debt.addDebt')}</span>
         </button>
       </div>
 
@@ -213,18 +215,18 @@ const Debts = () => {
                   <TrendingDown className="h-6 w-6 text-white" />
                 </div>
                 <div className="text-right">
-                  <p className="text-red-100 text-xs font-medium">Tổng số nợ</p>
+                  <p className="text-red-100 text-xs font-medium">{t('debt.totalDebt')}</p>
                   <p className="text-2xl font-bold text-white mt-1">
                     {formatCurrency(statistics.total_debt, settings.currency)}
                   </p>
                 </div>
               </div>
               <div className="flex items-center justify-between text-xs text-red-100">
-                <span>{statistics.active_debts} khoản đang nợ</span>
+                <span>{statistics.active_debts} {t('debt.activeDebts')}</span>
                 {statistics.overdue_debts > 0 && (
                   <span className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full">
                     <AlertTriangle className="h-3 w-3" />
-                    {statistics.overdue_debts} quá hạn
+                    {statistics.overdue_debts} {t('debt.overdue')}
                   </span>
                 )}
               </div>
@@ -239,14 +241,14 @@ const Debts = () => {
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
                 <div className="text-right">
-                  <p className="text-green-100 text-xs font-medium">Tổng cho vay</p>
+                  <p className="text-green-100 text-xs font-medium">{t('debt.totalLending')}</p>
                   <p className="text-2xl font-bold text-white mt-1">
                     {formatCurrency(statistics.total_lending, settings.currency)}
                   </p>
                 </div>
               </div>
               <p className="text-xs text-green-100">
-                Người khác nợ bạn
+                {t('debt.othersOweYou')}
               </p>
             </div>
           </div>
@@ -259,14 +261,14 @@ const Debts = () => {
                   <DollarSign className="h-6 w-6 text-white" />
                 </div>
                 <div className="text-right">
-                  <p className="text-white/90 text-xs font-medium">Vị thế ròng</p>
+                  <p className="text-white/90 text-xs font-medium">{t('debt.netPosition')}</p>
                   <p className="text-2xl font-bold text-white mt-1">
                     {statistics.net_position >= 0 ? '+' : '-'}{formatCurrency(Math.abs(statistics.net_position), settings.currency)}
                   </p>
                 </div>
               </div>
               <p className="text-xs text-white/90">
-                {statistics.net_position >= 0 ? 'Được nợ nhiều hơn' : 'Đang nợ nhiều hơn'}
+                {statistics.net_position >= 0 ? t('debt.owedMore') : t('debt.owingMore')}
               </p>
             </div>
           </div>
@@ -278,7 +280,7 @@ const Debts = () => {
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
             <TrendingDown className="h-5 w-5 text-red-600" />
-            Các khoản đang nợ
+            {t('debt.owingDebts')}
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {owingDebts.map(debt => (
@@ -303,7 +305,7 @@ const Debts = () => {
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-green-600" />
-            Các khoản cho vay
+            {t('debt.lendingDebts')}
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {lendingDebts.map(debt => (
@@ -328,7 +330,7 @@ const Debts = () => {
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-600" />
-            Đã thanh toán
+            {t('debt.paid')}
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {paidDebts.map(debt => (
@@ -355,16 +357,16 @@ const Debts = () => {
             <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-rose-100 dark:from-red-900/30 dark:to-rose-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
               <CreditCard className="h-10 w-10 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Chưa có khoản nợ nào</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t('debt.noDebts')}</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Thêm khoản nợ để theo dõi và quản lý tốt hơn
+              {t('debt.addDebtToTrack')}
             </p>
             <button
               onClick={() => navigate('/debts/new')}
               className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all inline-flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
-              Thêm khoản nợ đầu tiên
+              {t('debt.addFirstDebt')}
             </button>
           </div>
         </div>
@@ -375,7 +377,7 @@ const Debts = () => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4" onClick={() => setShowPaymentModal(false)}>
           <div className="bg-white dark:bg-slate-800 w-full md:max-w-md md:rounded-2xl rounded-t-3xl md:rounded-b-2xl shadow-xl max-h-[90vh] md:max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 md:px-6 py-4 flex items-center justify-between z-10">
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Ghi nhận thanh toán</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">{t('debt.recordPayment')}</h3>
               <button 
                 onClick={() => setShowPaymentModal(false)} 
                 className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
@@ -395,12 +397,12 @@ const Debts = () => {
                     )}
                   </div>
                   <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Khoản nợ</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{t('debt.debt')}</p>
                     <p className="font-bold text-gray-900 dark:text-gray-100">{selectedDebt.name}</p>
                   </div>
                 </div>
                 <div className="border-t border-gray-300 dark:border-slate-600 pt-3 mt-3">
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Số nợ còn lại</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('debt.remainingAmount')}</p>
                   <p className={`text-2xl font-bold ${selectedDebt.is_lending ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                     {formatCurrency(selectedDebt.remaining_amount, settings.currency)}
                   </p>
@@ -409,7 +411,7 @@ const Debts = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Số tiền thanh toán <span className="text-red-500">*</span>
+                  {t('debt.paymentAmount')} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -433,7 +435,7 @@ const Debts = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Ngày thanh toán
+                  {t('debt.paymentDate')}
                 </label>
                 <div className="relative">
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -450,13 +452,13 @@ const Debts = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Ghi chú
+                  {t('expense.description')}
                 </label>
                 <textarea
                   value={paymentData.notes}
                   onChange={e => setPaymentData(prev => ({ ...prev, notes: e.target.value }))}
                   className="flex min-h-[100px] w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent transition-all resize-none"
-                  placeholder="Ghi chú về lần thanh toán này..."
+                  placeholder={t('debt.paymentNotesPlaceholder')}
                 />
               </div>
 
@@ -466,7 +468,7 @@ const Debts = () => {
                   onClick={() => setShowPaymentModal(false)}
                   className="flex-1 md:flex-none px-4 md:px-5 py-2.5 h-10 md:h-auto bg-white dark:bg-slate-800 border-2 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-slate-700 active:scale-95 transition-all text-sm md:text-base flex items-center justify-center"
                 >
-                  Hủy
+                  {t('common.cancel')}
                 </button>
                 <button 
                   type="submit" 
@@ -475,7 +477,7 @@ const Debts = () => {
                   } text-white rounded-lg font-semibold hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 text-sm md:text-base`}
                 >
                   <CheckCircle className="h-4 w-4" />
-                  Ghi nhận
+                  {t('debt.record')}
                 </button>
               </div>
             </form>
@@ -488,7 +490,7 @@ const Debts = () => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4" onClick={() => setShowPaymentHistory(false)}>
           <div className="bg-white dark:bg-slate-800 w-full md:max-w-2xl md:rounded-2xl rounded-t-3xl md:rounded-b-2xl shadow-xl max-h-[90vh] md:max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 md:px-6 py-4 flex items-center justify-between z-10">
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Lịch sử thanh toán</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">{t('debt.paymentHistory')}</h3>
               <button 
                 onClick={() => setShowPaymentHistory(false)} 
                 className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
@@ -508,19 +510,19 @@ const Debts = () => {
                     )}
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Khoản nợ</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{t('debt.debt')}</p>
                     <p className="font-bold text-gray-900 dark:text-gray-100 text-lg">{selectedDebt.name}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-300 dark:border-slate-600">
                   <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Tổng</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('common.total')}</p>
                     <p className="font-semibold text-gray-900 dark:text-gray-100">
                       {formatCurrency(selectedDebt.total_amount, settings.currency)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Còn lại</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('debt.remaining')}</p>
                     <p className={`font-bold ${selectedDebt.is_lending ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                       {formatCurrency(selectedDebt.remaining_amount, settings.currency)}
                     </p>
@@ -565,8 +567,8 @@ const Debts = () => {
                   <div className="w-16 h-16 bg-gray-200 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
                     <History className="h-8 w-8 text-gray-400 dark:text-gray-500" />
                   </div>
-                  <p className="text-gray-600 dark:text-gray-400 font-medium">Chưa có lịch sử thanh toán</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Ghi nhận thanh toán đầu tiên để theo dõi</p>
+                  <p className="text-gray-600 dark:text-gray-400 font-medium">{t('debt.noPaymentHistory')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{t('debt.recordFirstPayment')}</p>
                 </div>
               )}
             </div>
@@ -579,6 +581,7 @@ const Debts = () => {
 
 // Debt Card Component
 const DebtCard = ({ debt, onEdit, onDelete, onRecordPayment, onViewHistory, getProgressColor, getDaysUntil, settings, isPaid = false }) => {
+  const { t } = useTranslation();
   const daysUntil = getDaysUntil(debt.next_payment_date);
   const isOverdue = debt.is_overdue;
 
@@ -637,7 +640,7 @@ const DebtCard = ({ debt, onEdit, onDelete, onRecordPayment, onViewHistory, getP
           {/* Progress bar */}
           <div>
             <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
-              <span>Tiến độ thanh toán</span>
+              <span>{t('debt.paymentProgress')}</span>
               <span className="font-bold">{debt.progress_percentage.toFixed(1)}%</span>
             </div>
             <div className="relative w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
@@ -651,11 +654,11 @@ const DebtCard = ({ debt, onEdit, onDelete, onRecordPayment, onViewHistory, getP
           {/* Amounts */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-3">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Tổng số tiền</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('common.total')}</p>
               <p className="font-bold text-gray-900 dark:text-gray-100 text-sm">{formatCurrency(debt.total_amount, settings.currency)}</p>
             </div>
             <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-3">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Còn lại</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('debt.remaining')}</p>
               <p className={`font-bold text-sm ${debt.is_lending ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {formatCurrency(debt.remaining_amount, settings.currency)}
               </p>
@@ -666,7 +669,7 @@ const DebtCard = ({ debt, onEdit, onDelete, onRecordPayment, onViewHistory, getP
           {debt.interest_rate > 0 && (
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <DollarSign className="h-4 w-4" />
-              <span>Lãi suất: <strong className="text-gray-900 dark:text-gray-100">{debt.interest_rate}%/năm</strong></span>
+              <span>{t('debt.interestRate')}: <strong className="text-gray-900 dark:text-gray-100">{debt.interest_rate}%/năm</strong></span>
             </div>
           )}
 
@@ -682,14 +685,14 @@ const DebtCard = ({ debt, onEdit, onDelete, onRecordPayment, onViewHistory, getP
               <Calendar className="h-4 w-4" />
               <div className="flex-1">
                 <span>
-                  {isOverdue ? 'Quá hạn!' : 
-                   daysUntil === 0 ? 'Hôm nay' :
-                   daysUntil === 1 ? 'Ngày mai' :
-                   `Còn ${daysUntil} ngày`}
+                  {isOverdue ? t('debt.overdue') : 
+                   daysUntil === 0 ? t('debt.today') :
+                   daysUntil === 1 ? t('debt.tomorrow') :
+                   t('debt.daysRemaining', { count: daysUntil })}
                 </span>
                 {debt.next_payment_amount && (
                   <span className="block text-xs mt-0.5 opacity-90">
-                    Số tiền: {formatCurrency(debt.next_payment_amount, settings.currency)}
+                    {t('debt.amount')}: {formatCurrency(debt.next_payment_amount, settings.currency)}
                   </span>
                 )}
               </div>
@@ -700,7 +703,7 @@ const DebtCard = ({ debt, onEdit, onDelete, onRecordPayment, onViewHistory, getP
           {isPaid && (
             <div className="flex items-center gap-2 text-sm p-3 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">
               <CheckCircle className="h-4 w-4" />
-              <span>Đã thanh toán đầy đủ</span>
+              <span>{t('debt.fullyPaid')}</span>
             </div>
           )}
 
@@ -714,12 +717,12 @@ const DebtCard = ({ debt, onEdit, onDelete, onRecordPayment, onViewHistory, getP
                 } text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center justify-center gap-1.5`}
               >
                 <DollarSign className="h-4 w-4" />
-                Ghi nhận
+                {t('debt.record')}
               </button>
               <button
                 onClick={() => onViewHistory(debt)}
                 className="px-4 py-2.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-all flex items-center justify-center"
-                title="Lịch sử"
+                title={t('debt.paymentHistory')}
               >
                 <History className="h-4 w-4" />
               </button>

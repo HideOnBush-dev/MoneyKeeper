@@ -18,32 +18,34 @@ import { formatCurrency } from '../lib/utils';
 import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import PageHeader from '../components/PageHeader';
-
-const CATEGORIES = [
-  { value: 'food', label: 'Ăn uống', emoji: '🍔' },
-  { value: 'transport', label: 'Di chuyển', emoji: '🚗' },
-  { value: 'shopping', label: 'Mua sắm', emoji: '🛍️' },
-  { value: 'entertainment', label: 'Giải trí', emoji: '🎮' },
-  { value: 'health', label: 'Sức khỏe', emoji: '💊' },
-  { value: 'education', label: 'Giáo dục', emoji: '📚' },
-  { value: 'utilities', label: 'Tiện ích', emoji: '💡' },
-  { value: 'other', label: 'Khác', emoji: '📦' },
-];
-
-const FREQUENCIES = [
-  { value: 'daily', label: 'Hàng ngày', icon: '📅' },
-  { value: 'weekly', label: 'Hàng tuần', icon: '📆' },
-  { value: 'monthly', label: 'Hàng tháng', icon: '🗓️' },
-  { value: 'yearly', label: 'Hàng năm', icon: '📅' },
-];
+import { useTranslation } from 'react-i18next';
 
 const Recurring = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState([]);
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { settings } = useSettings();
+
+  const CATEGORIES = [
+    { value: 'food', label: t('categories.food'), emoji: '🍔' },
+    { value: 'transport', label: t('categories.transport'), emoji: '🚗' },
+    { value: 'shopping', label: t('categories.shopping'), emoji: '🛍️' },
+    { value: 'entertainment', label: t('categories.entertainment'), emoji: '🎮' },
+    { value: 'health', label: t('categories.health'), emoji: '💊' },
+    { value: 'education', label: t('categories.education'), emoji: '📚' },
+    { value: 'utilities', label: t('categories.utilities'), emoji: '💡' },
+    { value: 'other', label: t('categories.other'), emoji: '📦' },
+  ];
+
+  const FREQUENCIES = [
+    { value: 'daily', label: t('debt.daily'), icon: '📅' },
+    { value: 'weekly', label: t('debt.weekly'), icon: '📆' },
+    { value: 'monthly', label: t('debt.monthly'), icon: '🗓️' },
+    { value: 'yearly', label: t('debt.yearly'), icon: '📅' },
+  ];
 
   useEffect(() => {
     fetchTransactions();
@@ -65,7 +67,7 @@ const Recurring = () => {
       setTransactions(response.data.transactions || []);
     } catch (error) {
       console.error('Error fetching recurring transactions:', error);
-      toast({ type: 'error', message: 'Lỗi khi tải giao dịch định kỳ' });
+      toast({ type: 'error', message: t('messages.errorOccurred') });
     } finally {
       setLoading(false);
     }
@@ -73,36 +75,36 @@ const Recurring = () => {
 
 
   const handleDelete = async (id) => {
-    if (!confirm('Bạn có chắc muốn xóa giao dịch định kỳ này?')) return;
+    if (!confirm(t('messages.confirmDelete'))) return;
     try {
       await recurringAPI.delete(id);
-      toast({ type: 'success', message: 'Xóa giao dịch định kỳ thành công!' });
+      toast({ type: 'success', message: t('messages.deleteSuccess') });
       fetchTransactions();
     } catch (error) {
       console.error('Error deleting recurring transaction:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi xóa giao dịch định kỳ' });
+      toast({ type: 'error', message: error.response?.data?.error || t('messages.errorOccurred') });
     }
   };
 
   const handleSkip = async (id) => {
     try {
       await recurringAPI.skip(id);
-      toast({ type: 'success', message: 'Đã bỏ qua lần thanh toán này!' });
+      toast({ type: 'success', message: t('recurring.skipSuccess') });
       fetchTransactions();
     } catch (error) {
       console.error('Error skipping recurring transaction:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi bỏ qua giao dịch' });
+      toast({ type: 'error', message: error.response?.data?.error || t('messages.errorOccurred') });
     }
   };
 
   const handleExecute = async (id) => {
     try {
       await recurringAPI.execute(id);
-      toast({ type: 'success', message: 'Đã thực thi giao dịch và tạo expense!' });
+      toast({ type: 'success', message: t('recurring.executeSuccess') });
       fetchTransactions();
     } catch (error) {
       console.error('Error executing recurring transaction:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi thực thi giao dịch' });
+      toast({ type: 'error', message: error.response?.data?.error || t('messages.errorOccurred') });
     }
   };
 
@@ -130,7 +132,7 @@ const Recurring = () => {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
         <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">Đang tải...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">{t('common.loading')}</p>
       </div>
     );
   }
@@ -146,8 +148,8 @@ const Recurring = () => {
       <div className="flex items-center justify-between">
         <PageHeader 
           icon={Repeat} 
-          title="Giao dịch định kỳ"
-          subtitle={`${activeTransactions.length} giao dịch đang hoạt động`}
+          title={t('recurring.title')}
+          subtitle={`${activeTransactions.length} ${t('recurring.activeTransactions')}`}
           iconColor="from-purple-500 to-indigo-600"
         />
         <button
@@ -155,7 +157,7 @@ const Recurring = () => {
           className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center gap-1.5"
         >
           <Plus className="h-4 w-4" />
-          <span>Tạo giao dịch</span>
+          <span>{t('recurring.addRecurring')}</span>
         </button>
       </div>
 
@@ -165,11 +167,11 @@ const Recurring = () => {
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
             <h3 className="font-bold text-yellow-900 dark:text-yellow-200">
-              {dueTransactions.length} giao dịch đến hạn
+              {t('recurring.dueTransactions', { count: dueTransactions.length })}
             </h3>
           </div>
           <p className="text-sm text-yellow-800 dark:text-yellow-300">
-            Có {dueTransactions.length} giao dịch định kỳ đã đến hạn thanh toán
+            {t('recurring.dueTransactionsMessage', { count: dueTransactions.length })}
           </p>
         </div>
       )}
@@ -179,7 +181,7 @@ const Recurring = () => {
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-600" />
-            Giao dịch đang hoạt động
+            {t('recurring.activeTransactions')}
           </h2>
           <div className="space-y-4">
             {activeTransactions.map((transaction) => {
@@ -236,7 +238,7 @@ const Recurring = () => {
                               {isDue && (
                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
                                   <AlertTriangle className="h-3 w-3" />
-                                  Đến hạn
+                                  {t('recurring.due')}
                                 </span>
                               )}
                             </div>
@@ -249,14 +251,14 @@ const Recurring = () => {
                                 <button
                                   onClick={() => handleExecute(transaction.id)}
                                   className="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-                                  title="Thực thi ngay"
+                                  title={t('recurring.executeNow')}
                                 >
                                   <Play className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => handleSkip(transaction.id)}
                                   className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                                  title="Bỏ qua"
+                                  title={t('recurring.skip')}
                                 >
                                   <SkipForward className="h-4 w-4" />
                                 </button>
@@ -265,14 +267,14 @@ const Recurring = () => {
                             <button
                               onClick={() => handleEdit(transaction)}
                               className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                              title="Chỉnh sửa"
+                              title={t('common.edit')}
                             >
                               <Edit className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(transaction.id)}
                               className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                              title="Xóa"
+                              title={t('common.delete')}
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -328,17 +330,17 @@ const Recurring = () => {
                         }`}>
                           {daysUntil !== null 
                             ? daysUntil < 0 
-                              ? `Quá ${Math.abs(daysUntil)} ngày`
+                              ? t('recurring.overdueDays', { count: Math.abs(daysUntil) })
                               : daysUntil === 0
-                              ? 'Hôm nay'
-                              : `${daysUntil} ngày`
+                              ? t('debt.today')
+                              : t('recurring.daysUntil', { count: daysUntil })
                             : 'N/A'}
                         </p>
                       </div>
 
                       {/* Wallet */}
                       <div className="p-3 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700/50 dark:to-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-600">
-                        <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Ví</p>
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">{t('wallet.title')}</p>
                         <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 truncate">
                           {wallets.find(w => w.id === transaction.wallet_id)?.name || 'N/A'}
                         </p>
@@ -350,7 +352,7 @@ const Recurring = () => {
                       <div className="mt-4 pt-3 border-t border-gray-200 dark:border-slate-700 flex items-center gap-2">
                         <div className="flex items-center gap-2 px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-xs font-medium">
                           <CheckCircle className="h-3.5 w-3.5" />
-                          <span>Tự động tạo expense khi đến hạn</span>
+                          <span>{t('recurring.autoCreate')}</span>
                         </div>
                       </div>
                     )}
@@ -367,7 +369,7 @@ const Recurring = () => {
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
             <Pause className="h-5 w-5 text-gray-600" />
-            Giao dịch đã tạm dừng
+            {t('recurring.paused')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {inactiveTransactions.map((transaction) => {
@@ -407,7 +409,7 @@ const Recurring = () => {
                       onClick={() => handleEdit(transaction)}
                       className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      Kích hoạt lại
+                      {t('recurring.reactivate')}
                     </button>
                   </div>
                 </div>
@@ -425,14 +427,14 @@ const Recurring = () => {
               <Repeat className="h-12 w-12 text-gray-400 dark:text-gray-500" />
             </div>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Chưa có giao dịch định kỳ</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Tạo giao dịch định kỳ đầu tiên của bạn (Netflix, điện thoại, gym, v.v.)</p>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{t('recurring.noRecurring')}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('recurring.createFirstRecurring')}</p>
           <button
             onClick={() => navigate('/recurring/new')}
             className="px-6 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors inline-flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            <span>Tạo giao dịch</span>
+            <span>{t('recurring.addRecurring')}</span>
           </button>
         </div>
       )}

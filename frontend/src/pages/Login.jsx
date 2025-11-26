@@ -3,8 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, User, Lock, ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const Login = () => {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
@@ -22,7 +24,7 @@ const Login = () => {
       await login(username, password, remember);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.');
+      setError(err.response?.data?.message || t('auth.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -89,9 +91,9 @@ const Login = () => {
               <Wallet className="h-12 w-12 text-white" />
             </div>
             <h1 className="text-4xl font-bold text-white mb-2 font-display">
-              Money Keeper
+              {t('app.name')}
             </h1>
-            <p className="text-white/80 text-sm">Quản lý tài chính thông minh với AI</p>
+            <p className="text-white/80 text-sm">{t('app.slogan')}</p>
           </motion.div>
 
           {/* Error Message */}
@@ -114,7 +116,7 @@ const Login = () => {
               transition={{ delay: 0.3 }}
             >
               <label className="block text-sm font-medium text-white/90 mb-2">
-                Tên đăng nhập
+                {t('auth.username')}
               </label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">
@@ -126,7 +128,7 @@ const Login = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   className="w-full pl-12 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent backdrop-blur-xl transition-all"
-                  placeholder="Nhập tên đăng nhập"
+                  placeholder={t('auth.enterUsername')}
                 />
               </div>
             </motion.div>
@@ -138,7 +140,7 @@ const Login = () => {
               transition={{ delay: 0.4 }}
             >
               <label className="block text-sm font-medium text-white/90 mb-2">
-                Mật khẩu
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">
@@ -150,7 +152,7 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="w-full pl-12 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent backdrop-blur-xl transition-all"
-                  placeholder="Nhập mật khẩu"
+                  placeholder={t('auth.enterPassword')}
                 />
               </div>
             </motion.div>
@@ -169,27 +171,27 @@ const Login = () => {
               {loading ? (
                 <>
                   <div className="h-5 w-5 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Đang đăng nhập...</span>
+                  <span>{t('auth.loggingIn')}</span>
                 </>
               ) : (
                 <>
-                  <span>Đăng nhập</span>
+                  <span>{t('auth.login')}</span>
                   <ArrowRight size={20} />
                 </>
               )}
             </motion.button>
 
-          {/* Remember me */}
-          <div className="mt-4 flex items-center justify-center gap-2 text-white/90">
-            <input
-              id="remember"
-              type="checkbox"
-              checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
-              className="h-4 w-4 rounded border-white/40 bg-white/10"
-            />
-            <label htmlFor="remember" className="text-sm select-none">Ghi nhớ đăng nhập</label>
-          </div>
+            {/* Remember me */}
+            <div className="mt-4 flex items-center justify-center gap-2 text-white/90">
+              <input
+                id="remember"
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="h-4 w-4 rounded border-white/40 bg-white/10"
+              />
+              <label htmlFor="remember" className="text-sm select-none">{t('auth.rememberMe')}</label>
+            </div>
           </form>
 
           {/* Register Link */}
@@ -200,12 +202,12 @@ const Login = () => {
             className="mt-6 text-center"
           >
             <p className="text-white/80 text-sm">
-              Chưa có tài khoản?{' '}
+              {t('auth.noAccount')}{' '}
               <Link
                 to="/register"
                 className="font-bold text-white hover:text-white/80 transition-colors underline underline-offset-4"
               >
-                Đăng ký ngay
+                {t('auth.signUpNow')}
               </Link>
             </p>
           </motion.div>

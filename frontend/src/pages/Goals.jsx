@@ -19,11 +19,13 @@ import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/numberFormat';
 import PageHeader from '../components/PageHeader';
+import { useTranslation } from 'react-i18next';
 
 const GOAL_ICONS = ['🎯', '💰', '🏠', '🚗', '✈️', '💍', '📱', '💻', '🎓', '🏥', '🎁', '💎'];
 const GOAL_COLORS = ['blue', 'green', 'purple', 'pink', 'orange', 'red', 'indigo', 'cyan', 'teal', 'yellow', 'rose', 'violet'];
 
 const Goals = () => {
+  const { t } = useTranslation();
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -59,7 +61,7 @@ const Goals = () => {
       setGoals(response.data.goals || []);
     } catch (error) {
       console.error('Error fetching goals:', error);
-      toast({ type: 'error', message: 'Lỗi khi tải mục tiêu' });
+      toast({ type: 'error', message: t('messages.errorOccurred') });
     } finally {
       setLoading(false);
     }
@@ -82,12 +84,12 @@ const Goals = () => {
     
     const parsedTarget = parseAmountInput(targetAmountInput || String(formData.target_amount), { numberFormat: settings.numberFormat });
     if (!parsedTarget || parsedTarget <= 0 || isNaN(parsedTarget)) {
-      toast({ type: 'warning', message: 'Vui lòng nhập số tiền mục tiêu lớn hơn 0' });
+      toast({ type: 'warning', message: t('transactionForm.amountMustBePositive') });
       return;
     }
     
     if (!formData.name.trim()) {
-      toast({ type: 'warning', message: 'Vui lòng nhập tên mục tiêu' });
+      toast({ type: 'warning', message: t('goals.enterGoalName') });
       return;
     }
 
@@ -102,10 +104,10 @@ const Goals = () => {
       
       if (selectedGoal) {
         await goalsAPI.update(selectedGoal.id, payload);
-        toast({ type: 'success', message: 'Cập nhật mục tiêu thành công!' });
+        toast({ type: 'success', message: t('messages.updateSuccess') });
       } else {
         await goalsAPI.create(payload);
-        toast({ type: 'success', message: 'Tạo mục tiêu thành công!' });
+        toast({ type: 'success', message: t('goals.createSuccess') });
       }
       
       setShowModal(false);
@@ -113,39 +115,39 @@ const Goals = () => {
       fetchGoals();
     } catch (error) {
       console.error('Error saving goal:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi lưu mục tiêu' });
+      toast({ type: 'error', message: error.response?.data?.error || t('messages.errorOccurred') });
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Bạn có chắc muốn xóa mục tiêu này?')) return;
+    if (!confirm(t('messages.confirmDelete'))) return;
     try {
       await goalsAPI.delete(id);
-      toast({ type: 'success', message: 'Xóa mục tiêu thành công!' });
+      toast({ type: 'success', message: t('messages.deleteSuccess') });
       fetchGoals();
     } catch (error) {
       console.error('Error deleting goal:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi xóa mục tiêu' });
+      toast({ type: 'error', message: error.response?.data?.error || t('messages.errorOccurred') });
     }
   };
 
   const handleAddAmount = async () => {
     const parsedAmount = parseAmountInput(amountInput || String(addAmount), { numberFormat: settings.numberFormat });
     if (!parsedAmount || parsedAmount <= 0 || isNaN(parsedAmount)) {
-      toast({ type: 'warning', message: 'Vui lòng nhập số tiền lớn hơn 0' });
+      toast({ type: 'warning', message: t('transactionForm.amountMustBePositive') });
       return;
     }
 
     try {
       await goalsAPI.addAmount(selectedGoal.id, parsedAmount);
-      toast({ type: 'success', message: 'Thêm tiền vào mục tiêu thành công!' });
+      toast({ type: 'success', message: t('goals.addAmountSuccess') });
       setShowAddAmountModal(false);
       setAddAmount(0);
       setAmountInput('');
       fetchGoals();
     } catch (error) {
       console.error('Error adding amount:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi thêm tiền' });
+      toast({ type: 'error', message: error.response?.data?.error || t('messages.errorOccurred') });
     }
   };
 
@@ -245,8 +247,8 @@ const Goals = () => {
       <div className="flex items-center justify-between">
         <PageHeader 
           icon={Target} 
-          title="Mục tiêu tiết kiệm"
-          subtitle={`${activeGoals.length} mục tiêu đang hoạt động`}
+          title={t('goals.title')}
+          subtitle={`${activeGoals.length} ${t('goals.activeGoals')}`}
           iconColor="from-blue-500 to-indigo-600"
         />
         <button
@@ -257,7 +259,7 @@ const Goals = () => {
           className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center gap-1.5"
         >
           <Plus className="h-4 w-4" />
-          <span>Tạo mục tiêu</span>
+          <span>{t('goals.addGoal')}</span>
         </button>
       </div>
 
@@ -265,20 +267,20 @@ const Goals = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           {
-            title: 'Tổng mục tiêu',
+            title: t('goals.totalTarget'),
             value: totalTarget,
             icon: Target,
             gradient: 'from-blue-500 to-indigo-500',
           },
           {
-            title: 'Đã tiết kiệm',
+            title: t('goals.saved'),
             value: totalCurrent,
             icon: TrendingUp,
             gradient: 'from-green-500 to-emerald-500',
             percentage: totalProgress,
           },
           {
-            title: 'Còn lại',
+            title: t('goals.remaining'),
             value: totalTarget - totalCurrent,
             icon: Wallet,
             gradient: 'from-purple-500 to-indigo-500',
@@ -317,7 +319,7 @@ const Goals = () => {
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-blue-600" />
-            Mục tiêu đang thực hiện
+            {t('goals.activeGoals')}
           </h2>
           <div className="space-y-4">
             {activeGoals.map((goal) => {
@@ -352,11 +354,11 @@ const Goals = () => {
                           <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {daysRemaining !== null && daysRemaining > 0 ? (
-                              <span>Còn {daysRemaining} ngày</span>
+                              <span>{t('goals.daysRemaining', { count: daysRemaining })}</span>
                             ) : daysRemaining === 0 ? (
-                              <span className="text-red-600 dark:text-red-400 font-semibold">Hết hạn hôm nay</span>
+                              <span className="text-red-600 dark:text-red-400 font-semibold">{t('goals.expiresToday')}</span>
                             ) : (
-                              <span className="text-red-600 dark:text-red-400">Đã quá hạn</span>
+                              <span className="text-red-600 dark:text-red-400">{t('goals.overdue')}</span>
                             )}
                           </p>
                         )}
@@ -369,7 +371,7 @@ const Goals = () => {
                         className="px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg text-sm font-medium hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors flex items-center gap-1.5"
                       >
                         <Plus className="h-3.5 w-3.5" />
-                        <span>Thêm tiền</span>
+                        <span>{t('goals.addAmount')}</span>
                       </button>
                       <button
                         onClick={() => handleEdit(goal)}
@@ -407,14 +409,14 @@ const Goals = () => {
                   {/* Stats */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Còn lại</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('goals.remaining')}</p>
                       <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                         {formatCurrency(goal.remaining_amount, settings.currency, settings.numberFormat)}
                       </p>
                     </div>
                     {goal.wallet_id && (
                       <div className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Liên kết ví</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('goals.linkedWallet')}</p>
                         <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                           {wallets.find(w => w.id === goal.wallet_id)?.name || 'N/A'}
                         </p>
@@ -433,7 +435,7 @@ const Goals = () => {
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-600" />
-            Mục tiêu đã đạt được
+            {t('goals.achieved')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {achievedGoals.map((goal) => (
@@ -449,7 +451,7 @@ const Goals = () => {
                     <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate">{goal.name}</h3>
                     {goal.achieved_at && (
                       <p className="text-xs text-gray-500 dark:text-gray-500">
-                        Đạt được: {new Date(goal.achieved_at).toLocaleDateString('vi-VN')}
+                        {t('goals.achievedAt')}: {new Date(goal.achieved_at).toLocaleDateString()}
                       </p>
                     )}
                   </div>
@@ -480,8 +482,8 @@ const Goals = () => {
               <Target className="h-12 w-12 text-gray-400 dark:text-gray-500" />
             </div>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Chưa có mục tiêu</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Tạo mục tiêu tiết kiệm đầu tiên của bạn</p>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{t('goals.noGoals')}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('goals.createFirstGoal')}</p>
           <button
             onClick={() => {
               resetForm();
@@ -490,7 +492,7 @@ const Goals = () => {
             className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            <span>Tạo mục tiêu</span>
+            <span>{t('goals.addGoal')}</span>
           </button>
         </div>
       )}
@@ -507,7 +509,7 @@ const Goals = () => {
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                {selectedGoal ? 'Chỉnh sửa mục tiêu' : 'Tạo mục tiêu mới'}
+                {selectedGoal ? t('goals.editGoal') : t('goals.addNewGoal')}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
@@ -518,19 +520,19 @@ const Goals = () => {
             </div>
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tên mục tiêu *</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('goals.goalName')} *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all font-semibold"
-                  placeholder="Ví dụ: Quỹ du lịch"
+                  placeholder={t('goals.goalNamePlaceholder')}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Số tiền mục tiêu *</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('goals.targetAmount')} *</label>
                 <div className="relative">
                   <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
                   <input
@@ -560,7 +562,7 @@ const Goals = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Hạn chót (tùy chọn)</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('goals.deadline')}</label>
                 <div className="relative">
                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500 z-10" />
                   <input
@@ -574,18 +576,18 @@ const Goals = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Mô tả (tùy chọn)</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('goals.description')}</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all font-semibold"
                   rows="3"
-                  placeholder="Thêm mô tả cho mục tiêu..."
+                  placeholder={t('goals.descriptionPlaceholder')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Icon</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('goals.icon')}</label>
                 <div className="grid grid-cols-6 gap-2">
                   {GOAL_ICONS.map((icon) => (
                     <button
@@ -605,7 +607,7 @@ const Goals = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Màu sắc</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('goals.color')}</label>
                 <div className="grid grid-cols-6 gap-2">
                   {GOAL_COLORS.map((color) => (
                     <button
@@ -621,13 +623,13 @@ const Goals = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Liên kết với ví (tùy chọn)</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('goals.linkWallet')}</label>
                 <select
                   value={formData.wallet_id || ''}
                   onChange={(e) => setFormData({ ...formData, wallet_id: e.target.value ? parseInt(e.target.value) : null })}
                   className="w-full px-4 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all font-semibold appearance-none"
                 >
-                  <option value="">Không liên kết</option>
+                  <option value="">{t('goals.noLink')}</option>
                   {wallets.map((wallet) => (
                     <option key={wallet.id} value={wallet.id}>{wallet.name}</option>
                   ))}
@@ -640,14 +642,14 @@ const Goals = () => {
                   onClick={() => setShowModal(false)}
                   className="flex-1 px-6 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
-                  Hủy
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2"
                 >
                   <CheckCircle className="h-4 w-4" />
-                  <span>{selectedGoal ? 'Cập nhật' : 'Tạo mục tiêu'}</span>
+                  <span>{selectedGoal ? t('common.update') : t('goals.addGoal')}</span>
                 </button>
               </div>
             </form>
@@ -667,7 +669,7 @@ const Goals = () => {
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Thêm tiền vào "{selectedGoal.name}"
+                {t('goals.addAmountToGoal', { name: selectedGoal.name })}
               </h2>
               <button
                 onClick={() => setShowAddAmountModal(false)}
@@ -679,7 +681,7 @@ const Goals = () => {
             
             <div className="mb-6">
               <div className="p-4 bg-gray-50 dark:bg-slate-700/50 rounded-xl mb-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Tiến độ hiện tại</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('goals.currentProgress')}</p>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
                     {formatCurrency(selectedGoal.current_amount, settings.currency, settings.numberFormat)} / {formatCurrency(selectedGoal.target_amount, settings.currency, settings.numberFormat)}
@@ -698,7 +700,7 @@ const Goals = () => {
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Số tiền thêm vào *</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('goals.amountToAdd')} *</label>
               <div className="relative">
                 <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
                 <input
@@ -733,14 +735,14 @@ const Goals = () => {
                 onClick={() => setShowAddAmountModal(false)}
                 className="flex-1 px-6 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
               >
-                Hủy
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleAddAmount}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                <span>Thêm tiền</span>
+                <span>{t('goals.addAmount')}</span>
               </button>
             </div>
           </div>

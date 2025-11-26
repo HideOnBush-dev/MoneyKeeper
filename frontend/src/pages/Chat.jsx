@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Send, Bot, User, Sparkles, Heart, Zap, Brain, 
@@ -9,25 +9,10 @@ import {
 import { chatSocket } from "../services/socket";
 import { chatAPI, expenseAPI, budgetAPI, walletAPI } from "../services/api";
 import MarkdownRenderer from "../components/MarkdownRenderer";
-
-const PERSONALITIES = [
-  { id: "friendly", name: "Thân thiện", icon: Heart, color: "from-pink-500 to-rose-500", accent: "bg-pink-100 text-pink-600" },
-  { id: "professional", name: "Chuyên nghiệp", icon: Brain, color: "from-blue-500 to-indigo-500", accent: "bg-blue-100 text-blue-600" },
-  { id: "motivational", name: "Động viên", icon: Zap, color: "from-amber-500 to-orange-500", accent: "bg-amber-100 text-amber-600" },
-  { id: "casual", name: "Thoải mái", icon: Sparkles, color: "from-purple-500 to-pink-500", accent: "bg-purple-100 text-purple-600" },
-  { id: "grumpy", name: "Cục xúc", icon: Flame, color: "from-red-600 to-orange-600", accent: "bg-red-100 text-red-600" },
-];
-
-const QUICK_ACTIONS = [
-  { icon: TrendingUp, text: "Phân tích chi tiêu tháng này", label: "Phân tích chi tiêu tháng này", color: "from-blue-500 to-cyan-500", emoji: "📊" },
-  { icon: PieChart, text: "Tổng quan tài chính của tôi", label: "Tổng quan tài chính của tôi", color: "from-purple-500 to-pink-500", emoji: "💰" },
-  { icon: Lightbulb, text: "Đánh giá hiệu quả ngân sách", label: "Đánh giá hiệu quả ngân sách", color: "from-amber-500 to-orange-500", emoji: "🧮" },
-  { icon: Sparkles, text: "Lên kế hoạch ngân sách", label: "Lên kế hoạch ngân sách", color: "from-green-500 to-emerald-500", emoji: "✨" },
-  { icon: BarChart3, text: "Xu hướng thu - chi 6 tháng", label: "Xu hướng thu - chi 6 tháng", color: "from-indigo-500 to-purple-500", emoji: "📈" },
-  { icon: Star, text: "Phân bổ chi tiêu", label: "Phân bổ chi tiêu", color: "from-rose-500 to-pink-500", emoji: "🧩" },
-];
+import { useTranslation } from "react-i18next";
 
 const Chat = () => {
+  const { t, i18n } = useTranslation();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,6 +28,39 @@ const Chat = () => {
   const chatEndRef = useRef(null);
   const textareaRef = useRef(null);
   const recognitionRef = useRef(null);
+
+  const personalities = useMemo(() => ([
+    { id: "friendly", name: t('chat.personality.friendly'), icon: Heart, color: "from-pink-500 to-rose-500", accent: "bg-pink-100 text-pink-600" },
+    { id: "professional", name: t('chat.personality.professional'), icon: Brain, color: "from-blue-500 to-indigo-500", accent: "bg-blue-100 text-blue-600" },
+    { id: "motivational", name: t('chat.personality.motivational'), icon: Zap, color: "from-amber-500 to-orange-500", accent: "bg-amber-100 text-amber-600" },
+    { id: "casual", name: t('chat.personality.casual'), icon: Sparkles, color: "from-purple-500 to-pink-500", accent: "bg-purple-100 text-purple-600" },
+    { id: "grumpy", name: t('chat.personality.grumpy'), icon: Flame, color: "from-red-600 to-orange-600", accent: "bg-red-100 text-red-600" },
+  ]), [t]);
+
+  const quickActions = useMemo(() => ([
+    { icon: TrendingUp, text: t('chat.quickActions.analyzeSpending'), label: t('chat.quickActions.analyzeSpending'), color: "from-blue-500 to-cyan-500", emoji: "📊" },
+    { icon: PieChart, text: t('chat.quickActions.financialOverview'), label: t('chat.quickActions.financialOverview'), color: "from-purple-500 to-pink-500", emoji: "💰" },
+    { icon: Lightbulb, text: t('chat.quickActions.budgetEfficiency'), label: t('chat.quickActions.budgetEfficiency'), color: "from-amber-500 to-orange-500", emoji: "🧮" },
+    { icon: Sparkles, text: t('chat.quickActions.planBudget'), label: t('chat.quickActions.planBudget'), color: "from-green-500 to-emerald-500", emoji: "✨" },
+    { icon: BarChart3, text: t('chat.quickActions.trends'), label: t('chat.quickActions.trends'), color: "from-indigo-500 to-purple-500", emoji: "📈" },
+    { icon: Star, text: t('chat.quickActions.allocation'), label: t('chat.quickActions.allocation'), color: "from-rose-500 to-pink-500", emoji: "🧩" },
+  ]), [t]);
+
+  const slashCommands = useMemo(() => ([
+    { cmd: '/help', desc: t('chat.commands.help') },
+    { cmd: '/add', desc: t('chat.commands.add') },
+    { cmd: '/edit', desc: t('chat.commands.edit') },
+    { cmd: '/budget', desc: t('chat.commands.budget') },
+    { cmd: '/goal', desc: t('chat.commands.goal') },
+    { cmd: '/balance', desc: t('chat.commands.balance') },
+    { cmd: '/spending', desc: t('chat.commands.spending') },
+    { cmd: '/alerts', desc: t('chat.commands.alerts') },
+    { cmd: '/remember', desc: t('chat.commands.remember') },
+    { cmd: '/recall', desc: t('chat.commands.recall') },
+    { cmd: '/trends', desc: t('chat.commands.trends') },
+    { cmd: '/allocation', desc: t('chat.commands.allocation') },
+    { cmd: '/efficiency', desc: t('chat.commands.efficiency') },
+  ]), [t]);
 
   useEffect(() => {
     // Connect to socket
@@ -76,7 +94,7 @@ const Chat = () => {
       console.error('Socket error:', error);
       setMessages((prev) => [...prev, { 
         role: "ai", 
-        text: error.data || "Đã xảy ra lỗi khi xử lý tin nhắn.",
+        text: error.data || t('chat.errorProcessing'),
         timestamp: new Date(),
         isError: true
       }]);
@@ -111,7 +129,7 @@ const Chat = () => {
           }));
           setMessages(msgs.length ? msgs : [{
             role: 'ai',
-            text: 'Xin chào! Mình là MoneyKeeper AI, trợ lý tài chính của bạn! 🤗 Bạn muốn mình giúp gì hôm nay?',
+            text: t('chat.greeting'),
             timestamp: new Date(),
           }]);
         } else {
@@ -124,7 +142,7 @@ const Chat = () => {
           }
           setMessages([{
             role: 'ai',
-            text: 'Xin chào! Mình là MoneyKeeper AI, trợ lý tài chính của bạn! 🤗 Bạn muốn mình giúp gì hôm nay?',
+            text: t('chat.greeting'),
             timestamp: new Date(),
           }]);
         }
@@ -182,7 +200,7 @@ const Chat = () => {
       console.error('Error sending message:', error);
       setMessages((prev) => [...prev, { 
         role: "ai", 
-        text: "Không thể gửi tin nhắn. Vui lòng kiểm tra kết nối.",
+        text: t('chat.cannotSend'),
         timestamp: new Date(),
         isError: true
       }]);
@@ -193,23 +211,6 @@ const Chat = () => {
   const handleQuickAction = (text) => {
     sendMessage(text);
   };
-
-  // Slash commands
-  const SLASH_COMMANDS = [
-    { cmd: '/help', desc: 'Hiển thị trợ giúp lệnh' },
-    { cmd: '/add', desc: 'Thêm giao dịch. Ví dụ: /add amount=120000 category="Ăn uống" note="Bữa trưa" date=2025-11-12 wallet="Ví chính"' },
-    { cmd: '/edit', desc: 'Sửa giao dịch. Ví dụ: /edit id=123 amount=150000 note="điều chỉnh"' },
-    { cmd: '/budget', desc: 'Tạo ngân sách. Ví dụ: /budget month=2025-11 category="Ăn uống" limit=3000000' },
-    { cmd: '/goal', desc: 'Tạo mục tiêu. Ví dụ: /goal name="Quỹ du lịch" target=20000000 due=2026-06-01' },
-    { cmd: '/balance', desc: 'Xem tổng số dư các ví' },
-    { cmd: '/spending', desc: 'Thống kê chi tiêu. Ví dụ: /spending month=2025-11' },
-    { cmd: '/alerts', desc: 'Xem cảnh báo ngân sách' },
-    { cmd: '/remember', desc: 'Ghi nhớ key/value. Ví dụ: /remember key="thành phố" value="Đà Nẵng"' },
-    { cmd: '/recall', desc: 'Truy xuất. Ví dụ: /recall key="thành phố"' },
-    { cmd: '/trends', desc: 'Xu hướng thu - chi. Ví dụ: /trends months=6' },
-    { cmd: '/allocation', desc: 'Phân bổ chi tiêu. Ví dụ: /allocation month=2025-11' },
-    { cmd: '/efficiency', desc: 'Hiệu quả ngân sách. Ví dụ: /efficiency month=2025-11' },
-  ];
 
   const addSystemMessage = (text, sources = null) => {
     setMessages((prev) => [...prev, {
@@ -264,8 +265,8 @@ const Chat = () => {
     try {
       switch (command) {
         case '/help': {
-          const help = SLASH_COMMANDS.map(c => `${c.cmd} — ${c.desc}`).join('\n');
-          addSystemMessage(`Các lệnh hỗ trợ:\n${help}`);
+          const help = slashCommands.map(c => `${c.cmd} — ${c.desc}`).join('\n');
+          addSystemMessage(`${t('chat.commands.helpTitle')}:\n${help}`);
           return true;
         }
         case '/add': {
@@ -280,20 +281,21 @@ const Chat = () => {
             payload.wallet_id = await resolveWalletIdByName(args.wallet);
           }
           await expenseAPI.create(payload);
-          addSystemMessage(`Đã thêm giao dịch ${Intl.NumberFormat('vi-VN').format(payload.amount)} ₫ cho "${payload.category}" (${payload.note || 'không ghi chú'}).`, [
-            { label: 'Xem chi tiêu', route: '/expenses' }
+          const formattedAmount = new Intl.NumberFormat(i18n.language === 'vi' ? 'vi-VN' : 'en-US').format(payload.amount);
+          addSystemMessage(t('chat.transactionAdded', { amount: formattedAmount, category: payload.category, note: payload.note || t('chat.noNote') }), [
+            { label: t('expense.viewExpenses'), route: '/expenses' }
           ]);
           return true;
         }
         case '/edit': {
           const id = args.id;
-          if (!id) throw new Error('Thiếu id');
+          if (!id) throw new Error(t('chat.missingId'));
           const update = { ...args };
           delete update.id;
           if (update.amount) update.amount = numberOr(update.amount, null);
           await expenseAPI.update(id, update);
-          addSystemMessage(`Đã cập nhật giao dịch #${id}.`, [
-            { label: 'Xem chi tiêu', route: '/expenses' }
+          addSystemMessage(t('chat.transactionUpdated', { id }), [
+            { label: t('expense.title'), route: '/expenses' }
           ]);
           return true;
         }
@@ -324,12 +326,12 @@ const Chat = () => {
           const amount = numberOr(args.limit || args.amount, 0);
           
           if (!amount || amount <= 0) {
-            addSystemMessage('Lỗi: Số tiền ngân sách phải lớn hơn 0.');
+            addSystemMessage(t('chat.budgetAmountError'));
             return true;
           }
           
           if (!args.category) {
-            addSystemMessage('Lỗi: Vui lòng chọn danh mục.');
+            addSystemMessage(t('chat.selectCategoryError'));
             return true;
           }
           
@@ -341,14 +343,18 @@ const Chat = () => {
           };
           
           await budgetAPI.create(payload);
-          addSystemMessage(`Đã tạo ngân sách cho ${payload.category} tháng ${payload.month}/${payload.year} với hạn mức ${Intl.NumberFormat('vi-VN').format(payload.amount)} ₫.`, [
-            { label: 'Xem ngân sách', route: '/budgets' }
+          const formattedAmount = new Intl.NumberFormat(i18n.language === 'vi' ? 'vi-VN' : 'en-US').format(payload.amount);
+          const currency = settings.currency === 'VND' ? '₫' : '$';
+          addSystemMessage(t('chat.budgetCreated', { category: payload.category, month: payload.month, year: payload.year, amount: formattedAmount, currency }), [
+            { label: t('budget.title'), route: '/budgets' }
           ]);
           return true;
         }
         case '/goal': {
-          const text = `Đã ghi nhận mục tiêu "${args.name}" mục tiêu ${Intl.NumberFormat('vi-VN').format(numberOr(args.target, 0))} ₫ trước ${args.due || '—'}.`;
-          addSystemMessage(text, [{ label: 'Xem ngân sách', route: '/budgets' }]);
+          const formattedTarget = new Intl.NumberFormat(i18n.language === 'vi' ? 'vi-VN' : 'en-US').format(numberOr(args.target, 0));
+          const currency = settings.currency === 'VND' ? '₫' : '$';
+          const text = t('chat.goalRecorded', { name: args.name, target: formattedTarget, currency, due: args.due || '—' });
+          addSystemMessage(text, [{ label: t('goals.title'), route: '/goals' }]);
           return true;
         }
         case '/balance': {
@@ -356,18 +362,22 @@ const Chat = () => {
           const walletsData = data?.wallets || data || [];
           const wallets = Array.isArray(walletsData) ? walletsData : [];
           const total = wallets.reduce((s, w) => s + (w.balance || 0), 0);
-          const lines = wallets.map(w => `• ${w.name}: ${Intl.NumberFormat('vi-VN').format(w.balance || 0)} ₫`).join('\n');
-          addSystemMessage(`Số dư ví:\n${lines}\n\nTổng: ${Intl.NumberFormat('vi-VN').format(total)} ₫`, [
-            { label: 'Xem ví', route: '/wallets' }
+          const formatNum = (n) => new Intl.NumberFormat(i18n.language === 'vi' ? 'vi-VN' : 'en-US').format(n);
+          const currency = settings.currency === 'VND' ? '₫' : '$';
+          const lines = wallets.map(w => `• ${w.name}: ${formatNum(w.balance || 0)} ${currency}`).join('\n');
+          addSystemMessage(t('chat.walletBalance', { lines, total: formatNum(total), currency }), [
+            { label: t('wallet.title'), route: '/wallets' }
           ]);
           return true;
         }
         case '/spending': {
           const { data } = await expenseAPI.getStatistics({ period: 'month', month: args.month });
           const categories = data?.by_category || data?.categories || [];
-          const lines = categories.map(c => `• ${c.category}: ${Intl.NumberFormat('vi-VN').format(c.amount)} ₫`).join('\n');
-          addSystemMessage(`Thống kê chi tiêu ${args.month || 'tháng này'}:\n${lines}`, [
-            { label: 'Báo cáo chi tiêu', route: '/expenses' }
+          const formatNum = (n) => new Intl.NumberFormat(i18n.language === 'vi' ? 'vi-VN' : 'en-US').format(n);
+          const currency = settings.currency === 'VND' ? '₫' : '$';
+          const lines = categories.map(c => `• ${c.category}: ${formatNum(c.amount)} ${currency}`).join('\n');
+          addSystemMessage(t('chat.spendingStats', { period: args.month || t('common.thisMonth'), lines }), [
+            { label: t('expense.title'), route: '/expenses' }
           ]);
           return true;
         }
@@ -375,10 +385,12 @@ const Chat = () => {
           const { data } = await budgetAPI.getAlerts();
           const items = data?.alerts || data || [];
           if (!items.length) {
-            addSystemMessage('Hiện chưa có cảnh báo ngân sách.');
+            addSystemMessage(t('chat.noBudgetAlerts'));
           } else {
-            const lines = items.map(a => `• ${a.category}: đã dùng ${Math.round(a.percentage)}% (${Intl.NumberFormat('vi-VN').format(a.spent)} / ${Intl.NumberFormat('vi-VN').format(a.limit)} ₫)`).join('\n');
-            addSystemMessage(`Cảnh báo ngân sách:\n${lines}`, [{ label: 'Xem ngân sách', route: '/budgets' }]);
+            const formatNum = (n) => new Intl.NumberFormat(i18n.language === 'vi' ? 'vi-VN' : 'en-US').format(n);
+            const currency = settings.currency === 'VND' ? '₫' : '$';
+            const lines = items.map(a => `• ${a.category}: ${t('chat.used')} ${Math.round(a.percentage)}% (${formatNum(a.spent)} / ${formatNum(a.limit)} ${currency})`).join('\n');
+            addSystemMessage(t('chat.budgetAlerts', { lines }), [{ label: t('budget.title'), route: '/budgets' }]);
           }
           return true;
         }
@@ -387,11 +399,13 @@ const Chat = () => {
           const { data } = await expenseAPI.getTrends({ months });
           const rows = data?.rows || data || [];
           if (!rows.length) {
-            addSystemMessage('Chưa có dữ liệu xu hướng.');
+            addSystemMessage(t('chat.noTrendData'));
             return true;
           }
-          const lines = rows.map(r => `- ${r.month}: thu ${Intl.NumberFormat('vi-VN').format(Math.abs(r.income || 0))} ₫ • chi ${Intl.NumberFormat('vi-VN').format(Math.abs(r.expenses || 0))} ₫`).join('\n');
-          addSystemMessage(`**Xu hướng thu - chi ${months} tháng gần đây**\n\n${lines}`);
+          const formatNum = (n) => new Intl.NumberFormat(i18n.language === 'vi' ? 'vi-VN' : 'en-US').format(n);
+          const currency = settings.currency === 'VND' ? '₫' : '$';
+          const lines = rows.map(r => `- ${r.month}: ${t('expense.income')} ${formatNum(Math.abs(r.income || 0))} ${currency} • ${t('expense.expense')} ${formatNum(Math.abs(r.expenses || 0))} ${currency}`).join('\n');
+          addSystemMessage(t('chat.trendsTitle', { months, lines }));
           return true;
         }
         case '/allocation': {
@@ -400,15 +414,17 @@ const Chat = () => {
           const { data } = await expenseAPI.getStatistics({ period: 'month', ...params });
           const categories = data?.by_category || data?.categories || [];
           if (!categories.length) {
-            addSystemMessage('Chưa có dữ liệu phân bổ chi tiêu.');
+            addSystemMessage(t('chat.noAllocationData'));
             return true;
           }
           const total = categories.reduce((s, c) => s + (c.amount || 0), 0);
+          const formatNum = (n) => new Intl.NumberFormat(i18n.language === 'vi' ? 'vi-VN' : 'en-US').format(n);
+          const currency = settings.currency === 'VND' ? '₫' : '$';
           const lines = categories.map(c => {
             const pct = total > 0 ? Math.round((c.amount || 0) * 100 / total) : 0;
-            return `- ${c.category}: ${Intl.NumberFormat('vi-VN').format(c.amount)} ₫ (${pct}%)`;
+            return `- ${c.category}: ${formatNum(c.amount)} ${currency} (${pct}%)`;
           }).join('\n');
-          addSystemMessage(`**Phân bổ chi tiêu** ${month === 'THIS' ? 'tháng này' : month}\n\n${lines}\n\nTổng: ${Intl.NumberFormat('vi-VN').format(total)} ₫`);
+          addSystemMessage(t('chat.allocationTitle', { period: month === 'THIS' ? t('common.thisMonth') : month, lines, total: formatNum(total), currency }));
           return true;
         }
         case '/efficiency': {
@@ -419,25 +435,27 @@ const Chat = () => {
           const { data } = await budgetAPI.getCurrent({ month: m, year: y });
           const budgets = data?.budgets || data || [];
           if (!budgets.length) {
-            addSystemMessage('Bạn chưa có ngân sách cho tháng này.');
+            addSystemMessage(t('chat.noBudgetThisMonth'));
             return true;
           }
-          const lines = budgets.map(b => `- ${b.category}: ${Intl.NumberFormat('vi-VN').format(b.spent || 0)} / ${Intl.NumberFormat('vi-VN').format(b.amount || 0)} ₫ (${Math.round(b.percentage || 0)}%) — ${b.status === 'exceeded' ? '⚠️ vượt' : '✅ ổn'}`).join('\n');
-          addSystemMessage(`**Hiệu quả ngân sách tháng ${m}-${y}**\n\n${lines}`, [{ label: 'Xem ngân sách', route: '/budgets' }]);
+          const formatNum = (n) => new Intl.NumberFormat(i18n.language === 'vi' ? 'vi-VN' : 'en-US').format(n);
+          const currency = settings.currency === 'VND' ? '₫' : '$';
+          const lines = budgets.map(b => `- ${b.category}: ${formatNum(b.spent || 0)} / ${formatNum(b.amount || 0)} ${currency} (${Math.round(b.percentage || 0)}%) — ${b.status === 'exceeded' ? `⚠️ ${t('chat.exceeded')}` : `✅ ${t('chat.ok')}`}`).join('\n');
+          addSystemMessage(t('chat.budgetEfficiency', { month: m, year: y, lines }), [{ label: t('budget.title'), route: '/budgets' }]);
           return true;
         }
         case '/remember': {
           const mem = loadMemory();
-          if (!args.key) throw new Error('Thiếu key');
+          if (!args.key) throw new Error(t('chat.missingKey'));
           mem[args.key] = args.value || '';
           saveMemory(mem);
-          addSystemMessage(`Đã ghi nhớ "${args.key}".`);
+          addSystemMessage(t('chat.remembered', { key: args.key }));
           return true;
         }
         case '/recall': {
           const mem = loadMemory();
           const val = mem[args.key];
-          addSystemMessage(val ? `Bạn đã lưu "${args.key}": ${val}` : `Không tìm thấy "${args.key}" trong bộ nhớ.`);
+          addSystemMessage(val ? t('chat.recalled', { key: args.key, value: val }) : t('chat.notFound', { key: args.key }));
           return true;
         }
         default:
@@ -445,7 +463,7 @@ const Chat = () => {
       }
     } catch (e) {
       console.error('Slash command error:', e);
-      addSystemMessage(`Không thực hiện được lệnh: ${e?.message || 'Lỗi không xác định'}`);
+      addSystemMessage(t('chat.commandError', { error: e?.message || t('chat.unknownError') }));
       return true;
     }
   };
@@ -468,7 +486,7 @@ const Chat = () => {
       }));
       setMessages(msgs.length ? msgs : [{
         role: 'ai',
-        text: 'Xin chào! Mình là MoneyKeeper AI, trợ lý tài chính của bạn! 🤗 Bạn muốn mình giúp gì hôm nay?',
+        text: t('chat.greeting'),
         timestamp: new Date(),
       }]);
       setShowSidebar(false);
@@ -492,7 +510,7 @@ const Chat = () => {
           setCurrentConversation(null);
           setMessages([{
             role: 'ai',
-            text: 'Xin chào! Mình là MoneyKeeper AI, trợ lý tài chính của bạn! 🤗 Bạn muốn mình giúp gì hôm nay?',
+            text: t('chat.greeting'),
             timestamp: new Date(),
           }]);
         }
@@ -512,7 +530,7 @@ const Chat = () => {
         setCurrentConversation(newId);
         setMessages([{
           role: 'ai',
-          text: 'Xin chào! Mình là MoneyKeeper AI, trợ lý tài chính của bạn! 🤗 Bạn muốn mình giúp gì hôm nay?',
+          text: t('chat.greeting'),
           timestamp: new Date(),
         }]);
       }
@@ -522,7 +540,7 @@ const Chat = () => {
     }
   };
 
-  const selectedPersonality = PERSONALITIES.find(p => p.id === personality);
+  const selectedPersonality = personalities.find(p => p.id === personality);
 
   // Sidebar content reused for desktop and mobile
   const SidebarContent = () => (
@@ -531,7 +549,7 @@ const Chat = () => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            Lịch sử chat
+            {t('chat.history')}
           </h2>
           <button
             onClick={() => setShowSidebar(false)}
@@ -545,7 +563,7 @@ const Chat = () => {
           className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
         >
           <Plus className="h-5 w-5" />
-          Cuộc trò chuyện mới
+          {t('chat.newConversation')}
         </button>
       </div>
 
@@ -553,10 +571,10 @@ const Chat = () => {
       <div className="p-4 border-b border-gray-200/50 dark:border-slate-700/50 bg-white dark:bg-slate-800">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-          Tính cách AI
+          {t('chat.aiPersonality')}
         </h3>
         <div className="grid grid-cols-2 gap-2">
-          {PERSONALITIES.map((p) => {
+          {personalities.map((p) => {
             const Icon = p.icon;
             const isSelected = personality === p.id;
             return (
@@ -590,8 +608,8 @@ const Chat = () => {
         {conversations.length === 0 ? (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <MessageSquare className="h-16 w-16 mx-auto mb-3 opacity-20" />
-            <p className="font-medium">Chưa có cuộc trò chuyện nào</p>
-            <p className="text-xs mt-1">Bắt đầu chat để lưu lịch sử</p>
+            <p className="font-medium">{t('chat.noConversations')}</p>
+            <p className="text-xs mt-1">{t('chat.startChatToSave')}</p>
           </div>
         ) : (
           conversations.map((conv, idx) => (
@@ -607,7 +625,7 @@ const Chat = () => {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm line-clamp-2 mb-1.5">
-                    {conv.title || 'Cuộc trò chuyện mới'}
+                    {conv.title || t('chat.newConversation')}
                   </p>
                   <div className="flex items-center gap-2 text-xs opacity-75">
                     <Clock className="h-3 w-3" />
@@ -812,7 +830,7 @@ const Chat = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {QUICK_ACTIONS.map((action, idx) => {
+                  {quickActions.map((action, idx) => {
                     const Icon = action.icon;
                     return (
                       <motion.button
@@ -1119,7 +1137,7 @@ const Chat = () => {
                     ref={textareaRef}
                     rows={1}
                     className="w-full bg-transparent outline-none text-sm md:text-base px-2 py-2 resize-none max-h-32 overflow-y-auto text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                    placeholder="Nhập tin nhắn của bạn..."
+                    placeholder={t('chat.inputPlaceholder')}
                     value={input}
                     onChange={e => {
                       setInput(e.target.value);

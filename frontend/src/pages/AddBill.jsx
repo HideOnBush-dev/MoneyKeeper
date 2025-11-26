@@ -15,10 +15,12 @@ import { billsAPI, walletAPI, recurringAPI } from '../services/api';
 import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import { parseAmountInput, formatAmountLive } from '../lib/numberFormat';
+import { useTranslation } from 'react-i18next';
 
 const COLOR_OPTIONS = ['indigo', 'rose', 'blue', 'amber', 'emerald', 'violet', 'cyan'];
 
 const AddBill = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -98,7 +100,7 @@ const AddBill = () => {
       setAmountInput(formatAmountLive(bill.amount, { numberFormat: settings.numberFormat }));
     } catch (error) {
       console.error('Error fetching bill:', error);
-      toast({ type: 'error', message: 'Không thể tải hóa đơn' });
+      toast({ type: 'error', message: t('messages.errorOccurred') });
       navigate('/bills');
     }
   };
@@ -109,11 +111,11 @@ const AddBill = () => {
       numberFormat: settings.numberFormat,
     });
     if (!parsedAmount || parsedAmount <= 0) {
-      toast({ type: 'warning', message: 'Vui lòng nhập số tiền hợp lệ' });
+      toast({ type: 'warning', message: t('transactionForm.amountMustBePositive') });
       return;
     }
     if (!formData.name.trim()) {
-      toast({ type: 'warning', message: 'Vui lòng nhập tên hóa đơn' });
+      toast({ type: 'warning', message: t('bill.enterBillName') });
       return;
     }
 
@@ -128,15 +130,15 @@ const AddBill = () => {
       setSaving(true);
       if (isEdit) {
         await billsAPI.update(id, payload);
-        toast({ type: 'success', message: 'Cập nhật hóa đơn thành công' });
+        toast({ type: 'success', message: t('messages.updateSuccess') });
       } else {
         await billsAPI.create(payload);
-        toast({ type: 'success', message: 'Tạo hóa đơn thành công' });
+        toast({ type: 'success', message: t('bill.createSuccess') });
       }
       navigate('/bills');
     } catch (error) {
       console.error('Error saving bill:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi lưu hóa đơn' });
+      toast({ type: 'error', message: error.response?.data?.error || t('messages.errorOccurred') });
     } finally {
       setSaving(false);
     }
@@ -146,7 +148,7 @@ const AddBill = () => {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
         <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-        <p className="mt-4 text-gray-500">Đang tải...</p>
+        <p className="mt-4 text-gray-500">{t('common.loading')}</p>
       </div>
     );
   }
@@ -161,7 +163,7 @@ const AddBill = () => {
           <div className="p-1.5 rounded-lg bg-gray-100 dark:bg-slate-800 group-hover:bg-gray-200 dark:group-hover:bg-slate-700 transition-colors">
             <ArrowLeft className="h-4 w-4" />
           </div>
-          <span className="text-sm font-medium">Quay lại</span>
+          <span className="text-sm font-medium">{t('common.back')}</span>
         </button>
 
         <div className="flex items-center gap-3 md:gap-4">
@@ -170,10 +172,10 @@ const AddBill = () => {
           </div>
           <div>
             <h1 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-              {isEdit ? 'Chỉnh sửa hóa đơn' : 'Thêm hóa đơn'}
+              {isEdit ? t('bill.editBill') : t('bill.addBill')}
             </h1>
             <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Nhận nhắc nhở trước hạn để không bỏ lỡ khoản thanh toán
+              {t('bill.subtitle')}
             </p>
           </div>
         </div>
@@ -183,20 +185,20 @@ const AddBill = () => {
         {/* Basic info */}
         <div className="bg-white dark:bg-slate-800 rounded-xl md:rounded-2xl border border-gray-200 dark:border-slate-700 p-4 md:p-6 shadow-sm space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tên hóa đơn *</label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('bill.billName')} *</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
               className="flex h-11 w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-2 text-sm text-gray-900 dark:text-gray-100"
-              placeholder="VD: Tiền điện tháng 3"
+              placeholder={t('bill.billNamePlaceholder')}
               required
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Số tiền *</label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('transactionForm.amount')} *</label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
@@ -216,7 +218,7 @@ const AddBill = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Ngày đến hạn *</label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('bill.dueDate')} *</label>
               <input
                 type="date"
                 value={formData.due_date}
@@ -233,7 +235,7 @@ const AddBill = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <AlarmClock className="h-4 w-4" /> Nhắc trước (ngày)
+                <AlarmClock className="h-4 w-4" /> {t('bill.reminderDays')}
               </label>
               <input
                 type="number"
@@ -249,14 +251,14 @@ const AddBill = () => {
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <WalletIcon className="h-4 w-4" /> Ví thanh toán
+                <WalletIcon className="h-4 w-4" /> {t('bill.paymentWallet')}
               </label>
               <select
                 value={formData.wallet_id}
                 onChange={(e) => setFormData((prev) => ({ ...prev, wallet_id: e.target.value }))}
                 className="flex h-11 w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-2 text-sm"
               >
-                <option value="">Không liên kết</option>
+                <option value="">{t('goals.noLink')}</option>
                 {wallets.map((wallet) => (
                   <option key={wallet.id} value={wallet.id}>
                     {wallet.name}
@@ -268,14 +270,14 @@ const AddBill = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-              <Repeat className="h-4 w-4" /> Liên kết giao dịch định kỳ
+              <Repeat className="h-4 w-4" /> {t('bill.linkRecurring')}
             </label>
             <select
               value={formData.recurring_id}
               onChange={(e) => setFormData((prev) => ({ ...prev, recurring_id: e.target.value }))}
               className="flex h-11 w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-2 text-sm"
             >
-              <option value="">Không liên kết</option>
+              <option value="">{t('goals.noLink')}</option>
               {recurrings.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name} • {formatCurrency(r.amount, settings.currency)}
@@ -286,7 +288,7 @@ const AddBill = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-              <Palette className="h-4 w-4" /> Màu nhãn
+              <Palette className="h-4 w-4" /> {t('bill.labelColor')}
             </label>
             <div className="flex gap-2 flex-wrap">
               {COLOR_OPTIONS.map((color) => (
@@ -317,12 +319,12 @@ const AddBill = () => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Ghi chú</label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('expense.description')}</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               className="flex min-h-[100px] md:min-h-[120px] w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-2 text-sm"
-              placeholder="Thông tin thêm (ví dụ: mã khách hàng, hướng dẫn thanh toán...)"
+              placeholder={t('bill.notesPlaceholder')}
             />
           </div>
         </div>
@@ -334,7 +336,7 @@ const AddBill = () => {
               onClick={() => navigate('/bills')}
               className="flex-1 md:flex-none px-4 md:px-6 py-2.5 md:py-3 h-10 md:h-11 bg-white dark:bg-slate-800 border-2 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold flex items-center justify-center hover:bg-gray-50"
             >
-              Hủy
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -344,12 +346,12 @@ const AddBill = () => {
               {saving ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Đang lưu...
+                  {t('common.saving')}
                 </>
               ) : (
                 <>
                   <CheckCircle className="h-4 w-4" />
-                  {isEdit ? 'Cập nhật hóa đơn' : 'Tạo hóa đơn'}
+                  {isEdit ? t('bill.updateBill') : t('bill.addBill')}
                 </>
               )}
             </button>

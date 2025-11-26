@@ -20,8 +20,10 @@ import { formatCurrency } from '../lib/utils';
 import PageHeader from '../components/PageHeader';
 import { useSettings } from '../contexts/SettingsContext';
 import QRCodeGenerator from '../components/QRCodeGenerator';
+import { useTranslation } from 'react-i18next';
 
 const Wallets = () => {
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const navigate = useNavigate();
   const [wallets, setWallets] = useState([]);
@@ -58,7 +60,7 @@ const Wallets = () => {
     } catch (error) {
       console.error('Error fetching wallets:', error);
       setWallets([]);
-      alert('Lỗi khi tải danh sách ví');
+      alert(t('wallet.errorLoadingWallets'));
     } finally {
       setLoading(false);
     }
@@ -69,10 +71,10 @@ const Wallets = () => {
     try {
       if (editingWallet) {
         await walletAPI.update(editingWallet.id, formData);
-        alert('Cập nhật ví thành công!');
+        alert(t('wallet.walletUpdateSuccess'));
       } else {
         await walletAPI.create(formData);
-        alert('Tạo ví mới thành công!');
+        alert(t('wallet.walletCreateSuccess'));
       }
       setShowModal(false);
       setEditingWallet(null);
@@ -80,7 +82,7 @@ const Wallets = () => {
       fetchWallets();
     } catch (error) {
       console.error('Error saving wallet:', error);
-      alert(error.response?.data?.error || 'Lỗi khi lưu ví');
+      alert(error.response?.data?.error || t('wallet.errorLoadingWallets'));
     }
   };
 
@@ -99,47 +101,47 @@ const Wallets = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Bạn có chắc muốn xóa ví này?')) return;
+    if (!confirm(t('wallet.confirmDeleteWallet'))) return;
     try {
       await walletAPI.delete(id);
-      alert('Xóa ví thành công!');
+      alert(t('wallet.walletDeleteSuccess'));
       fetchWallets();
     } catch (error) {
       console.error('Error deleting wallet:', error);
-      alert(error.response?.data?.error || 'Lỗi khi xóa ví');
+      alert(error.response?.data?.error || t('wallet.errorLoadingWallets'));
     }
   };
 
   const handleShare = async (e) => {
     e.preventDefault();
     if (!shareFormData.username) {
-      alert('Vui lòng nhập username hoặc email');
+      alert(t('wallet.enterUsernameOrEmail'));
       return;
     }
     try {
       await walletAPI.share(sharingWallet.id, shareFormData);
-      alert('Chia sẻ ví thành công!');
+      alert(t('wallet.shareSuccess'));
       setShowShareModal(false);
       setShareFormData({ username: '', can_edit: true });
       setSharingWallet(null);
       fetchWallets();
     } catch (error) {
       console.error('Error sharing wallet:', error);
-      alert(error.response?.data?.error || 'Lỗi khi chia sẻ ví');
+      alert(error.response?.data?.error || t('wallet.errorLoadingWallets'));
     }
   };
 
   const handleUnshare = async (userId) => {
-    if (!confirm('Bạn có chắc muốn ngừng chia sẻ ví với người dùng này?')) return;
+    if (!confirm(t('wallet.confirmUnshare'))) return;
     try {
       await walletAPI.unshare(sharingWallet.id, userId);
-      alert('Đã ngừng chia sẻ ví!');
+      alert(t('wallet.unshareSuccess'));
       const res = await walletAPI.getSharedUsers(sharingWallet.id);
       setSharedUsers(res.data.shared_users || []);
       fetchWallets();
     } catch (error) {
       console.error('Error unsharing wallet:', error);
-      alert(error.response?.data?.error || 'Lỗi khi ngừng chia sẻ ví');
+      alert(error.response?.data?.error || t('wallet.errorLoadingWallets'));
     }
   };
 
@@ -156,7 +158,7 @@ const Wallets = () => {
       setShowQRModal(true);
     } catch (error) {
       console.error('Error generating QR code:', error);
-      alert(error.response?.data?.error || 'Lỗi khi tạo QR code');
+      alert(error.response?.data?.error || t('wallet.qrCodeError'));
     }
   };
 
@@ -189,8 +191,8 @@ const Wallets = () => {
       <div className="flex items-center justify-between">
         <PageHeader
           icon={WalletIcon}
-          title="Ví của tôi"
-          subtitle={`Tổng: ${formatCurrency(totalBalance, settings.currency, settings.numberFormat)}`}
+          title={t('wallet.myWallets')}
+          subtitle={`${t('common.total')}: ${formatCurrency(totalBalance, settings.currency, settings.numberFormat)}`}
           iconColor="from-blue-500 to-cyan-600"
         />
         <div className="flex items-center gap-2">
@@ -199,7 +201,7 @@ const Wallets = () => {
             className="px-3 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center gap-1.5"
           >
             <ArrowRightLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Chuyển</span>
+            <span className="hidden sm:inline">{t('nav.transfer')}</span>
           </button>
           <button
             onClick={() => {
@@ -210,7 +212,7 @@ const Wallets = () => {
             className="px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center gap-1.5"
           >
             <Plus className="h-4 w-4" />
-            <span>Thêm</span>
+            <span>{t('common.add')}</span>
           </button>
         </div>
       </div>
@@ -223,14 +225,14 @@ const Wallets = () => {
               <WalletIcon className="h-12 w-12 text-gray-400 dark:text-gray-500" />
             </div>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Chưa có ví nào</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Hãy tạo ví đầu tiên của bạn</p>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{t('wallet.noWallets')}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('wallet.createFirstWallet')}</p>
           <button
             onClick={() => setShowModal(true)}
             className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            <span>Tạo ví</span>
+            <span>{t('wallet.createWallet')}</span>
           </button>
         </div>
       ) : (
@@ -257,12 +259,12 @@ const Wallets = () => {
                     {wallet.is_default && (
                       <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-400/30 backdrop-blur-md rounded-full shadow-md">
                         <Check className="h-3.5 w-3.5 text-white" />
-                        <span className="text-xs font-bold text-white">Mặc định</span>
+                        <span className="text-xs font-bold text-white">{t('wallet.defaultWallet')}</span>
                       </div>
                     )}
                   </div>
                   <div>
-                    <p className="text-xs text-white/80 mb-2 font-medium">Số dư</p>
+                    <p className="text-xs text-white/80 mb-2 font-medium">{t('wallet.balance')}</p>
                     <p className="text-3xl font-bold text-white tracking-tight">
                       {formatCurrency(wallet.balance || 0, wallet.currency, settings.numberFormat)}
                     </p>
@@ -280,10 +282,10 @@ const Wallets = () => {
                     <button
                       onClick={() => handleGenerateQR(wallet)}
                       className="flex flex-col items-center gap-1.5 px-3 py-3 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:scale-105 transition-all duration-200 text-sm font-semibold border border-indigo-100 dark:border-indigo-800/50 shadow-sm hover:shadow-md"
-                      title="Tạo QR code để chia sẻ"
+                      title={t('wallet.scanQR')}
                     >
                       <QrCode className="h-5 w-5" />
-                      <span className="text-xs">QR Code</span>
+                      <span className="text-xs">{t('wallet.scanQR')}</span>
                     </button>
                     <button
                       onClick={() => {
@@ -293,7 +295,7 @@ const Wallets = () => {
                       className="flex flex-col items-center gap-1.5 px-3 py-3 bg-white dark:bg-slate-800 text-green-600 dark:text-green-400 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 hover:scale-105 transition-all duration-200 text-sm font-semibold border border-green-100 dark:border-green-800/50 shadow-sm hover:shadow-md"
                     >
                       <Share2 className="h-5 w-5" />
-                      <span className="text-xs">Chia sẻ</span>
+                      <span className="text-xs">{t('common.share')}</span>
                     </button>
                     <button
                       onClick={async () => {
@@ -304,34 +306,34 @@ const Wallets = () => {
                           setShowSharedUsersModal(true);
                         } catch (error) {
                           console.error('Error fetching shared users:', error);
-                          alert('Lỗi khi tải danh sách người dùng đã chia sẻ');
+                          alert(t('wallet.errorLoadingWallets'));
                         }
                       }}
                       className="flex flex-col items-center gap-1.5 px-3 py-3 bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:scale-105 transition-all duration-200 text-sm font-semibold border border-purple-100 dark:border-purple-800/50 shadow-sm hover:shadow-md"
                     >
                       <Users className="h-5 w-5" />
-                      <span className="text-xs">Đã chia sẻ</span>
+                      <span className="text-xs">{t('wallet.sharedUsers')}</span>
                     </button>
                     <button
                       onClick={() => openEditModal(wallet)}
                       className="flex flex-col items-center gap-1.5 px-3 py-3 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:scale-105 transition-all duration-200 text-sm font-semibold border border-blue-100 dark:border-blue-800/50 shadow-sm hover:shadow-md"
                     >
                       <Edit2 className="h-5 w-5" />
-                      <span className="text-xs">Sửa</span>
+                      <span className="text-xs">{t('common.edit')}</span>
                     </button>
                     <button
                       onClick={() => handleDelete(wallet.id)}
                       className="flex flex-col items-center gap-1.5 px-3 py-3 bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105 transition-all duration-200 text-sm font-semibold border border-red-100 dark:border-red-800/50 shadow-sm hover:shadow-md col-span-2 sm:col-span-1"
                     >
                       <Trash2 className="h-5 w-5" />
-                      <span className="text-xs">Xóa</span>
+                      <span className="text-xs">{t('common.delete')}</span>
                     </button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
                     <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     <span className="text-sm text-blue-700 dark:text-blue-300 font-semibold">
-                      Được chia sẻ bởi {wallet.owner?.username || 'Người dùng'}
+                      {t('wallet.sharedBy')} {wallet.owner?.username || t('common.none')}
                     </span>
                   </div>
                 )}
@@ -353,7 +355,7 @@ const Wallets = () => {
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                {editingWallet ? 'Sửa ví' : 'Thêm ví mới'}
+                {editingWallet ? t('wallet.editWallet') : t('wallet.newWallet')}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
@@ -364,7 +366,7 @@ const Wallets = () => {
             </div>
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tên ví *</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('wallet.walletName')} *</label>
                 <div className="relative">
                   <WalletIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
                   <input
@@ -372,14 +374,14 @@ const Wallets = () => {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all font-semibold"
-                    placeholder="Ví của tôi"
+                    placeholder={t('wallet.walletName')}
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Số dư ban đầu</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('wallet.initialBalance')}</label>
                 <div className="relative">
                   <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
                   <input
@@ -393,13 +395,13 @@ const Wallets = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Mô tả</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('wallet.description')}</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all resize-none"
                   rows="3"
-                  placeholder="Mô tả về ví..."
+                  placeholder={t('wallet.description')}
                 />
               </div>
 
@@ -413,7 +415,7 @@ const Wallets = () => {
                 />
                 <label htmlFor="default-wallet" className="flex items-center space-x-2 text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
                   <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  <span>Đặt làm ví mặc định</span>
+                  <span>{t('wallet.setAsDefault')}</span>
                 </label>
               </div>
 
@@ -426,13 +428,13 @@ const Wallets = () => {
                   }}
                   className="flex-1 px-6 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
-                  Hủy
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-semibold hover:shadow-md transition-all"
                 >
-                  {editingWallet ? 'Cập nhật' : 'Tạo mới'}
+                  {editingWallet ? t('wallet.update') : t('wallet.createNew')}
                 </button>
               </div>
             </form>
@@ -457,7 +459,7 @@ const Wallets = () => {
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                Chia sẻ ví "{sharingWallet.name}"
+                {t('wallet.shareWalletTitle')} "{sharingWallet.name}"
               </h2>
               <button
                 onClick={() => {
@@ -473,13 +475,13 @@ const Wallets = () => {
             <form onSubmit={handleShare} className="space-y-5">
               <div>
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                  Username hoặc Email *
+                  {t('wallet.usernameOrEmail')} *
                 </label>
                 <input
                   type="text"
                   value={shareFormData.username}
                   onChange={(e) => setShareFormData({ ...shareFormData, username: e.target.value })}
-                  placeholder="Nhập username hoặc email"
+                  placeholder={t('wallet.enterUsernameOrEmail')}
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 text-gray-900 dark:text-white"
                   required
                 />
@@ -493,7 +495,7 @@ const Wallets = () => {
                     className="h-4 w-4 text-green-600 rounded focus:ring-green-500"
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">
-                    Cho phép chỉnh sửa (thêm/sửa/xóa giao dịch)
+                    {t('wallet.allowEdit')}
                   </span>
                 </label>
               </div>
@@ -507,13 +509,13 @@ const Wallets = () => {
                   }}
                   className="flex-1 px-4 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
-                  Hủy
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
                 >
-                  Chia sẻ
+                  {t('common.share')}
                 </button>
               </div>
             </form>
@@ -537,7 +539,7 @@ const Wallets = () => {
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Người dùng đã chia sẻ "{sharingWallet.name}"
+                {t('wallet.sharedUsers')} "{sharingWallet.name}"
               </h2>
               <button
                 onClick={() => {
@@ -552,7 +554,7 @@ const Wallets = () => {
             </div>
             {sharedUsers.length === 0 ? (
               <p className="text-center text-gray-500 dark:text-gray-400 py-8">
-                Chưa có người dùng nào được chia sẻ
+                {t('wallet.noSharedUsers')}
               </p>
             ) : (
               <div className="space-y-3">
@@ -565,14 +567,14 @@ const Wallets = () => {
                       <p className="font-semibold text-gray-900 dark:text-white">{user.username}</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
                       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        {user.can_edit ? 'Có quyền chỉnh sửa' : 'Chỉ xem'}
+                        {user.can_edit ? t('wallet.canEdit') : t('wallet.viewOnly')}
                       </p>
                     </div>
                     <button
                       onClick={() => handleUnshare(user.id)}
                       className="px-3 py-1.5 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors text-sm font-medium"
                     >
-                      Gỡ
+                      {t('common.remove')}
                     </button>
                   </div>
                 ))}

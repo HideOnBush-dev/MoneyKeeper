@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
   Home,
   Wallet,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { notificationsAPI } from '../services/api';
+import LanguageSwitcher from './LanguageSwitcher';
 
 // NavLink component with icon
 const NavLink = ({ to, icon: Icon, label, isActive }) => (
@@ -46,6 +48,7 @@ const NavLink = ({ to, icon: Icon, label, isActive }) => (
 );
 
 const Layout = ({ children }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -90,47 +93,47 @@ const Layout = ({ children }) => {
             </Link>
 
             <div className="ml-6 flex items-center space-x-2">
-              <NavLink to="/dashboard" icon={Home} label="Trang chủ" isActive={isActive('/dashboard')} />
-              <NavLink to="/expenses" icon={DollarSign} label="Chi tiêu" isActive={isActive('/expenses')} />
-              <NavLink to="/wallets" icon={Wallet} label="Ví" isActive={isActive('/wallets')} />
-              <NavLink to="/budgets" icon={PieChart} label="Ngân sách" isActive={isActive('/budgets')} />
+              <NavLink to="/dashboard" icon={Home} label={t('nav.home')} isActive={isActive('/dashboard')} />
+              <NavLink to="/expenses" icon={DollarSign} label={t('nav.expenses')} isActive={isActive('/expenses')} />
+              <NavLink to="/wallets" icon={Wallet} label={t('nav.wallets')} isActive={isActive('/wallets')} />
+              <NavLink to="/budgets" icon={PieChart} label={t('nav.budgets')} isActive={isActive('/budgets')} />
 
               {/* Utilities Dropdown */}
               <div className="relative group">
                 <button className="flex items-center space-x-1 px-4 py-2 rounded-xl font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all">
-                  <span className="text-sm">Tiện ích</span>
+                  <span className="text-sm">{t('nav.utilities')}</span>
                   <ChevronDown className="h-4 w-4" />
                 </button>
 
                 <div className="absolute left-0 mt-2 w-48 rounded-2xl shadow-xl py-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg ring-1 ring-black dark:ring-slate-700 ring-opacity-5 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all transform origin-top-left z-50">
                   <Link to="/goals" className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2">
                     <Target className="h-4 w-4 text-blue-600" />
-                    <span>Mục tiêu</span>
+                    <span>{t('nav.goals')}</span>
                   </Link>
                   <Link to="/recurring" className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2">
                     <Repeat className="h-4 w-4 text-purple-600" />
-                    <span>Định kỳ</span>
+                    <span>{t('nav.recurring')}</span>
                   </Link>
                   <Link to="/bills" className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2">
                     <Bell className="h-4 w-4 text-indigo-600" />
-                    <span>Hóa đơn</span>
+                    <span>{t('nav.bills')}</span>
                   </Link>
                   <Link to="/debts" className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2">
                     <CreditCard className="h-4 w-4 text-red-600" />
-                    <span>Quản lý nợ</span>
+                    <span>{t('nav.debtManagement')}</span>
                   </Link>
                   <Link to="/splits" className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2">
                     <Users className="h-4 w-4 text-green-600" />
-                    <span>Chia tiền</span>
+                    <span>{t('nav.splits')}</span>
                   </Link>
                   <Link to="/scan" className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2">
                     <Scan className="h-4 w-4 text-purple-600" />
-                    <span>Quét QR</span>
+                    <span>{t('nav.scanQR')}</span>
                   </Link>
                 </div>
               </div>
 
-              <NavLink to="/chat" icon={MessageSquare} label="AI Chat" isActive={isActive('/chat')} />
+              <NavLink to="/chat" icon={MessageSquare} label={t('nav.aiChat')} isActive={isActive('/chat')} />
 
               {/* User Menu */}
               <div className="ml-6 relative">
@@ -165,7 +168,7 @@ const Layout = ({ children }) => {
                         className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2"
                       >
                         <Bell className="h-4 w-4" />
-                        <span>Thông báo</span>
+                        <span>{t('nav.notifications')}</span>
                         {unreadNotifications > 0 && (
                           <span className="ml-auto bg-red-500 text-white py-0.5 px-2 rounded-full text-xs font-medium">
                             {unreadNotifications}
@@ -173,13 +176,18 @@ const Layout = ({ children }) => {
                         )}
                       </Link>
 
-                      <Link
-                        to="/settings"
-                        className="flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors rounded-lg mx-2"
-                      >
-                        <Settings className="h-4 w-4" />
-                        <span>Cài đặt</span>
-                      </Link>
+                      <div className="px-4 py-2.5 space-y-2">
+                        <Link
+                          to="/settings"
+                          className="flex items-center space-x-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors rounded-lg px-2 py-2"
+                        >
+                          <Settings className="h-4 w-4" />
+                          <span>{t('nav.settings')}</span>
+                        </Link>
+                        <div className="rounded-lg border border-gray-100 dark:border-slate-700 px-2 py-2">
+                          <LanguageSwitcher />
+                        </div>
+                      </div>
 
                       <div className="border-t border-gray-200 dark:border-slate-700 my-2"></div>
 
@@ -188,7 +196,7 @@ const Layout = ({ children }) => {
                         className="flex items-center space-x-3 w-full px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-lg mx-2"
                       >
                         <LogOut className="h-4 w-4" />
-                        <span>Đăng xuất</span>
+                        <span>{t('nav.logout')}</span>
                       </button>
                     </motion.div>
                   )}
@@ -347,13 +355,14 @@ const Layout = ({ children }) => {
                 <div className="w-12 h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full"></div>
               </div>
 
-              {/* User Info */}
-              <div className="p-4 flex flex-col items-center text-center border-b border-gray-100 dark:border-slate-800">
+              {/* User Info + Language Switcher */}
+              <div className="p-4 flex flex-col items-center text-center border-b border-gray-100 dark:border-slate-800 space-y-3">
                 <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg mb-3">
                   {user?.username?.[0]?.toUpperCase()}
                 </div>
                 <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">{user?.username}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
+                <LanguageSwitcher />
               </div>
 
               {/* Grid Menu */}
@@ -366,7 +375,7 @@ const Layout = ({ children }) => {
                   <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-2xl group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 transition-colors">
                     <PieChart className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Ngân sách</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('nav.budgets')}</span>
                 </Link>
 
                 <Link
@@ -377,7 +386,7 @@ const Layout = ({ children }) => {
                   <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
                     <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Mục tiêu</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('nav.goals')}</span>
                 </Link>
 
                 <Link
@@ -388,7 +397,7 @@ const Layout = ({ children }) => {
                   <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-2xl group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 transition-colors">
                     <Repeat className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Định kỳ</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('nav.recurring')}</span>
                 </Link>
 
                 <Link
@@ -399,7 +408,7 @@ const Layout = ({ children }) => {
                   <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
                     <Bell className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Hóa đơn</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('nav.bills')}</span>
                 </Link>
 
                 <Link
@@ -410,7 +419,7 @@ const Layout = ({ children }) => {
                   <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl group-hover:bg-red-100 dark:group-hover:bg-red-900/30 transition-colors">
                     <CreditCard className="h-6 w-6 text-red-600 dark:text-red-400" />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Quản lý nợ</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('nav.debtManagement')}</span>
                 </Link>
 
                 <Link
@@ -421,7 +430,7 @@ const Layout = ({ children }) => {
                   <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-2xl group-hover:bg-green-100 dark:group-hover:bg-green-900/30 transition-colors">
                     <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Chia tiền</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('nav.splits')}</span>
                 </Link>
 
                 <Link
@@ -432,7 +441,7 @@ const Layout = ({ children }) => {
                   <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-2xl group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 transition-colors">
                     <Scan className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Quét QR</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('nav.scanQR')}</span>
                 </Link>
 
                 <Link
@@ -443,7 +452,7 @@ const Layout = ({ children }) => {
                   <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
                     <MessageSquare className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">AI Chat</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('nav.aiChat')}</span>
                 </Link>
 
                 <Link
@@ -459,7 +468,7 @@ const Layout = ({ children }) => {
                       </span>
                     )}
                   </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Thông báo</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('nav.notifications')}</span>
                 </Link>
 
                 <Link
@@ -470,7 +479,7 @@ const Layout = ({ children }) => {
                   <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-2xl group-hover:bg-gray-100 dark:group-hover:bg-slate-700 transition-colors">
                     <Settings className="h-6 w-6 text-gray-600 dark:text-gray-400" />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Cài đặt</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('nav.settings')}</span>
                 </Link>
 
                 <button
@@ -483,7 +492,7 @@ const Layout = ({ children }) => {
                   <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl group-hover:bg-red-100 dark:group-hover:bg-red-900/30 transition-colors">
                     <LogOut className="h-6 w-6 text-red-600 dark:text-red-400" />
                   </div>
-                  <span className="text-xs font-medium text-red-600 dark:text-red-400">Đăng xuất</span>
+                  <span className="text-xs font-medium text-red-600 dark:text-red-400">{t('nav.logout')}</span>
                 </button>
               </div>
             </motion.div>

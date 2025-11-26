@@ -26,6 +26,7 @@ import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import PageHeader from '../components/PageHeader';
 import ExpenseDetailModal from '../components/ExpenseDetailModal';
+import { useTranslation } from 'react-i18next';
 
 const CATEGORIES = [
   { value: '', label: 'Tất cả', emoji: '📋', gradient: 'from-gray-400 to-gray-500' },
@@ -40,6 +41,7 @@ const CATEGORIES = [
 ];
 
 const Expenses = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState([]);
   const [wallets, setWallets] = useState([]);
@@ -129,10 +131,10 @@ const Expenses = () => {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      toast({ type: 'success', message: 'Xuất CSV thành công' });
+      toast({ type: 'success', message: t('expense.exportCSVSuccess') });
     } catch (error) {
       console.error('Error exporting CSV:', error);
-      toast({ type: 'error', message: 'Xuất CSV thất bại' });
+      toast({ type: 'error', message: t('expense.exportCSVError') });
     }
   };
 
@@ -143,7 +145,7 @@ const Expenses = () => {
         const categoryData = getCategoryData(exp.category);
         return {
           'Ngày': exp.date ? new Date(exp.date).toLocaleDateString('vi-VN') : '',
-          'Loại': exp.is_expense ? 'Chi tiêu' : 'Thu nhập',
+          'Loại': exp.is_expense ? t('expense.expenseType') : t('expense.incomeType'),
           'Số tiền': exp.amount || 0,
           'Danh mục': categoryData.label,
           'Mô tả': exp.description || '',
@@ -168,10 +170,10 @@ const Expenses = () => {
 
       // Generate file and download
       XLSX.writeFile(wb, `expenses_${new Date().toISOString().slice(0,10)}.xlsx`);
-      toast({ type: 'success', message: 'Xuất Excel thành công' });
+      toast({ type: 'success', message: t('expense.exportExcelSuccess') });
     } catch (error) {
       console.error('Error exporting Excel:', error);
-      toast({ type: 'error', message: 'Xuất Excel thất bại' });
+      toast({ type: 'error', message: t('expense.exportExcelError') });
     }
   };
 
@@ -189,7 +191,7 @@ const Expenses = () => {
       const isCSV = file.name.endsWith('.csv');
 
       if (!isExcel && !isCSV) {
-        toast({ type: 'error', message: 'Chỉ hỗ trợ file CSV hoặc Excel (.xlsx, .xls)' });
+        toast({ type: 'error', message: t('expense.importError') });
         return;
       }
 
@@ -245,11 +247,11 @@ const Expenses = () => {
             const res = await expenseAPI.importCSV(formData);
             const created = res?.data?.created ?? 0;
             const errs = res?.data?.errors ?? [];
-            toast({ type: 'success', message: `Nhập ${created} giao dịch từ Excel. Lỗi: ${errs.length}` });
+            toast({ type: 'success', message: t('expense.importExcelSuccess', { count: created, errors: errs.length }) });
             fetchExpenses();
           } catch (error) {
             console.error('Error processing Excel:', error);
-            toast({ type: 'error', message: 'Lỗi khi xử lý file Excel' });
+            toast({ type: 'error', message: t('expense.importErrorGeneric') });
           }
         };
         reader.readAsBinaryString(file);
@@ -260,12 +262,12 @@ const Expenses = () => {
         const res = await expenseAPI.importCSV(form);
         const created = res?.data?.created ?? 0;
         const errs = res?.data?.errors ?? [];
-        toast({ type: 'success', message: `Nhập ${created} giao dịch từ CSV. Lỗi: ${errs.length}` });
+        toast({ type: 'success', message: t('expense.importCSVSuccess', { count: created, errors: errs.length }) });
         fetchExpenses();
       }
     } catch (error) {
       console.error('Error importing file:', error);
-      toast({ type: 'error', message: error?.response?.data?.message || 'Nhập file thất bại' });
+      toast({ type: 'error', message: error?.response?.data?.message || t('expense.importErrorGeneric') });
     } finally {
       // reset input so selecting the same file again triggers change
       if (importInputRef.current) importInputRef.current.value = '';
@@ -274,16 +276,16 @@ const Expenses = () => {
 
 
   const handleDelete = async (id) => {
-    if (!confirm('Bạn có chắc muốn xóa giao dịch này?')) return;
+    if (!confirm(t('expense.confirmDelete'))) return;
     try {
       await expenseAPI.delete(id);
-      toast({ type: 'success', message: 'Xóa giao dịch thành công!' });
+      toast({ type: 'success', message: t('expense.deleteSuccess') });
       fetchExpenses();
       setShowDetailModal(false);
       setSelectedExpense(null);
     } catch (error) {
       console.error('Error deleting expense:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi xóa giao dịch' });
+      toast({ type: 'error', message: error.response?.data?.error || t('expense.deleteError') });
     }
   };
 
@@ -338,7 +340,7 @@ const Expenses = () => {
       <div className="flex items-center justify-between">
         <PageHeader 
           icon={DollarSign} 
-          title="Chi tiêu"
+          title={t('expense.title')}
           iconColor="from-pink-500 to-rose-600"
         />
         <button
@@ -346,7 +348,7 @@ const Expenses = () => {
           className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center gap-1.5"
         >
           <Plus className="h-4 w-4" />
-          <span>Thêm</span>
+          <span>{t('common.add')}</span>
         </button>
       </div>
 
@@ -357,7 +359,7 @@ const Expenses = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
-            placeholder="Tìm kiếm..."
+            placeholder={t('expense.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all text-sm"
@@ -373,7 +375,7 @@ const Expenses = () => {
                 ? 'bg-blue-600 text-white' 
                 : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'
             }`}
-            title="Bộ lọc"
+            title={t('common.filter')}
           >
             <Filter className="h-4 w-4" />
           </button>
@@ -381,7 +383,7 @@ const Expenses = () => {
           <button
             onClick={exportCSV}
             className="p-2 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 rounded-lg transition-all"
-            title="Xuất CSV"
+            title={t('expense.exportCSV')}
           >
             <FileDown className="h-4 w-4" />
           </button>
@@ -389,7 +391,7 @@ const Expenses = () => {
           <button
             onClick={exportExcel}
             className="p-2 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 rounded-lg transition-all"
-            title="Xuất Excel"
+            title={t('expense.exportExcel')}
           >
             <FileSpreadsheet className="h-4 w-4" />
           </button>
@@ -397,7 +399,7 @@ const Expenses = () => {
           <button
             onClick={handleImportClick}
             className="p-2 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 rounded-lg transition-all"
-            title="Nhập file"
+            title={t('expense.importFile')}
           >
             <Upload className="h-4 w-4" />
           </button>
@@ -418,7 +420,7 @@ const Expenses = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Bộ lọc</h3>
+                <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{t('expense.filterPanel')}</h3>
               </div>
               <button onClick={() => setShowFilters(false)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
                 <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -460,9 +462,9 @@ const Expenses = () => {
                   onChange={(e) => setFilters({ ...filters, is_expense: e.target.value })}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all text-sm"
                 >
-                  <option value="">Tất cả</option>
-                  <option value="true">Chi tiêu</option>
-                  <option value="false">Thu nhập</option>
+                  <option value="">{t('common.all')}</option>
+                  <option value="true">{t('expense.expenseType')}</option>
+                  <option value="false">{t('expense.incomeType')}</option>
                 </select>
               </div>
 
@@ -493,9 +495,9 @@ const Expenses = () => {
                   onChange={(e) => setFilters({ ...filters, sort_by: e.target.value })}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-100 transition-all text-sm"
                 >
-                  <option value="date">Ngày</option>
-                  <option value="amount">Số tiền</option>
-                  <option value="category">Danh mục</option>
+                  <option value="date">{t('expense.sortByDate')}</option>
+                  <option value="amount">{t('expense.sortByAmount')}</option>
+                  <option value="category">{t('expense.sortByCategory')}</option>
                 </select>
               </div>
             </div>
@@ -505,13 +507,13 @@ const Expenses = () => {
                 onClick={resetFilters}
                 className="flex-1 px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
               >
-                Đặt lại
+                {t('common.reset')}
               </button>
               <button
                 onClick={applyFilters}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
               >
-                Áp dụng
+                {t('common.apply')}
               </button>
             </div>
         </div>
@@ -526,14 +528,14 @@ const Expenses = () => {
                 <DollarSign className="h-12 w-12 text-gray-400 dark:text-gray-500" />
               </div>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Chưa có giao dịch nào</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Hãy thêm giao dịch đầu tiên của bạn</p>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{t('expense.noTransactions')}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('expense.addFirstTransaction')}</p>
             <button
               onClick={() => navigate('/expenses/new')}
               className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
-              <span>Thêm giao dịch</span>
+              <span>{t('expense.addTransaction')}</span>
             </button>
           </div>
         ) : (
@@ -560,7 +562,7 @@ const Expenses = () => {
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3 mb-2">
                           <div className="flex-1 min-w-0">
                             <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base mb-1.5 line-clamp-2 break-words">
-                              {expense.description || 'Không có mô tả'}
+                              {expense.description || t('expense.noDescription')}
                             </h3>
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs font-semibold flex-shrink-0 ${
@@ -628,7 +630,7 @@ const Expenses = () => {
                                 handleDelete(expense.id);
                               }}
                               className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                              title="Xóa giao dịch"
+                              title={t('expense.deleteExpense')}
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>

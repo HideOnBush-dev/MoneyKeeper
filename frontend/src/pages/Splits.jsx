@@ -11,8 +11,10 @@ import Modal from '../components/Modal';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import Skeleton from '../components/Skeleton';
+import { useTranslation } from 'react-i18next';
 
 const Splits = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState('balances'); // balances, groups
@@ -49,7 +51,7 @@ const Splits = () => {
             setOwing(owingRes.data);
         } catch (error) {
             console.error('Error fetching splits data:', error);
-            toast({ type: 'error', message: 'Không thể tải dữ liệu chia sẻ' });
+            toast({ type: 'error', message: t('messages.errorOccurred') });
         } finally {
             setLoading(false);
         }
@@ -59,12 +61,12 @@ const Splits = () => {
         e.preventDefault();
         try {
             await splitsAPI.createGroup({ name: groupName });
-            toast({ type: 'success', message: 'Tạo nhóm thành công' });
+            toast({ type: 'success', message: t('group.createSuccess') });
             setShowCreateGroup(false);
             setGroupName('');
             fetchData();
         } catch (error) {
-            toast({ type: 'error', message: error?.response?.data?.error || 'Lỗi khi tạo nhóm' });
+            toast({ type: 'error', message: error?.response?.data?.error || t('messages.errorOccurred') });
         }
     };
 
@@ -77,25 +79,25 @@ const Splits = () => {
                 name: memberName,
                 email: memberEmail || undefined
             });
-            toast({ type: 'success', message: 'Thêm thành viên thành công' });
+            toast({ type: 'success', message: t('group.addMemberSuccess') });
             setShowAddMember(false);
             setMemberName('');
             setMemberEmail('');
             fetchData();
         } catch (error) {
-            toast({ type: 'error', message: error?.response?.data?.error || 'Lỗi khi thêm thành viên' });
+            toast({ type: 'error', message: error?.response?.data?.error || t('messages.errorOccurred') });
         }
     };
 
     const handleSettle = async (splitId) => {
-        if (!window.confirm('Xác nhận đã nhận được tiền?')) return;
+        if (!window.confirm(t('split.confirmSettle'))) return;
 
         try {
             await splitsAPI.settle(splitId);
-            toast({ type: 'success', message: 'Đã xác nhận thanh toán' });
+            toast({ type: 'success', message: t('split.settleSuccess') });
             fetchData();
         } catch (error) {
-            toast({ type: 'error', message: error?.response?.data?.error || 'Lỗi khi xác nhận' });
+            toast({ type: 'error', message: error?.response?.data?.error || t('messages.errorOccurred') });
         }
     };
 
@@ -119,9 +121,9 @@ const Splits = () => {
     return (
         <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
             <div className="flex justify-between items-center">
-                <PageHeader icon={Users} title="Chia sẻ chi tiêu" iconColor="from-purple-600 to-pink-600" />
+                <PageHeader icon={Users} title={t('split.title')} iconColor="from-purple-600 to-pink-600" />
                 <Button onClick={() => setShowCreateGroup(true)} icon={Plus}>
-                    Tạo nhóm
+                    {t('group.addGroup')}
                 </Button>
             </div>
 
@@ -134,7 +136,7 @@ const Splits = () => {
                         }`}
                     onClick={() => setActiveTab('balances')}
                 >
-                    Số dư
+                    {t('split.balances')}
                     {activeTab === 'balances' && (
                         <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
                     )}
@@ -146,7 +148,7 @@ const Splits = () => {
                         }`}
                     onClick={() => setActiveTab('groups')}
                 >
-                    Nhóm ({groups.length})
+                    {t('group.title')} ({groups.length})
                     {activeTab === 'groups' && (
                         <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
                     )}
@@ -162,7 +164,7 @@ const Splits = () => {
                                 <div className="p-2 bg-green-100 dark:bg-green-800 rounded-full text-green-600 dark:text-green-300">
                                     <ArrowDownLeft className="h-5 w-5" />
                                 </div>
-                                <h3 className="font-semibold text-gray-700 dark:text-gray-300">Bạn được nợ</h3>
+                                <h3 className="font-semibold text-gray-700 dark:text-gray-300">{t('split.youAreOwed')}</h3>
                             </div>
                             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                                 {formatCurrency(owed.total_owed)}
@@ -174,7 +176,7 @@ const Splits = () => {
                                 <div className="p-2 bg-red-100 dark:bg-red-800 rounded-full text-red-600 dark:text-red-300">
                                     <ArrowUpRight className="h-5 w-5" />
                                 </div>
-                                <h3 className="font-semibold text-gray-700 dark:text-gray-300">Bạn nợ</h3>
+                                <h3 className="font-semibold text-gray-700 dark:text-gray-300">{t('split.youOwe')}</h3>
                             </div>
                             <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                                 {formatCurrency(owing.total_owing)}
@@ -184,12 +186,12 @@ const Splits = () => {
 
                     {/* Details List */}
                     <div className="space-y-4">
-                        <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">Chi tiết</h3>
+                        <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">{t('common.details')}</h3>
 
                         {owed.details.length === 0 && owing.details.length === 0 && (
                             <div className="text-center py-10 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-slate-700">
                                 <Users className="h-10 w-10 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-                                <p className="text-gray-500 dark:text-gray-400">Không có khoản nợ nào đang chờ xử lý</p>
+                                <p className="text-gray-500 dark:text-gray-400">{t('split.noPendingSplits')}</p>
                             </div>
                         )}
 
@@ -199,11 +201,11 @@ const Splits = () => {
                                     <div className="flex items-center gap-2">
                                         <span className="font-semibold text-gray-800 dark:text-gray-200">{item.debtor_name}</span>
                                         <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-slate-700 rounded-full text-gray-500 dark:text-gray-400">
-                                            nợ bạn
+                                            {t('split.owesYou')}
                                         </span>
                                     </div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                        {item.expense_name} • {new Date(item.expense_date).toLocaleDateString('vi-VN')}
+                                        {item.expense_name} • {new Date(item.expense_date).toLocaleDateString()}
                                     </p>
                                 </div>
                                 <div className="text-right">
@@ -215,7 +217,7 @@ const Splits = () => {
                                         className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-end gap-1"
                                     >
                                         <Check className="h-3 w-3" />
-                                        Đánh dấu đã trả
+                                        {t('split.markAsPaid')}
                                     </button>
                                 </div>
                             </div>
@@ -227,11 +229,11 @@ const Splits = () => {
                                     <div className="flex items-center gap-2">
                                         <span className="font-semibold text-gray-800 dark:text-gray-200">Bạn</span>
                                         <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-slate-700 rounded-full text-gray-500 dark:text-gray-400">
-                                            nợ {item.creditor_name}
+                                            {t('split.owe')} {item.creditor_name}
                                         </span>
                                     </div>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                        {item.expense_name} • {new Date(item.expense_date).toLocaleDateString('vi-VN')}
+                                        {item.expense_name} • {new Date(item.expense_date).toLocaleDateString()}
                                     </p>
                                 </div>
                                 <div className="text-right">
@@ -250,9 +252,9 @@ const Splits = () => {
                     {groups.length === 0 ? (
                         <div className="col-span-full text-center py-10 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-slate-700">
                             <Users className="h-10 w-10 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-                            <p className="text-gray-500 dark:text-gray-400 mb-4">Chưa có nhóm nào</p>
+                            <p className="text-gray-500 dark:text-gray-400 mb-4">{t('group.noGroups')}</p>
                             <Button onClick={() => setShowCreateGroup(true)} variant="outline" size="sm">
-                                Tạo nhóm đầu tiên
+                                {t('group.createFirstGroup')}
                             </Button>
                         </div>
                     ) : (
@@ -261,7 +263,7 @@ const Splits = () => {
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
                                         <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">{group.name}</h3>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">{group.description || 'Không có mô tả'}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">{group.description || t('common.noDescription')}</p>
                                     </div>
                                     <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                                         <MoreVertical className="h-5 w-5" />
@@ -270,7 +272,7 @@ const Splits = () => {
 
                                 <div className="space-y-3 mb-4">
                                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Thành viên ({group.members.length})
+                                        {t('group.members')} ({group.members.length})
                                     </p>
                                     <div className="flex flex-wrap gap-2">
                                         {group.members.map((member) => (
@@ -289,7 +291,7 @@ const Splits = () => {
                                             className="flex items-center gap-1.5 px-2.5 py-1 border border-dashed border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-500 hover:text-blue-600 hover:border-blue-300 transition-colors"
                                         >
                                             <Plus className="h-3 w-3" />
-                                            Thêm
+                                            {t('common.add')}
                                         </button>
                                     </div>
                                 </div>
@@ -303,22 +305,22 @@ const Splits = () => {
             <Modal
                 isOpen={showCreateGroup}
                 onClose={() => setShowCreateGroup(false)}
-                title="Tạo nhóm mới"
+                title={t('group.addGroup')}
             >
                 <form onSubmit={handleCreateGroup} className="space-y-4">
                     <Input
-                        label="Tên nhóm"
+                        label={t('group.groupName')}
                         value={groupName}
                         onChange={(e) => setGroupName(e.target.value)}
-                        placeholder="Ví dụ: Ăn trưa, Du lịch..."
+                        placeholder={t('group.groupNamePlaceholder')}
                         required
                     />
                     <div className="flex justify-end gap-3 pt-2">
                         <Button type="button" variant="ghost" onClick={() => setShowCreateGroup(false)}>
-                            Hủy
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit">
-                            Tạo nhóm
+                            {t('group.addGroup')}
                         </Button>
                     </div>
                 </form>
@@ -328,29 +330,29 @@ const Splits = () => {
             <Modal
                 isOpen={showAddMember}
                 onClose={() => setShowAddMember(false)}
-                title={`Thêm thành viên vào ${selectedGroup?.name}`}
+                title={t('group.addMemberToGroup', { name: selectedGroup?.name })}
             >
                 <form onSubmit={handleAddMember} className="space-y-4">
                     <Input
-                        label="Tên thành viên"
+                        label={t('group.memberName')}
                         value={memberName}
                         onChange={(e) => setMemberName(e.target.value)}
-                        placeholder="Tên hiển thị"
+                        placeholder={t('group.memberNamePlaceholder')}
                         required
                     />
                     <Input
-                        label="Email (tuỳ chọn)"
+                        label={t('group.memberEmail')}
                         type="email"
                         value={memberEmail}
                         onChange={(e) => setMemberEmail(e.target.value)}
-                        placeholder="Để gửi thông báo"
+                        placeholder={t('group.memberEmailPlaceholder')}
                     />
                     <div className="flex justify-end gap-3 pt-2">
                         <Button type="button" variant="ghost" onClick={() => setShowAddMember(false)}>
-                            Hủy
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit">
-                            Thêm
+                            {t('common.add')}
                         </Button>
                     </div>
                 </form>

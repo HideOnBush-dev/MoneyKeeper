@@ -7,29 +7,7 @@ import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/nu
 import { formatCurrency } from '../lib/utils';
 import Select from './Select';
 import CategoryGrid from './CategoryGrid';
-
-// Expense categories
-const EXPENSE_CATEGORIES = [
-  { value: 'food', label: 'Ăn uống', emoji: '🍔' },
-  { value: 'transport', label: 'Di chuyển', emoji: '🚗' },
-  { value: 'shopping', label: 'Mua sắm', emoji: '🛍️' },
-  { value: 'entertainment', label: 'Giải trí', emoji: '🎮' },
-  { value: 'health', label: 'Sức khỏe', emoji: '💊' },
-  { value: 'education', label: 'Giáo dục', emoji: '📚' },
-  { value: 'utilities', label: 'Tiện ích', emoji: '💡' },
-  { value: 'other', label: 'Khác', emoji: '📦' },
-];
-
-// Income categories
-const INCOME_CATEGORIES = [
-  { value: 'salary', label: 'Lương', emoji: '💰' },
-  { value: 'bonus', label: 'Thưởng', emoji: '🎁' },
-  { value: 'investment', label: 'Đầu tư', emoji: '📈' },
-  { value: 'freelance', label: 'Freelance', emoji: '💼' },
-  { value: 'gift', label: 'Quà tặng', emoji: '🎁' },
-  { value: 'refund', label: 'Hoàn tiền', emoji: '↩️' },
-  { value: 'other', label: 'Khác', emoji: '📦' },
-];
+import { useTranslation } from 'react-i18next';
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -42,8 +20,32 @@ const QuickTransactionForm = ({
   initialData = null, // OCR data or expense data: { amount, date, category, description, wallet_id, is_expense, image_path }
   expenseId = null, // ID of expense to edit
 }) => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { settings } = useSettings();
+  
+  // Expense categories
+  const EXPENSE_CATEGORIES = [
+    { value: 'food', label: t('categories.food'), emoji: '🍔' },
+    { value: 'transport', label: t('categories.transport'), emoji: '🚗' },
+    { value: 'shopping', label: t('categories.shopping'), emoji: '🛍️' },
+    { value: 'entertainment', label: t('categories.entertainment'), emoji: '🎮' },
+    { value: 'health', label: t('categories.health'), emoji: '💊' },
+    { value: 'education', label: t('categories.education'), emoji: '📚' },
+    { value: 'utilities', label: t('categories.utilities'), emoji: '💡' },
+    { value: 'other', label: t('categories.other'), emoji: '📦' },
+  ];
+
+  // Income categories
+  const INCOME_CATEGORIES = [
+    { value: 'salary', label: t('categories.salary'), emoji: '💰' },
+    { value: 'bonus', label: t('categories.bonus'), emoji: '🎁' },
+    { value: 'investment', label: t('categories.investment'), emoji: '📈' },
+    { value: 'freelance', label: t('categories.freelance'), emoji: '💼' },
+    { value: 'gift', label: t('categories.gift'), emoji: '🎁' },
+    { value: 'refund', label: t('categories.refund'), emoji: '↩️' },
+    { value: 'other', label: t('categories.other'), emoji: '📦' },
+  ];
   const [wallets, setWallets] = useState(walletsProp || []);
   const [saving, setSaving] = useState(false);
 
@@ -207,12 +209,12 @@ const QuickTransactionForm = ({
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        toast({ type: 'error', message: 'Vui lòng chọn file ảnh' });
+        toast({ type: 'error', message: t('transactionForm.selectImageFile') });
         return;
       }
       // Validate file size (5MB)
       if (file.size > 5 * 1024 * 1024) {
-        toast({ type: 'error', message: 'Kích thước ảnh tối đa 5MB' });
+        toast({ type: 'error', message: t('transactionForm.imageSizeLimit') });
         return;
       }
       setSelectedImage(file);
@@ -236,11 +238,11 @@ const QuickTransactionForm = ({
   const submit = async (e) => {
     e && e.preventDefault();
     if (!formData.wallet_id) {
-      toast({ type: 'warning', message: 'Vui lòng chọn ví' });
+      toast({ type: 'warning', message: t('transactionForm.selectWalletWarning') });
       return;
     }
     if (!formData.amount || formData.amount <= 0) {
-      toast({ type: 'warning', message: 'Số tiền phải lớn hơn 0' });
+      toast({ type: 'warning', message: t('transactionForm.amountMustBePositive') });
       return;
     }
 
@@ -312,14 +314,14 @@ const QuickTransactionForm = ({
         toast({ 
           type: 'success', 
           message: expenseId 
-            ? `Cập nhật giao dịch thành công! ${changeText}${changeFormatted} → Số dư: ${newBalanceFormatted}`
-            : `Thêm giao dịch thành công! ${changeText}${changeFormatted} → Số dư: ${newBalanceFormatted}`,
+            ? `${t('messages.updateSuccess')} ${changeText}${changeFormatted} → ${t('wallet.balance')}: ${newBalanceFormatted}`
+            : `${t('expense.addSuccess')} ${changeText}${changeFormatted} → ${t('wallet.balance')}: ${newBalanceFormatted}`,
           duration: 4000
         });
       } else {
         toast({ 
           type: 'success', 
-          message: expenseId ? 'Cập nhật giao dịch thành công!' : 'Thêm giao dịch thành công!' 
+          message: expenseId ? t('messages.updateSuccess') : t('expense.addSuccess')
         });
       }
       // Only reset form if creating new expense, not editing
@@ -340,7 +342,7 @@ const QuickTransactionForm = ({
       onSuccess && onSuccess();
     } catch (error) {
       console.error(error);
-      toast({ type: 'error', message: error?.response?.data?.error || 'Lỗi khi thêm giao dịch' });
+      toast({ type: 'error', message: error?.response?.data?.error || t('expense.addError') });
     } finally {
       setSaving(false);
     }
@@ -364,7 +366,7 @@ const QuickTransactionForm = ({
     <div className={isInline ? 'w-full' : 'w-full space-y-4'}>
       {/* Type Selector - Segmented control */}
       <div>
-        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Loại giao dịch</label>
+        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('transactionForm.type')}</label>
         <div className="relative w-full bg-gray-100 dark:bg-slate-700 rounded-xl p-1 flex gap-1">
           <button
             type="button"
@@ -378,7 +380,7 @@ const QuickTransactionForm = ({
               }`}
           >
             <TrendingDown className="h-4 w-4" />
-            Chi tiêu
+            {t('transactionForm.expense')}
           </button>
           <button
             type="button"
@@ -393,14 +395,14 @@ const QuickTransactionForm = ({
               }`}
           >
             <TrendingUp className="h-4 w-4" />
-            Thu nhập
+            {t('transactionForm.income')}
           </button>
         </div>
       </div>
 
       {/* Amount Field */}
       <div>
-        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Số tiền</label>
+        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('transactionForm.amount')}</label>
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-gray-400 dark:text-gray-500">
             {currencySymbol}
@@ -425,7 +427,7 @@ const QuickTransactionForm = ({
       {/* Category - Grid for page, Select for modal */}
       {!isInline && (
         <div>
-          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Danh mục</label>
+          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">{t('transactionForm.category')}</label>
           {isPage ? (
             <CategoryGrid
               categories={currentCategories}
@@ -443,7 +445,7 @@ const QuickTransactionForm = ({
                 icon: c.emoji
               }))}
               icon={Tag}
-              placeholder="Chọn danh mục"
+              placeholder={t('transactionForm.selectCategory')}
             />
           )}
         </div>
@@ -452,7 +454,7 @@ const QuickTransactionForm = ({
       {/* Wallet + Date */}
       <div className={isInline ? 'grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2' : 'grid grid-cols-1 sm:grid-cols-2 gap-3'}>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Ví</label>
+          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('transactionForm.wallet')}</label>
           <Select
             value={formData.wallet_id}
             onChange={(value) => setFormData((prev) => ({ ...prev, wallet_id: value }))}
@@ -461,11 +463,11 @@ const QuickTransactionForm = ({
               label: w.name
             }))}
             icon={WalletIcon}
-            placeholder="Chọn ví"
+            placeholder={t('transactionForm.selectWallet')}
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Ngày</label>
+          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('transactionForm.date')}</label>
           <div className="relative">
             <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none z-10" />
             <input
@@ -483,14 +485,14 @@ const QuickTransactionForm = ({
       {/* Description (modal only) */}
       {!isInline && (
         <div>
-          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Mô tả</label>
+          <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('transactionForm.description')}</label>
           <input
             type="text"
             name="description"
             value={formData.description}
             onChange={handleChange}
             className="w-full px-4 py-3 border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 hover:border-gray-300 dark:hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            placeholder="Ghi chú (tuỳ chọn)"
+            placeholder={t('transactionForm.enterDescription')}
           />
         </div>
       )}
@@ -530,8 +532,8 @@ const QuickTransactionForm = ({
                 className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all"
               >
                 <Camera className="h-8 w-8 text-gray-400 dark:text-gray-500 mb-2" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">Chọn ảnh hóa đơn</span>
-                <span className="text-xs text-gray-500 dark:text-gray-500 mt-1">PNG, JPG, WEBP (tối đa 5MB)</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{t('transactionForm.uploadImage')}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-500 mt-1">PNG, JPG, WEBP ({t('transactionForm.imageSizeLimit')})</span>
               </label>
             )}
           </div>
@@ -547,13 +549,13 @@ const QuickTransactionForm = ({
             className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
           >
             <Users className="h-4 w-4" />
-            {isSplit ? 'Hủy chia tiền' : 'Chia tiền với người khác'}
+            {isSplit ? t('split.settleUp') : t('transactionForm.splitExpense')}
           </button>
 
           {isSplit && (
             <div className="mt-3 p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-700 space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Chọn nhóm</label>
+                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('transactionForm.selectGroup')}</label>
                 <Select
                   value={selectedGroupId}
                   onChange={(value) => setSelectedGroupId(value)}
@@ -561,13 +563,13 @@ const QuickTransactionForm = ({
                     value: g.id,
                     label: g.name
                   }))}
-                  placeholder="Chọn nhóm để chia"
+                  placeholder={t('transactionForm.selectGroup')}
                 />
               </div>
 
               {selectedGroupId && splitMembers.length > 0 && (
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Thành viên</label>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">{t('group.members')}</label>
                   <div className="space-y-2">
                     {splitMembers.map(member => (
                       <div key={member.id} className="flex items-center justify-between">
@@ -602,7 +604,7 @@ const QuickTransactionForm = ({
             onClick={onCancel}
             disabled={saving}
           >
-            Hủy
+            {t('common.cancel')}
           </button>
         )}
         <button
@@ -611,7 +613,7 @@ const QuickTransactionForm = ({
           className={`w-full px-4 py-3 rounded-xl text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all whitespace-nowrap ${formData.is_expense ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700' : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'} disabled:opacity-50`}
           disabled={saving}
         >
-          {saving ? 'Đang lưu...' : 'Thêm giao dịch'}
+          {saving ? t('common.loading') : (expenseId ? t('common.update') : t('expense.addExpense'))}
         </button>
       </div>
     </div>

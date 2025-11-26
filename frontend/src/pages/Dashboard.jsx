@@ -45,10 +45,12 @@ import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/nu
 import { goalsAPI, recurringAPI, debtsAPI, billsAPI } from '../services/api';
 import { cn } from '../lib/utils';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 const Dashboard = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [recentExpenses, setRecentExpenses] = useState([]);
@@ -127,14 +129,14 @@ const Dashboard = () => {
 
       // Map category statistics -> { name, value }
       const categoryLabelMap = {
-        food: 'Ăn uống',
-        transport: 'Di chuyển',
-        shopping: 'Mua sắm',
-        entertainment: 'Giải trí',
-        health: 'Sức khỏe',
-        education: 'Giáo dục',
-        utilities: 'Tiện ích',
-        other: 'Khác',
+        food: t('categories.food'),
+        transport: t('categories.transport'),
+        shopping: t('categories.shopping'),
+        entertainment: t('categories.entertainment'),
+        health: t('categories.health'),
+        education: t('categories.education'),
+        utilities: t('categories.utilities'),
+        other: t('categories.other'),
       };
       const byCategory = statsRes?.data?.by_category || [];
       const categories = byCategory.map(c => ({
@@ -222,11 +224,11 @@ const Dashboard = () => {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     if (!formData.wallet_id) {
-      toast({ type: 'warning', message: 'Vui lòng chọn ví' });
+      toast({ type: 'warning', message: t('expense.selectWallet') });
       return;
     }
     if (!formData.amount || formData.amount <= 0) {
-      toast({ type: 'warning', message: 'Số tiền phải lớn hơn 0' });
+      toast({ type: 'warning', message: t('expense.amountMustBePositive') });
       return;
     }
     try {
@@ -255,11 +257,11 @@ const Dashboard = () => {
         
         toast({ 
           type: 'success', 
-          message: `Thêm giao dịch thành công! ${changeText}${changeFormatted} → Số dư: ${newBalanceFormatted}`,
+          message: `${t('expense.addSuccess')} ${changeText}${changeFormatted} → ${t('wallet.balance')}: ${newBalanceFormatted}`,
           duration: 4000
         });
       } else {
-        toast({ type: 'success', message: 'Thêm giao dịch thành công!' });
+        toast({ type: 'success', message: t('expense.addSuccess') });
       }
       
       setShowAddModal(false);
@@ -276,7 +278,7 @@ const Dashboard = () => {
       await fetchDashboardData();
     } catch (error) {
       console.error('Error creating expense:', error);
-      toast({ type: 'error', message: error?.response?.data?.error || 'Lỗi khi thêm giao dịch' });
+      toast({ type: 'error', message: error?.response?.data?.error || t('expense.addError') });
     } finally {
       setSaving(false);
     }
@@ -296,10 +298,10 @@ const Dashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white font-display">
-            Tổng quan
+            {t('dashboard.title')}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Chào mừng trở lại, {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}
+            {t('dashboard.welcomeBack')}, {new Date().toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
         <button
@@ -307,7 +309,7 @@ const Dashboard = () => {
           className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2 w-full md:w-auto justify-center"
         >
           <Plus className="h-5 w-5" />
-          <span>Thêm giao dịch</span>
+          <span>{t('dashboard.addTransaction')}</span>
         </button>
       </div>
 
@@ -318,7 +320,7 @@ const Dashboard = () => {
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Thu nhập</span>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('dashboard.totalIncome')}</span>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {formatCurrency(stats?.totalIncome || 0, settings.currency, settings.numberFormat)}
@@ -330,7 +332,7 @@ const Dashboard = () => {
             <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
               <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Chi tiêu</span>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('dashboard.totalExpense')}</span>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {formatCurrency(stats?.totalExpenses || 0, settings.currency, settings.numberFormat)}
@@ -342,7 +344,7 @@ const Dashboard = () => {
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Số dư</span>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('dashboard.totalBalance')}</span>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {formatCurrency(stats?.balance || 0, settings.currency, settings.numberFormat)}
@@ -358,7 +360,7 @@ const Dashboard = () => {
           {/* Charts Section */}
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Phân tích</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('dashboard.analysis')}</h3>
               <div className="flex p-1 bg-gray-100 dark:bg-slate-700 rounded-xl">
                 <button
                   onClick={() => setChartTab('trends')}
@@ -369,7 +371,7 @@ const Dashboard = () => {
                       : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
                   )}
                 >
-                  Xu hướng
+                  {t('dashboard.trends')}
                 </button>
                 <button
                   onClick={() => setChartTab('categories')}
@@ -380,7 +382,7 @@ const Dashboard = () => {
                       : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
                   )}
                 >
-                  Danh mục
+                  {t('dashboard.categories')}
                 </button>
               </div>
             </div>
@@ -445,7 +447,7 @@ const Dashboard = () => {
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <p className="text-gray-500 dark:text-gray-400">Không có dữ liệu xu hướng</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t('dashboard.noTrendData')}</p>
                   </div>
                 )
               ) : (
@@ -484,7 +486,7 @@ const Dashboard = () => {
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <p className="text-gray-500 dark:text-gray-400">Không có dữ liệu danh mục</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t('dashboard.noCategoryData')}</p>
                   </div>
                 )
               )}
@@ -494,12 +496,12 @@ const Dashboard = () => {
           {/* Recent Transactions */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Giao dịch gần đây</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('dashboard.recentTransactions')}</h3>
               <button
                 onClick={() => navigate('/expenses')}
                 className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
               >
-                Xem tất cả
+                {t('common.viewAll')}
               </button>
             </div>
             <div className="space-y-3">
@@ -520,7 +522,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900 dark:text-white">{expense.category}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{expense.description || 'Không có ghi chú'}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{expense.description || t('common.noDescription')}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -546,7 +548,7 @@ const Dashboard = () => {
           {/* Wallets Summary */}
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Ví của tôi</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('dashboard.myWallets')}</h3>
               <button onClick={() => navigate('/wallets')} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full transition-colors">
                 <ArrowRight className="h-4 w-4 text-gray-500" />
               </button>
@@ -571,7 +573,7 @@ const Dashboard = () => {
 
           {/* Upcoming Alerts */}
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Sắp đến hạn</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{t('dashboard.upcoming')}</h3>
             <div className="space-y-4">
               {upcomingBills.slice(0, 2).map(bill => (
                 <div key={bill.id} className="flex items-center gap-3">
@@ -580,7 +582,7 @@ const Dashboard = () => {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{bill.name}</p>
-                    <p className="text-xs text-gray-500">Hóa đơn • {bill.due_date}</p>
+                    <p className="text-xs text-gray-500">{t('bill.bill')} • {bill.due_date}</p>
                   </div>
                   <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
                     {formatCurrency(bill.amount, settings.currency)}
@@ -594,7 +596,7 @@ const Dashboard = () => {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{rec.name}</p>
-                    <p className="text-xs text-gray-500">Định kỳ • {rec.next_due_date}</p>
+                    <p className="text-xs text-gray-500">{t('nav.recurring')} • {rec.next_due_date}</p>
                   </div>
                   <p className="text-sm font-bold text-purple-600 dark:text-purple-400">
                     {formatCurrency(rec.amount, settings.currency)}
@@ -602,7 +604,7 @@ const Dashboard = () => {
                 </div>
               ))}
               {upcomingBills.length === 0 && upcomingRecurring.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-4">Không có thông báo nào</p>
+                <p className="text-sm text-gray-500 text-center py-4">{t('messages.noData')}</p>
               )}
             </div>
           </div>
@@ -611,7 +613,7 @@ const Dashboard = () => {
           {activeGoals.length > 0 && (
             <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Mục tiêu</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('dashboard.goals')}</h3>
                 <button onClick={() => navigate('/goals')} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full transition-colors">
                   <ArrowRight className="h-4 w-4 text-gray-500" />
                 </button>
@@ -642,7 +644,7 @@ const Dashboard = () => {
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Thêm giao dịch nhanh</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">{t('dashboard.quickAddTransaction')}</h2>
             <QuickTransactionForm
               formData={formData}
               onChange={handleAddChange}
@@ -655,7 +657,7 @@ const Dashboard = () => {
               onClick={() => setShowAddModal(false)}
               className="mt-4 w-full py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
-              Hủy
+              {t('common.cancel')}
             </button>
           </div>
         </div>

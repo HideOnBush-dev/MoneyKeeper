@@ -19,19 +19,10 @@ import { useToast } from '../components/Toast';
 import { useSettings } from '../contexts/SettingsContext';
 import { parseAmountInput, formatAmountInput, formatAmountLive } from '../lib/numberFormat';
 import PageHeader from '../components/PageHeader';
-
-const CATEGORIES = [
-  { value: 'food', label: 'Ăn uống', emoji: '🍔', gradient: 'from-orange-400 to-red-500', bgLight: 'from-orange-50 to-red-50' },
-  { value: 'transport', label: 'Di chuyển', emoji: '🚗', gradient: 'from-blue-400 to-cyan-500', bgLight: 'from-blue-50 to-cyan-50' },
-  { value: 'shopping', label: 'Mua sắm', emoji: '🛍️', gradient: 'from-pink-400 to-rose-500', bgLight: 'from-pink-50 to-rose-50' },
-  { value: 'entertainment', label: 'Giải trí', emoji: '🎮', gradient: 'from-purple-400 to-indigo-500', bgLight: 'from-purple-50 to-indigo-50' },
-  { value: 'health', label: 'Sức khỏe', emoji: '💊', gradient: 'from-green-400 to-emerald-500', bgLight: 'from-green-50 to-emerald-50' },
-  { value: 'education', label: 'Giáo dục', emoji: '📚', gradient: 'from-yellow-400 to-amber-500', bgLight: 'from-yellow-50 to-amber-50' },
-  { value: 'utilities', label: 'Tiện ích', emoji: '💡', gradient: 'from-teal-400 to-cyan-500', bgLight: 'from-teal-50 to-cyan-50' },
-  { value: 'other', label: 'Khác', emoji: '📦', gradient: 'from-gray-400 to-slate-500', bgLight: 'from-gray-50 to-slate-50' },
-];
+import { useTranslation } from 'react-i18next';
 
 const Budgets = () => {
+  const { t } = useTranslation();
   const [budgets, setBudgets] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +39,17 @@ const Budgets = () => {
   const { toast } = useToast();
   const { settings } = useSettings();
   const amountInputRef = useRef(null);
+  
+  const CATEGORIES = [
+    { value: 'food', label: t('categories.food'), emoji: '🍔', gradient: 'from-orange-400 to-red-500', bgLight: 'from-orange-50 to-red-50' },
+    { value: 'transport', label: t('categories.transport'), emoji: '🚗', gradient: 'from-blue-400 to-cyan-500', bgLight: 'from-blue-50 to-cyan-50' },
+    { value: 'shopping', label: t('categories.shopping'), emoji: '🛍️', gradient: 'from-pink-400 to-rose-500', bgLight: 'from-pink-50 to-rose-50' },
+    { value: 'entertainment', label: t('categories.entertainment'), emoji: '🎮', gradient: 'from-purple-400 to-indigo-500', bgLight: 'from-purple-50 to-indigo-50' },
+    { value: 'health', label: t('categories.health'), emoji: '💊', gradient: 'from-green-400 to-emerald-500', bgLight: 'from-green-50 to-emerald-50' },
+    { value: 'education', label: t('categories.education'), emoji: '📚', gradient: 'from-yellow-400 to-amber-500', bgLight: 'from-yellow-50 to-amber-50' },
+    { value: 'utilities', label: t('categories.utilities'), emoji: '💡', gradient: 'from-teal-400 to-cyan-500', bgLight: 'from-teal-50 to-cyan-50' },
+    { value: 'other', label: t('categories.other'), emoji: '📦', gradient: 'from-gray-400 to-slate-500', bgLight: 'from-gray-50 to-slate-50' },
+  ];
 
   useEffect(() => {
     fetchBudgets();
@@ -80,20 +82,20 @@ const Budgets = () => {
     // Validate amount
     const parsedAmount = parseAmountInput(amountInput || String(formData.amount), { numberFormat: settings.numberFormat });
     if (!parsedAmount || parsedAmount <= 0 || isNaN(parsedAmount)) {
-      toast({ type: 'warning', message: 'Vui lòng nhập số tiền ngân sách lớn hơn 0' });
+      toast({ type: 'warning', message: t('transactionForm.amountMustBePositive') });
       return;
     }
     
     // Validate category
     if (!formData.category) {
-      toast({ type: 'warning', message: 'Vui lòng chọn danh mục' });
+      toast({ type: 'warning', message: t('transactionForm.selectCategory') });
       return;
     }
     
     try {
       const payload = { ...formData, amount: parsedAmount };
       await budgetAPI.create(payload);
-      toast({ type: 'success', message: 'Lưu ngân sách thành công!' });
+      toast({ type: 'success', message: t('messages.saveSuccess') });
       setShowModal(false);
       setFormData({ category: '', amount: 0, month: selectedMonth, year: selectedYear });
       setAmountInput('');
@@ -101,20 +103,20 @@ const Budgets = () => {
       fetchAlerts();
     } catch (error) {
       console.error('Error saving budget:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi lưu ngân sách' });
+      toast({ type: 'error', message: error.response?.data?.error || t('messages.errorOccurred') });
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Bạn có chắc muốn xóa ngân sách này?')) return;
+    if (!confirm(t('messages.confirmDelete'))) return;
     try {
       await budgetAPI.delete(id);
-      toast({ type: 'success', message: 'Xóa ngân sách thành công!' });
+      toast({ type: 'success', message: t('messages.deleteSuccess') });
       fetchBudgets();
       fetchAlerts();
     } catch (error) {
       console.error('Error deleting budget:', error);
-      toast({ type: 'error', message: error.response?.data?.error || 'Lỗi khi xóa ngân sách' });
+      toast({ type: 'error', message: error.response?.data?.error || t('messages.errorOccurred') });
     }
   };
 
@@ -148,8 +150,8 @@ const Budgets = () => {
       <div className="flex items-center justify-between">
         <PageHeader 
           icon={Target} 
-          title="Ngân sách"
-          subtitle={`Tháng ${selectedMonth}/${selectedYear}`}
+          title={t('budget.title')}
+          subtitle={`${t('common.month')} ${selectedMonth}/${selectedYear}`}
           iconColor="from-purple-500 to-indigo-600"
         />
         <button
@@ -161,7 +163,7 @@ const Budgets = () => {
           className="px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all flex items-center gap-1.5"
         >
           <Plus className="h-4 w-4" />
-          <span>Thêm</span>
+          <span>{t('common.add')}</span>
         </button>
       </div>
 
@@ -188,7 +190,7 @@ const Budgets = () => {
           <div className="flex-1">
             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-2">
               <Calendar className="h-4 w-4" />
-              <span>Tháng</span>
+              <span>{t('common.month')}</span>
             </label>
             <select
               value={selectedMonth}
@@ -196,14 +198,14 @@ const Budgets = () => {
               className="w-full px-4 py-3 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all font-semibold appearance-none"
             >
               {[...Array(12)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
+                <option key={i + 1} value={i + 1}>{t('common.month')} {i + 1}</option>
               ))}
             </select>
           </div>
           <div className="flex-1">
             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-2">
               <Calendar className="h-4 w-4" />
-              <span>Năm</span>
+              <span>{t('common.year')}</span>
             </label>
             <select
               value={selectedYear}
@@ -222,14 +224,14 @@ const Budgets = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           {
-            title: 'Tổng ngân sách',
+            title: t('budget.totalBudget'),
             value: totalBudget,
             icon: Target,
             gradient: 'from-blue-500 to-indigo-500',
             bg: 'from-blue-50 to-indigo-50',
           },
           {
-            title: 'Đã chi tiêu',
+            title: t('budget.spent'),
             value: totalSpent,
             icon: TrendingDown,
             gradient: 'from-red-500 to-pink-500',
@@ -237,7 +239,7 @@ const Budgets = () => {
             percentage: totalPercentage,
           },
           {
-            title: 'Còn lại',
+            title: t('budget.remaining'),
             value: totalRemaining,
             icon: TrendingUp,
             gradient: 'from-green-500 to-emerald-500',
@@ -280,14 +282,14 @@ const Budgets = () => {
               <Target className="h-12 w-12 text-gray-400 dark:text-gray-500" />
             </div>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">Chưa có ngân sách</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Tạo ngân sách đầu tiên cho tháng này</p>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{t('budget.noBudgets')}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('budget.createFirstBudget')}</p>
           <button
             onClick={() => setShowModal(true)}
             className="px-6 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors inline-flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            <span>Tạo ngân sách</span>
+            <span>{t('budget.addBudget')}</span>
           </button>
         </div>
       ) : (
@@ -310,7 +312,7 @@ const Budgets = () => {
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 truncate">{categoryInfo.label}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Tháng {budget.month}/{budget.year}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('common.month')} {budget.month}/{budget.year}</p>
                     </div>
                   </div>
                   
@@ -347,15 +349,15 @@ const Budgets = () => {
 
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
                   <div className="text-center p-2 sm:p-3 bg-white/50 dark:bg-slate-700/50 rounded-2xl min-w-0">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Ngân sách</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('budget.budget')}</p>
                     <p className="text-sm sm:text-lg font-bold text-gray-900 dark:text-gray-100 break-words overflow-hidden">{formatCurrency(budget.amount, settings.currency, settings.numberFormat)}</p>
                   </div>
                   <div className="text-center p-2 sm:p-3 bg-white/50 dark:bg-slate-700/50 rounded-2xl min-w-0">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Đã chi</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('budget.spent')}</p>
                     <p className="text-sm sm:text-lg font-bold text-red-600 dark:text-red-400 break-words overflow-hidden">{formatCurrency(budget.spent, settings.currency, settings.numberFormat)}</p>
                   </div>
                   <div className="text-center p-2 sm:p-3 bg-white/50 dark:bg-slate-700/50 rounded-2xl min-w-0">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Còn lại</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('budget.remaining')}</p>
                     <p className="text-sm sm:text-lg font-bold text-green-600 dark:text-green-400 break-words overflow-hidden">{formatCurrency(budget.remaining, settings.currency, settings.numberFormat)}</p>
                   </div>
                 </div>
@@ -366,7 +368,7 @@ const Budgets = () => {
                   className="w-full px-4 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  <span>Xóa ngân sách</span>
+                  <span>{t('budget.deleteBudget')}</span>
                 </button>
               </div>
             );
@@ -386,7 +388,7 @@ const Budgets = () => {
           >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                  Thêm ngân sách
+                  {t('budget.addBudget')}
                 </h2>
                 <button
                   onClick={() => setShowModal(false)}
@@ -397,7 +399,7 @@ const Budgets = () => {
               </div>
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Danh mục *</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('transactionForm.category')} *</label>
                   <div className="relative">
                     <Tag className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500 z-10" />
                     <select
@@ -406,7 +408,7 @@ const Budgets = () => {
                       className="w-full pl-12 pr-4 py-4 bg-white/60 dark:bg-slate-700/60 border border-gray-200 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-gray-100 transition-all font-semibold appearance-none"
                       required
                     >
-                      <option value="">Chọn danh mục</option>
+                      <option value="">{t('transactionForm.selectCategory')}</option>
                       {CATEGORIES.map((cat) => (
                         <option key={cat.value} value={cat.value}>{cat.emoji} {cat.label}</option>
                       ))}
@@ -415,7 +417,7 @@ const Budgets = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Số tiền ngân sách *</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('transactionForm.amount')} *</label>
                   <div className="relative">
                     <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
                     <input
@@ -446,7 +448,7 @@ const Budgets = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tháng</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('common.month')}</label>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500 z-10" />
                       <select
@@ -461,7 +463,7 @@ const Budgets = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Năm</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('common.year')}</label>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500 z-10" />
                       <select
@@ -483,14 +485,14 @@ const Budgets = () => {
                     onClick={() => setShowModal(false)}
                     className="flex-1 px-6 py-3 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                   >
-                    Hủy
+                    {t('common.cancel')}
                   </button>
                   <button
                     type="submit"
                     className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2"
                   >
                     <CheckCircle className="h-4 w-4" />
-                    <span>Lưu</span>
+                    <span>{t('common.save')}</span>
                   </button>
                 </div>
               </form>

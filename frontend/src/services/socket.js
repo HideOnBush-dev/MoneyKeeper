@@ -11,17 +11,22 @@ class ChatSocket {
       return this.socket;
     }
 
-    // In development, use relative path (will use Vite proxy)
-    // In production, use the actual backend URL
     const isDev = import.meta.env.DEV;
-    const socketPath = isDev ? '/chat' : `${import.meta.env.VITE_API_URL || window.location.origin}/chat`;
+    const { protocol, hostname, origin } = window.location || { protocol: 'http:', hostname: 'localhost', origin: 'http://localhost:3000' };
+    const defaultDevUrl = `${protocol}//${hostname}:8000`;
+    const baseUrl =
+      import.meta.env.VITE_SOCKET_URL ||
+      import.meta.env.VITE_API_URL ||
+      (isDev ? defaultDevUrl : origin);
+    const namespace = '/chat';
+    const socketUrl = isDev ? namespace : `${baseUrl.replace(/\/$/, '')}${namespace}`;
 
-    console.log('🔌 Connecting to socket:', socketPath, '(Dev mode:', isDev, ')');
+    console.log('🔌 Connecting to socket:', socketUrl, '(Dev mode:', isDev, ')');
 
     // Connect to the chat namespace
-    this.socket = io(socketPath, {
+    this.socket = io(socketUrl, {
       withCredentials: true,
-      transports: ['polling'], // Force polling for compatibility with dev server
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
