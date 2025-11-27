@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/app-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Money Keeper" />
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="msapplication-TileColor" content="#3B82F6" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Ứng dụng quản lý tài chính cá nhân thông minh với AI. Theo dõi chi tiêu, lập ngân sách và phân tích xu hướng tài chính." />
+    <meta name="keywords" content="quản lý chi tiêu, tài chính cá nhân, ngân sách, ví điện tử, AI finance" />
+    <meta name="author" content="Money Keeper" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://example.com/" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Money Keeper - Quản lý Chi tiêu Thông minh" />
+    <meta property="og:description" content="Ứng dụng quản lý tài chính cá nhân với AI" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/app-icon.png" />
+    <meta property="og:url" content="https://example.com/" />
+    <meta property="og:site_name" content="Money Keeper" />
+    <meta property="og:locale" content="vi_VN" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Money Keeper - Quản lý Chi tiêu Thông minh" />
+    <meta name="twitter:description" content="Ứng dụng quản lý tài chính cá nhân với AI" />
+    <meta name="twitter:image" content="/app-icon.png" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Money Keeper",
+        "url": "https://example.com/",
+        "inLanguage": "vi-VN",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://example.com/search?q={query}",
+          "query-input": "required name=query"
+        }
+      }
+    </script>
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/app-icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/img/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/icon-192x192.png" />
+    
+    <title>Money Keeper - Quản lý Chi tiêu Thông minh</title>
+    
+    <!-- Google Fonts - Inter & Poppins for modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    
+    <!-- Apply theme immediately to prevent FOUC -->
+    <script>
+      (function() {
+        try {
+          const settings = localStorage.getItem('mk_settings');
+          if (settings) {
+            const parsed = JSON.parse(settings);
+            if (parsed.theme === 'dark') {
+              document.documentElement.classList.add('dark');
+            }
+          }
+        } catch (e) {
+          // Ignore errors
+        }
+      })();
+    </script>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+              display: ['Poppins', 'Inter', 'system-ui', 'sans-serif'],
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-in-out',
+              'slide-up': 'slideUp 0.5s ease-out',
+              'bounce-slow': 'bounce 3s infinite',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { transform: 'translateY(20px)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              },
+            },
+          },
+        },
+      }
+    </script>
+    
+    <style>
+      @supports (padding: max(0px)) {
+        body {
+          padding-left: min(0px, env(safe-area-inset-left));
+          padding-right: min(0px, env(safe-area-inset-right));
+        }
+      }
+      
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #3b82f6, #6366f1);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #2563eb, #4f46e5);
+      }
+      
+      /* Smooth transitions */
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+        overscroll-behavior-y: none;
+      }
+
+      /* Basic dark theme support without Tailwind darkMode config */
+      :root.dark body {
+        background-color: #0f172a; /* slate-900 */
+        color: #e2e8f0; /* slate-200 */
+      }
+      :root.dark ::-webkit-scrollbar-track { background: #111827; }
+      :root.dark ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #4f46e5, #7c3aed); }
+    </style>
+  </head>
+  <body class="antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
