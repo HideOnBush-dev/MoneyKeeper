@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Wallet } from 'lucide-react';
 import { AuthProvider } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './components/Toast';
 import Layout from './components/Layout';
@@ -58,9 +59,10 @@ const PublicRoute = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <SettingsProvider>
-        <ToastProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <SettingsProvider>
+          <ToastProvider>
             <Router>
             <Routes>
           {/* Public Routes */}
@@ -175,6 +177,7 @@ function App() {
         </ToastProvider>
       </SettingsProvider>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 

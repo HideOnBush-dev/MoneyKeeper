@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { notificationsAPI } from '../services/api';
-// import ThemeToggle from './ThemeToggle';
+import ThemeToggle from './ThemeToggle';
 
 // NavLink component with icon
 const NavLink = ({ to, icon: Icon, label, isActive }) => (
@@ -93,7 +93,7 @@ const Layout = ({ children }) => {
               <NavLink to="/chat" icon={MessageSquare} label="AI Chat" isActive={isActive('/chat')} />
 
               {/* Theme Toggle */}
-              {/* <ThemeToggle size="small" /> */}
+              <ThemeToggle size="small" />
 
               {/* User Menu */}
               <div className="relative">
